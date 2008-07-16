@@ -1,0 +1,33 @@
+actor Passer
+  var int m_id
+  var Passer m_next
+
+  action pass(int token)
+    if (token == 0)
+      puti(m_id)
+      exit(0)
+    else
+      token = token - 1
+      m_next::pass(token)
+    end
+  end
+
+  action setIdAndNext(int id, Passer next)
+    m_id = id
+    m_next = next
+  end
+end
+
+action main(string[] args)
+    var int numPassers = 503
+    spawn Passer[] passers[numPassers]
+    var int i = 0
+    while (i < numPassers-1)
+      passers[i]::setIdAndNext(i+1, passers[i+1])
+      i = i + 1
+    end
+    passers[numPassers-1]::setIdAndNext(numPassers, passers[0])
+
+    passers[0]::pass(convertToInt(args[0]))
+end
+

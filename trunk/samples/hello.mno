@@ -1,0 +1,7 @@
+extern int puts(string s)
+extern void exit(int i)
+
+action main()
+  puts("Hello")
+  exit(0)
+end
