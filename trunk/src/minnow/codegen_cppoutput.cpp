@@ -188,7 +188,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(VarDeclExprAST *ast) {
         }
     }
     else {
-        gc.get()->decls << lookupInternalType(vi) << " " << ast->name << ";" << std::endl;
+        gc.get()->decls << lookupAssocType(vi->type) << " " << ast->name << ";" << std::endl;
         if (ast->isAlloc) {
             gc.get()->output << ast->name << " = new " << ast->declType << "();" << std::endl;
         }
@@ -206,7 +206,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ArrayIndexedExprAST *as
         oss << "Unknown variable '" << ast->name << "'";
         throw CompilerException(oss.str(), ast->pos);
     }
-    else if (vi->typeType != TypeType::Array) {
+    else if (vi->type.typeType != TypeType::Array) {
         std::ostringstream oss;
         oss << "Variable '" << ast->name << "' is not of an array type";
         throw CompilerException(oss.str(), ast->pos);
@@ -305,8 +305,8 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ArrayDeclExprAST *ast) 
         }
     }
     else {
-        gc.get()->decls << "std::vector<"<< lookupInternalType(vi) << "> *" << ast->name << ";" << std::endl;
-        gc.get()->output << ast->name << " = new std::vector<" << lookupInternalType(vi) << ">(";
+        gc.get()->decls << "std::vector<"<< lookupAssocType(vi->type) << "> *" << ast->name << ";" << std::endl;
+        gc.get()->output << ast->name << " = new std::vector<" << lookupAssocType(vi->type) << ">(";
         if (ast->size != NULL) {
             boost::shared_ptr<GeneratedCode> gc_temp = visit (ast->size);
             if (gc_temp.get()->decls.str() != "") {
@@ -702,13 +702,13 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(StructAST *ast, DeclSta
         for (std::map<std::string, VariableInfo*>::iterator iter = ast->vars.begin(), end = ast->vars.end(); iter != end; ++iter) {
             ++(currentScopeCount.back());
             scopeStack.push_back(iter->second);
-            std::map<std::string, ActorAST*>::iterator finder = actors.find(iter->second->declType);
+            std::map<std::string, ActorAST*>::iterator finder = actors.find(iter->second->type.declType);
             
             if (finder != actors.end()) {                
-                if (iter->second->typeType == TypeType::Scalar) {
+                if (iter->second->type.typeType == TypeType::Scalar) {
                     gc.get()->output << "actorId_t " << iter->first << ";" << std::endl;
                 }
-                else if (iter->second->typeType == TypeType::Array) {
+                else if (iter->second->type.typeType == TypeType::Array) {
                     gc.get()->output << "actorId_t " << iter->first << "[";
                     boost::shared_ptr<GeneratedCode> gc_temp = visit (iter->second->size);
                     if (gc_temp.get()->decls.str() != "") {
@@ -725,11 +725,11 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(StructAST *ast, DeclSta
                 }
             }
             else {
-                if (iter->second->typeType == TypeType::Scalar) {
-                    gc.get()->output << lookupInternalType(iter->second) << " " << iter->first << ";" << std::endl;
+                if (iter->second->type.typeType == TypeType::Scalar) {
+                    gc.get()->output << lookupAssocType(iter->second->type) << " " << iter->first << ";" << std::endl;
                 }
-                else if (iter->second->typeType == TypeType::Array) {
-                    gc.get()->output << lookupInternalType(iter->second) << " " << iter->first << "[";
+                else if (iter->second->type.typeType == TypeType::Array) {
+                    gc.get()->output << lookupAssocType(iter->second->type) << " " << iter->first << "[";
                     boost::shared_ptr<GeneratedCode> gc_temp = visit (iter->second->size);
                     if (gc_temp.get()->decls.str() != "") {
                         gc.get()->decls << gc_temp.get()->decls.str();
@@ -790,13 +790,13 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ActorAST *ast, DeclStag
         for (std::map<std::string, VariableInfo*>::iterator iter = ast->vars.begin(), end = ast->vars.end(); iter != end; ++iter) {
             ++(currentScopeCount.back());
             scopeStack.push_back(iter->second);
-            std::map<std::string, ActorAST*>::iterator finder = actors.find(iter->second->declType);
+            std::map<std::string, ActorAST*>::iterator finder = actors.find(iter->second->type.declType);
             
             if (finder != actors.end()) {                
-                if (iter->second->typeType == TypeType::Scalar) {
+                if (iter->second->type.typeType == TypeType::Scalar) {
                     gc.get()->output << "actorId_t " << iter->first << ";" << std::endl;
                 }
-                else if (iter->second->typeType == TypeType::Array) {
+                else if (iter->second->type.typeType == TypeType::Array) {
                     gc.get()->output << "actorId_t " << iter->first << "[";
                     
                     boost::shared_ptr<GeneratedCode> gc_temp = visit (iter->second->size);
@@ -814,11 +814,11 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ActorAST *ast, DeclStag
                 }
             }
             else {
-                if (iter->second->typeType == TypeType::Scalar) {
-                    gc.get()->output << lookupInternalType(iter->second) << " " << iter->first << ";" << std::endl;
+                if (iter->second->type.typeType == TypeType::Scalar) {
+                    gc.get()->output << lookupAssocType(iter->second->type) << " " << iter->first << ";" << std::endl;
                 }
-                else if (iter->second->typeType == TypeType::Array) {
-                    gc.get()->output << lookupInternalType(iter->second) << " " << iter->first << "[";
+                else if (iter->second->type.typeType == TypeType::Array) {
+                    gc.get()->output << lookupAssocType(iter->second->type) << " " << iter->first << "[";
                     boost::shared_ptr<GeneratedCode> gc_temp = visit (iter->second->size);
                     
                     if (gc_temp.get()->decls.str() != "") {
@@ -925,7 +925,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(PrototypeAST *ast, Decl
             gc.get()->output << ", ";
         }
         
-        gc.get()->output << lookupInternalType(vi) << " " << ast->argNames[i];
+        gc.get()->output << lookupAssocType(vi->type) << " " << ast->argNames[i];
         if (stage != DeclStage::IMPL) {
             delete vi;
         }
@@ -1065,7 +1065,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ActionAST *ast, std::st
 
         for (std::map<std::string, VariableInfo*>::reverse_iterator iter = ast->vars.rbegin(), end = ast->vars.rend(); iter != end; ++iter) {
             if (iter->second->scopeType == ScopeType::Prototype) {
-                gc.get()->decls << lookupInternalType(iter->second) << " " << iter->second->name << ";" << std::endl;
+                gc.get()->decls << lookupAssocType(iter->second->type) << " " << iter->second->name << ";" << std::endl;
                 gc.get()->output << lookupPopForVar(iter->second) << ";" << std::endl;
 
                 ++(currentScopeCount.back());

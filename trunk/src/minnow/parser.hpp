@@ -11,49 +11,56 @@
 #include "lexer.hpp"
 
 class TypeType {
-public:
+  public:
     enum Type { Scalar, Array };
 };
 
 class ScopeType {
-    public:
-        enum Type { CodeBlock, Struct, Actor, Prototype };
+  public:
+    enum Type { CodeBlock, Struct, Actor, Prototype };
 };
 
 class ExpressionType {
-public:
+  public:
     enum Type { Number, Boolean, Variable, ArrayIndexed, Binary, Quote, Call, End, VarDecl, ArrayDecl, If, While, Pointcut, Lambda };
 };
 
 class ExpressionAST {
-public:
+  public:
     virtual ~ExpressionAST() {}
     FilePos pos;
     virtual ExpressionType::Type type() = 0;
     virtual std::string resultType() = 0;
 };
 
-class VariableInfo {
-public:
-    std::string name;
+class TypeInfo {
+  public:
     std::string declType;
     TypeType::Type typeType;
+
+    TypeInfo(std::string &decl, TypeType::Type type) : declType(decl), typeType(type) { }
+};
+
+class VariableInfo {
+  public:
+    std::string name;
+    TypeInfo type;
     ExpressionAST *size;
     ScopeType::Type scopeType;
     
-    VariableInfo(std::string &vname, std::string &decl, TypeType::Type type, ScopeType::Type scope) : 
-        name(vname), declType(decl), typeType(type), scopeType(scope) { }
-    VariableInfo(std::string &vname, std::string &decl, TypeType::Type type, ExpressionAST *sizeexpr, ScopeType::Type scope) : 
-        name(vname), declType(decl), typeType(type), size(sizeexpr), scopeType(scope) { }
+    VariableInfo(std::string &vname, std::string &decl, TypeType::Type ty, ScopeType::Type scope) : 
+        name(vname), type(decl, ty), scopeType(scope) { }
+    VariableInfo(std::string &vname, std::string &decl, TypeType::Type ty, ExpressionAST *sizeexpr, ScopeType::Type scope) : 
+        name(vname), type(decl, ty), size(sizeexpr), scopeType(scope) { }
 };
 
 class CodeHolder {
-public:
+  public:
     std::map <std::string, VariableInfo*> vars;
 };
 
 class NumberExprAST : public ExpressionAST {
-public:
+  public:
     double val;
 
     NumberExprAST(double nVal) : val(nVal) {}
@@ -63,7 +70,7 @@ public:
 };
 
 class BooleanExprAST : public ExpressionAST {
-public:
+  public:
     bool val;
 
     BooleanExprAST(bool bVal) : val(bVal) {}
@@ -73,7 +80,7 @@ public:
 };
 
 class QuoteExprAST : public ExpressionAST {
-public:
+  public:
     std::string val;
 
     QuoteExprAST(std::string &nVal) : val(nVal) {}
@@ -83,7 +90,7 @@ public:
 };
 
 class VariableExprAST : public ExpressionAST {
-public:
+  public:
     std::string name, varType;
     explicit VariableExprAST(const std::string vName) : name(vName) {}
 
@@ -92,7 +99,7 @@ public:
 };
 
 class VarDeclExprAST : public ExpressionAST {
-public:
+  public:
     std::string name, declType;
     bool isSpawn;
     bool isAlloc;
@@ -103,7 +110,7 @@ public:
 };
 
 class ArrayIndexedExprAST : public ExpressionAST {
-public:
+  public:
     std::string name;
     ExpressionAST *index;
     explicit ArrayIndexedExprAST(const std::string vName, ExpressionAST *vIndex) :
@@ -114,7 +121,7 @@ public:
 };
 
 class ArrayDeclExprAST : public ExpressionAST {
-public:
+  public:
     std::string name, declType;
     ExpressionAST *size;
     bool isSpawn;
@@ -128,7 +135,7 @@ public:
 
 //FIXME: Check for possible leaks
 class EndExprAST : public ExpressionAST {
-public:
+  public:
     explicit EndExprAST() {}
 
     virtual ExpressionType::Type type() { return ExpressionType::End; }
@@ -136,7 +143,7 @@ public:
 };
 
 class IfExprAST : public ExpressionAST {
-public:
+  public:
     explicit IfExprAST() {}
     ExpressionAST *Cond;
     std::vector<ExpressionAST*> Then;
@@ -147,7 +154,7 @@ public:
 };
 
 class WhileExprAST : public ExpressionAST {
-public:
+  public:
     explicit WhileExprAST() {}
     ExpressionAST *Cond;
     std::vector<ExpressionAST*> Loop;
@@ -157,24 +164,24 @@ public:
 };
 
 class BinaryExprAST : public ExpressionAST {
-public:
+  public:
     std::string op, binaryType;
     ExpressionAST *LHS, *RHS;
 
     explicit BinaryExprAST(const std::string bOp, ExpressionAST *lhs, ExpressionAST *rhs)
-     : op(bOp), LHS(lhs), RHS(rhs) {}
+        : op(bOp), LHS(lhs), RHS(rhs) {}
 
     virtual ExpressionType::Type type() { return ExpressionType::Binary; }
     virtual std::string resultType() { return binaryType; };
 };
 
 class CallExprAST : public ExpressionAST {
-public:
+  public:
     std::string name;
     std::vector<ExpressionAST*> args;
 
     CallExprAST(const std::string &fName, std::vector<ExpressionAST*> &fArgs)
-     : name(fName), args(fArgs) {}
+        : name(fName), args(fArgs) {}
 
     virtual ExpressionType::Type type() { return ExpressionType::Call; }
 
@@ -182,7 +189,7 @@ public:
 };
 
 class LambdaExprAST : public ExpressionAST{
-public:
+  public:
     std::vector<ExpressionAST*> body;
 
     virtual ExpressionType::Type type() { return ExpressionType::Lambda; }
@@ -191,7 +198,7 @@ public:
 };
 
 class PointcutExprAST : public ExpressionAST {
-public:
+  public:
     std::string pattern;
     bool throwExOnFalse;
     LambdaExprAST *closure;
@@ -203,7 +210,7 @@ public:
 };
 
 class PrototypeAST {
-public:
+  public:
     std::string name;
     std::string type;
     std::vector<std::string> argNames;
@@ -211,28 +218,28 @@ public:
 };
 
 class FunctionAST : public CodeHolder {
-public:
+  public:
     PrototypeAST *proto;
     std::vector<ExpressionAST*> body;
     FilePos pos;
 };
 
 class ActionAST : public CodeHolder {
-public:
+  public:
     PrototypeAST *proto;
     std::vector<ExpressionAST*> body;
     FilePos pos;
 };
 
 class StructAST : public CodeHolder {
-public:
+  public:
     std::string name;
     std::vector<FunctionAST*> funs;
     //std::vector<ExpressionAST*> vars;
 };
 
 class ActorAST : public CodeHolder {
-public:
+  public:
     std::string name;
     //std::vector<ExpressionAST*> vars;
     std::vector<FunctionAST*> funs;
@@ -242,7 +249,7 @@ public:
 };
 
 class AppAST {
-public:
+  public:
     std::vector<FunctionAST*> functions;
     std::vector<StructAST*> structs;
     std::vector<ActorAST*> actors;
