@@ -491,9 +491,26 @@ PrototypeAST *parsePrototype(std::vector<Token*>::iterator &iter, std::vector<To
 
         //FIXME: Add type parsing here, so we can allow things like arrays/dictionaries/etc
         
-        proto->type = (*iter)->data;
+        proto->type.declType = (*iter)->data;
+        proto->type.typeType = TypeType::Scalar;
 
         ++iter;
+
+        if (iter == end) {
+            throw CompilerException("Incomplete function definition", *(--iter));
+        }
+        if ((*iter)->data == "[") {
+            ++iter;
+            if (iter == end) {
+                throw CompilerException("Incomplete function definition", *(--iter));
+            }
+            if ((*iter)->data != "]") {
+                throw CompilerException("Incomplete function definition", *(--iter));
+            }
+            ++iter;
+            proto->type.typeType = TypeType::Array;
+        }
+        
         if (iter == end) {
             throw CompilerException("Expected function definition", *(--iter));
         }
@@ -506,8 +523,8 @@ PrototypeAST *parsePrototype(std::vector<Token*>::iterator &iter, std::vector<To
             }
         }
         else {
-            proto->name = proto->type;
-            proto->type = "void";
+            proto->name = proto->type.declType;
+            proto->type.declType = "void";
         }
 
         //current version: def <name>
@@ -557,15 +574,17 @@ PrototypeAST *parsePrototype(std::vector<Token*>::iterator &iter, std::vector<To
                 else {
                     vi = new VariableInfo(name, type, TypeType::Scalar, ScopeType::Prototype);
                 }
-                    
+
+                //FIXME: How much is CodeHolder used?
                 if (holder->vars.find(name) == holder->vars.end()) {
                     holder->vars[name] = vi;
                 }
                 else {
                     throw CompilerException("Duplicated variable name in function", *iter);
                 }
-                proto->argNames.push_back(name);
-                proto->argTypes.push_back(type);
+                //proto->argNames.push_back(name);
+                //proto->argTypes.push_back(type);
+                proto->args.push_back(vi);
                 ++iter;
                 if ((iter != end) && ((*iter)->data == ",")) {
                     //skip to the next arg

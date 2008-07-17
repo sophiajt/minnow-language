@@ -59,35 +59,82 @@ class CodegenCPPOutput {
         }
     }
 
-    void setupDontCare(const std::string &typeName) {
+    //void setupDontCare(const std::string &typeName) {
+    void setupDontCare(const TypeInfo &ti) {
         //FIXME: Add in the position this happened
-        
-        if (typeName == "void") {
+
+        if (ti.typeType == TypeType::Array) {
+            dontCareReturnVal = "NULL";
+        }
+        else if (ti.declType == "void") {
             dontCareReturnVal = "";
         }
-        else if (typeName == "bool") {
+        else if (ti.declType == "bool") {
             dontCareReturnVal = "false";
         }
-        else if (typeName == "int") {
+        else if (ti.declType == "int") {
             dontCareReturnVal = "0";
         }
-        else if (typeName == "double") {
+        else if (ti.declType == "double") {
             dontCareReturnVal = "0.0";
         }
-        else if (typeName == "string") {
+        else if (ti.declType == "string") {
             dontCareReturnVal = "\"\"";
         }
         else {
             std::ostringstream msg;
-            msg << "Unknown typename '" << typeName << "'";
+            msg << "Unknown typename '" << ti.declType << "'";
 
             throw CompilerException(msg.str());
+        }
+    }
+    
+    std::string lookupAssocType(const TypeInfo &ti) {
+        std::map<std::string, ActorAST*>::iterator finder = actors.find(ti.declType);
+
+        if (finder != actors.end()) {
+            if (ti.typeType == TypeType::Array) {
+                return "std::vector<actorId_t>*";
+            }
+            else {
+                return "actorId_t";
+            }
+        }
+        else {
+            std::ostringstream arrayType;
+            if (ti.typeType == TypeType::Array) {
+                if ((ti.declType == "int") || (ti.declType == "float") || (ti.declType == "bool") || (ti.declType == "double") || (ti.declType == "void")) {
+                    arrayType << "std::vector<" << ti.declType << ">*";
+                }
+                else if (ti.declType == "string") {
+                    arrayType << "std::vector<std::string>*";
+                }
+                else {
+                    arrayType << "std::vector<" << ti.declType << "*>*";
+                }
+                return arrayType.str();
+            }
+            else {
+                if ((ti.declType == "int") || (ti.declType == "float") || (ti.declType == "bool") || (ti.declType == "double") || (ti.declType == "void")) {
+                    arrayType << ti.declType;
+                }
+                else if (ti.declType == "string") {
+                    arrayType << "std::string";
+                }
+                else {
+                    arrayType << ti.declType << "*";
+                }
+                return arrayType.str();
+            }
         }
     }
 
     std::string lookupPushForVar(const VariableInfo *vi) {
         std::ostringstream o;
-        if (vi->type.declType == "int") {
+        if (vi->type.typeType == TypeType::Array) {
+            o << "  tmpTU__.VoidPtr = " << vi->name << ";" << std::endl;
+        }   
+        else if (vi->type.declType == "int") {
             o << "  tmpTU__.UInt32 = " << vi->name << ";" << std::endl;
         }
         else if (vi->type.declType == "double") {
@@ -106,49 +153,12 @@ class CodegenCPPOutput {
         return o.str();
     }
     
-    std::string lookupAssocType(const TypeInfo &ti) {
-        std::map<std::string, ActorAST*>::iterator finder = actors.find(ti.declType);
-
-        if (finder != actors.end()) {
-            if (ti.typeType == TypeType::Array) {
-                return "std::vector<actorId_t>*";
-            }
-            else {
-                return "actorId_t";
-            }
-        }
-        else {
-            std::ostringstream arrayType;
-            if (ti.typeType == TypeType::Array) {
-                if ((ti.declType == "int") || (ti.declType == "float") || (ti.declType == "bool") || (ti.declType == "double")) {
-                    arrayType << "std::vector<" << ti.declType << ">*";
-                }
-                else if (ti.declType == "string") {
-                    arrayType << "std::vector<std::string>*";
-                }
-                else {
-                    arrayType << "std::vector<" << ti.declType << "*>*";
-                }
-                return arrayType.str();
-            }
-            else {
-                if ((ti.declType == "int") || (ti.declType == "float") || (ti.declType == "bool") || (ti.declType == "double")) {
-                    arrayType << ti.declType;
-                }
-                else if (ti.declType == "string") {
-                    arrayType << "std::string";
-                }
-                else {
-                    arrayType << ti.declType << "*";
-                }
-                return arrayType.str();
-            }
-        }
-    }
-    
     std::string lookupPopForVar(const VariableInfo *vi) {
         std::ostringstream o;
-        if (vi->type.declType == "int") {
+        if (vi->type.typeType == TypeType::Array) {
+            o << "  " << vi->name << " = (" << lookupAssocType(vi->type) << ")(actor__->heapStack.back().VoidPtr); actor__->heapStack.pop_back();" << std::endl;
+        }   
+        else if (vi->type.declType == "int") {
             o << "  " << vi->name << " = actor__->heapStack.back().UInt32; actor__->heapStack.pop_back();" << std::endl;
         }
         else if (vi->type.declType == "double") {
@@ -197,8 +207,8 @@ class CodegenCPPOutput {
         for (std::vector<PrototypeAST*>::reverse_iterator iter = funStack.rbegin(), end = funStack.rend(); iter != end; ++iter) {
             //FIXME: This is insufficient for overloaded functions
             if ((*iter)->name == ast->name) {
-                TypeInfo ti((*iter)->type, TypeType::Scalar);
-                return lookupAssocType(ti);
+                //TypeInfo ti((*iter)->type, TypeType::Scalar);
+                return lookupAssocType((*iter)->type);
             }
         }
 

@@ -305,8 +305,10 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ArrayDeclExprAST *ast) 
         }
     }
     else {
-        gc.get()->decls << "std::vector<"<< lookupAssocType(vi->type) << "> *" << ast->name << ";" << std::endl;
-        gc.get()->output << ast->name << " = new std::vector<" << lookupAssocType(vi->type) << ">(";
+        gc.get()->decls << lookupAssocType(vi->type) << " " << ast->name << ";" << std::endl;
+        std::string allocType = lookupAssocType(vi->type);
+        allocType = allocType.erase(allocType.size()-1); //trim off the trailing '*'
+        gc.get()->output << ast->name << " = new " << allocType << "(";
         if (ast->size != NULL) {
             boost::shared_ptr<GeneratedCode> gc_temp = visit (ast->size);
             if (gc_temp.get()->decls.str() != "") {
@@ -914,24 +916,26 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(PrototypeAST *ast, Decl
 
     bool isExtern = checkIfExtern(ast->name);
     
-    gc.get()->output << ast->type << " " << ast->name << "(";
-    for (int i = 0, j = ast->argNames.size(); i != j; ++i) {
-        VariableInfo *vi = new VariableInfo(ast->argNames[i], ast->argTypes[i], TypeType::Scalar, ScopeType::CodeBlock);
+    gc.get()->output << lookupAssocType(ast->type) << " " << ast->name << "(";
+    for (int i = 0, j = ast->args.size(); i != j; ++i) {
+        //VariableInfo *vi = new VariableInfo(ast->argNames[i], ast->argTypes[i], TypeType::Scalar, ScopeType::CodeBlock);
         if (stage == DeclStage::IMPL) {
             ++(currentScopeCount.back());
-            scopeStack.push_back(vi);
+            scopeStack.push_back(ast->args[i]);
         }
         if (i != 0) {
             gc.get()->output << ", ";
         }
         
-        gc.get()->output << lookupAssocType(vi->type) << " " << ast->argNames[i];
+        gc.get()->output << lookupAssocType(ast->args[i]->type) << " " << ast->args[i]->name;
+        /*
         if (stage != DeclStage::IMPL) {
             delete vi;
         }
+        */
     }
     if (!isExtern) {
-        if (ast->argNames.size() > 0) {
+        if (ast->args.size() > 0) {
             gc.get()->output << ", ";
         }
         gc.get()->output << "Actor *actor__";
@@ -1045,8 +1049,9 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ActionAST *ast, std::st
         scopeContainerId = currentScopeCount.size(); //remember where we started
         currentScopeCount.push_back(0);
         currentContId = 0;
-        std::string retVal = "void";
-        setupDontCare(retVal);
+        //std::string retVal = "void";
+        //setupDontCare(retVal);
+        this->dontCareReturnVal = "";
 
         gc.get()->decls << "{" << std::endl;
 
@@ -1286,7 +1291,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(AppAST *ast) {
         throw CompilerException("Can not find 'main' action");
     }
     
-    else if (ast->actions[0]->proto->argNames.size() > 0) {
+    else if (ast->actions[0]->proto->args.size() > 0) {
         gc.get()->output << "VM_Main(argc, argv, main_action, true);" << std::endl;
     }
     else {

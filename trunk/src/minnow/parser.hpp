@@ -39,6 +39,7 @@ class TypeInfo {
     TypeType::Type typeType;
 
     TypeInfo(std::string &decl, TypeType::Type type) : declType(decl), typeType(type) { }
+    TypeInfo() { }
 };
 
 class VariableInfo {
@@ -212,9 +213,11 @@ class PointcutExprAST : public ExpressionAST {
 class PrototypeAST {
   public:
     std::string name;
-    std::string type;
-    std::vector<std::string> argNames;
-    std::vector<std::string> argTypes;
+    //std::string type;
+    TypeInfo type;
+    //std::vector<std::string> argNames;
+    //std::vector<std::string> argTypes;
+    std::vector<VariableInfo*> args;
 };
 
 class FunctionAST : public CodeHolder {
