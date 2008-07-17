@@ -285,6 +285,26 @@ void Thread::ScheduleNewIsolatedActor(Actor *actor) {
    This version does not free the memory the actor was using, for that use 'DeleteActor' instead
 */
 void Thread::RemoveActor(Actor *actor) {
+    RemoveActor(actor, true);
+}
+
+void Thread::RemoveActors(std::vector<Actor*> *actors) {
+    std::vector<actorId_t> *toBeDeleted = new std::vector<actorId_t>();
+
+    for (std::vector<Actor*>::iterator iter=actors->begin(), end=actors->end(); iter!=end; ++iter) {
+        RemoveActor(*iter, false);
+        toBeDeleted->push_back((*iter)->actorId);
+    }
+    
+    Message message;
+    message.messageType = MessageType::DELETE_ACTOR_IDS;
+    message.arg[0].UInt32 = threadId;
+    message.arg[1].VoidPtr = toBeDeleted;
+    message.numArgs = 2;
+    outgoingChannel->sendMessage(message);
+}
+
+void Thread::RemoveActor(Actor *actor, bool sendDeleteMsg) {
     __gnu_cxx::hash_map<actorId_t, Actor*>::iterator iter = actorIds.find(actor->actorId);
     std::vector<Actor*>::iterator iterActor;
 
@@ -300,14 +320,15 @@ void Thread::RemoveActor(Actor *actor) {
 
     if (iter != actorIds.end()) {
         actorIds.erase(iter);
-        
-        Message message;
-        message.messageType = MessageType::DELETE_ACTOR_ID;
-        message.arg[0].UInt32 = threadId;
-        message.arg[1].UInt32 = actor->actorId;
-        message.numArgs = 2;
-        outgoingChannel->sendMessage(message);
 
+        if (sendDeleteMsg) {
+            Message message;
+            message.messageType = MessageType::DELETE_ACTOR_ID;
+            message.arg[0].UInt32 = threadId;
+            message.arg[1].UInt32 = actor->actorId;
+            message.numArgs = 2;
+            outgoingChannel->sendMessage(message);
+        }
         int j = 0;
         while (j < runningActors.size()) {
             if (runningActors[j]->actorId == actor->actorId) 
@@ -352,43 +373,70 @@ void Thread::SendStatus() {
 
 //JDT: REFACTOR - breaking rebalance until we put in locality calculator
 void Thread::MoveHeaviestActor(threadId_t destination, uint32_t count) {
-    //First, we have to find the heaviest actor
-    int heaviestWeight = 0;
-    std::vector<Actor*>::iterator iter, heaviest;
-    
-    for (int k = 0; k < count; ++k) {    
-        heaviestWeight = 0;
-        for (iter = runningActors.begin(); iter != runningActors.end(); ++iter) {
-            /*
-            if (((*iter)->timesActive > heaviestWeight) && ((*iter)->actorType == ActorType::ACTOR)) {
-                heaviestWeight = (*iter)->timesActive;
-                heaviest = iter;
-            }
-            */
-        }
+    //std::vector<Actor*>::iterator iter, chosen;
+    bool foundOne;
+    std::vector<Actor*> *group;
+    if (count > 1) {
+        group = new std::vector<Actor*>();
+    }
 
-        if (heaviestWeight != 0) {
-            Actor *heaviestActor = *heaviest;
-            heaviestActor->actorStateBeforeMove = heaviestActor->actorState;
+    //std::cout << "Moving " << count << std::endl;
+    //for (int k = 0; k < count; ++k) {
+    //for (iter = runningActors.begin(); iter != runningActors.end(); ++iter) {
+    int i = 0;
+    while (i < runningActors.size()) {
+        if ( (runningActors[i]->actorState == ActorState::ACTIVE) && (runningActors[i]->actorId != 0xffffffff)) {
+
+            //std::cout << "Found one, moving it" << std::endl;
+            Actor *chosenActor = runningActors[i];
+            chosenActor->actorStateBeforeMove = chosenActor->actorState;
                     
-            heaviestActor->actorState = ActorState::MOVED;
-            heaviestActor->parentThread = NULL;
-            //heaviestActor->timesActive = 1;
+            chosenActor->actorState = ActorState::MOVED;
+            chosenActor->parentThread = NULL;
 
-            //std::cout << "Removing heaviest " << actorIds.size() << " " << runningActors.size() << std::endl;
-            RemoveActor(heaviestActor);
-            //std::cout << "Removed heaviest " << actorIds.size() << " " << runningActors.size() << std::endl;
-            
-            Message message;
-            message.messageType = MessageType::PLEASE_RECV_ACTOR;
-            message.arg[0].UInt32 = destination;
-            message.arg[1].VoidPtr = (void *)heaviestActor;
+
+            if (count == 1) {
+                //std::cout << "$$ " << count << " $$" << std::endl;
+                RemoveActor(chosenActor);
+                
+                Message message;
+                message.messageType = MessageType::PLEASE_RECV_ACTOR;
+                message.arg[0].UInt32 = destination;
+                message.arg[1].VoidPtr = (void *)chosenActor;
         
-            message.numArgs = 2;
-            //std::cout << "Sending heavy: " << heaviestActor->actorId << std::endl;
-            outgoingChannel->sendMessage(message);    
+                message.numArgs = 2;
+
+                outgoingChannel->sendMessage(message);
+                break;
+                
+            }
+            else {
+                group->push_back(chosenActor);
+                if (group->size() == count) {
+                    break;
+                }
+            }
+                
+        }
+        else {
+            ++i;
         }
     }
+    
+    if (count > 1) {
+        RemoveActors(group);
+
+        //std::cout << "@@ " << count << " " << group->size() << " @@" << std::endl;
+        Message message;
+        message.messageType = MessageType::PLEASE_RECV_ACTORS;
+        message.arg[0].UInt32 = destination;
+        message.arg[1].VoidPtr = (void *)group;
+        
+        message.numArgs = 2;
+        
+        outgoingChannel->sendMessage(message);
+    }
+    
 }
 
 /**
@@ -420,26 +468,29 @@ void Thread::TaskRebalance() {
         }
         ++iter;
     }
-    if (lightest != heaviest) {
-        if ((lightest != 0) && (heaviest != 0)) {
-            if ((heaviest_weight - lightest_weight) > 2) {
-                //std::cout << "Moving: " << heaviest << " to " << lightest << std::endl;
-                uint32_t amount = (50 + heaviest_weight - lightest_weight) / 50;
-                if (amount > 50) 
-                    amount = 50;
-                Message message;
-                message.messageType = MessageType::PLEASE_MOVE_ACTOR;
-                message.arg[0].UInt32 = lightest;
-                message.arg[1].UInt32 = amount;
-                message.numArgs = 2;
-                (*mailChannelOutgoing)[heaviest]->sendMessage(message);
-                iter = scheduleWeights->begin();
-                while (iter != scheduleWeights->end()) {
-                    //std::cout << iter->first << ":" << iter->second << " ";
-                    ++iter;
-                }
-                //std::cout << std::endl;
-            }
+    if ((lightest != heaviest) && (lightest != 0) && (heaviest != 0)) {
+        if ((heaviest_weight - lightest_weight) > 1 + (heaviest_weight / 10)) {
+            //uint32_t amount = (heaviest_weight - lightest_weight) / 2; //(50 + heaviest_weight - lightest_weight) / 50;
+            uint32_t amount = (50 + heaviest_weight - lightest_weight) / 50;
+            //std::cout << "Moving: " << amount << " from " << heaviest << " to " << lightest << std::endl;
+            
+            //if (amount > 500) 
+            //  amount = 500;
+            
+            Message message;
+            message.messageType = MessageType::PLEASE_MOVE_ACTOR;
+            message.arg[0].UInt32 = lightest;
+            message.arg[1].UInt32 = amount;
+            message.numArgs = 2;
+            (*mailChannelOutgoing)[heaviest]->sendMessage(message);
+            iter = scheduleWeights->begin();
+            /*
+              while (iter != scheduleWeights->end()) {
+              //std::cout << iter->first << ":" << iter->second << " ";
+              ++iter;
+              }
+            */
+            //std::cout << std::endl;
         }
     }
 }
@@ -564,17 +615,37 @@ void Thread::MailCheck() {
                         }
                     }
                 }
-                else if (message.messageType == MessageType::PLEASE_RECV_ACTOR) {
-
-                    threadId_t threadId = message.arg[0].UInt32;
-                    (*(mailChannelOutgoing))[threadId]->sendMessage(message);
+                else if (message.messageType == MessageType::DELETE_ACTOR_IDS) {
+                    //FIXME: When we move to a mailmen+kernel model instead of just a kernel model, we need to pass up the deleted actor
+                    //threadId_t threadId = message.arg[0].UInt32;
+                    std::vector<actorId_t> *actorIds = (std::vector<actorId_t> *)(message.arg[1].VoidPtr);
+                    //std::cout << "Kernel: deleting " << actorIds->size() << " actors" << std::endl;
+                    for (std::vector<actorId_t>::iterator actorIter = actorIds->begin(), actorEnd = actorIds->end(); actorIter != actorEnd; ++actorIter) {
+                        __gnu_cxx::hash_map<actorId_t, threadId_t>::iterator finder = mailAddresses->find(*actorIter);
+                        if (finder != mailAddresses->end()) {
+                            threadId_t threadId = finder->second;
+                            __gnu_cxx::hash_map<actorId_t, threadId_t> *mailMap = mailAddresses;
+                            mailMap->erase(*actorIter);
+                            for (int k = 0; k < threadPoolThreads->size(); ++k) {
+                                if ((*threadPoolThreads)[k].threadId == threadId) {
+                                    (*threadPoolThreads)[k].available = true;
+                                }
+                            }
+                        }
+                    }
+                    delete actorIds;
                 }
                 else if (message.messageType == MessageType::LOAD_STATUS) {
                     threadId_t threadId = message.arg[0].UInt32;
                     int32_t activeActors = message.arg[1].Int32;
 
+                    //std::cout << "Status: " << threadId << ": " << activeActors << std::endl;
                     (*(scheduleWeights))[threadId] = activeActors;
                     TaskRebalance();
+                }
+                else {
+                    threadId_t threadId = message.arg[0].UInt32;
+                    (*(mailChannelOutgoing))[threadId]->sendMessage(message);
                 }
                 ++inMailIter;
             }
@@ -606,8 +677,6 @@ void Thread::SchedulerLoop() {
     std::vector<Actor *> deletedActors;
     int slicePos;
 
-    //MessageBox (NULL, "Hello", "Hello Demo", MB_OK);
-    
     this->previousActiveActors = -1;
     this->numberActiveActors = 0;
     
@@ -678,8 +747,18 @@ void Thread::SchedulerLoop() {
                             }
                             else if (message.messageType == MessageType::PLEASE_RECV_ACTOR) {
                                 Actor *newActor = (Actor *)(message.arg[1].VoidPtr);
-                                newActor->actorState = newActor->actorStateBeforeMove; //ActorState::ACTIVE;
+                                newActor->actorState = newActor->actorStateBeforeMove; 
                                 ScheduleExistingActor(newActor);
+                            }
+                            else if (message.messageType == MessageType::PLEASE_RECV_ACTORS) {
+                                std::vector<Actor*> *newActors = (std::vector<Actor*> *)(message.arg[1].VoidPtr);
+                                //std::cout << "New message: " << newActors->size() << std::endl;
+                                for(std::vector<Actor*>::iterator newIter = newActors->begin(), newEnd = newActors->end(); newIter != newEnd; ++newIter) {
+                                    //std::cout << "***MOVED***" << std::endl;
+                                    (*newIter)->actorState = (*newIter)->actorStateBeforeMove; 
+                                    ScheduleExistingActor(*newIter);
+                                }
+                                delete newActors;
                             }
                             ++inMailIter;
                         }
@@ -719,6 +798,7 @@ void Thread::SchedulerLoop() {
                         if (thisActor->actorState == ActorState::ACTIVE) {
                             thisActor->isResuming = true;
                             ++this->numberActiveActors;
+                            //std::cout << "NAA: " << this->numberActiveActors << std::endl;
                         }
                         //If instead it's waiting for an action message, see if we have one to give it
                         else if (thisActor->actorState == ActorState::WAITING_FOR_ACTION) {

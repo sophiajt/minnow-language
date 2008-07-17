@@ -23,7 +23,7 @@ const int TIMESLICE_QUANTUM=2000;
 
 class ThreadType { public: enum Type { THREAD, MAILMAN, KERNEL}; };
 class ActorState { public: enum State { ACTIVE, WAITING_FOR_ACTION, WAITING_FOR_DATA, DELETED, MOVED }; };
-class MessageType { public: enum Type { ACTION_MESSAGE, DATA_MESSAGE, ADD_ACTOR_ID, MOVE_ACTOR_ID, DELETE_ACTOR_ID, CREATE_ISOLATED_ACTOR, LOAD_STATUS, PLEASE_MOVE_ACTOR, PLEASE_RECV_ACTOR };  };
+class MessageType { public: enum Type { ACTION_MESSAGE, DATA_MESSAGE, ADD_ACTOR_ID, MOVE_ACTOR_ID, DELETE_ACTOR_ID, DELETE_ACTOR_IDS, CREATE_ISOLATED_ACTOR, LOAD_STATUS, PLEASE_MOVE_ACTOR, PLEASE_RECV_ACTOR, PLEASE_RECV_ACTORS };  };
 
 typedef struct Thread;
 typedef struct Actor;
@@ -225,7 +225,10 @@ class Thread {
     void ScheduleNewActor(Actor *actor);
     void ScheduleNewIsolatedActor(Actor *actor);
     void RemoveRunningActor(Actor *actor);
-    void RemoveActor(Actor *actor);  //FIXME: Not sure if I'm going to ultimately differentiate remove and delete like this
+    void RemoveActor(Actor *actor);
+    void RemoveActors(std::vector<Actor*> *actors);
+    void RemoveActor(Actor *actor, bool sendDeleteMsg);
+    
     void DeleteActor(Actor *actor);
     void SendStatus();
     void MoveHeaviestActor(threadId_t threadId, uint32_t amount);
