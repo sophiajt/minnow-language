@@ -19,7 +19,7 @@ actor Passer
 end
 
 action main(string[] args)
-    var int numPassers = 503
+    var int numPassers = 503000
     spawn Passer[] passers[numPassers]
     var int i = 0
     while (i < numPassers-1)

@@ -43,7 +43,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ExpressionAST *ast) {
         case (ExpressionType::ArrayIndexed) :
             aieast = dynamic_cast<ArrayIndexedExprAST*>(ast);
             if (aieast == NULL) {
-                printf("FIXME: Variable compiler exception\n");
+                printf("FIXME: Array indexed compiler exception\n");
             }
             return visit(aieast);
             break;
@@ -64,35 +64,35 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ExpressionAST *ast) {
         case (ExpressionType::Call) :
             ceast = dynamic_cast<CallExprAST*>(ast);
             if (ceast == NULL) {
-                printf("FIXME: Variable compiler exception\n");
+                printf("FIXME: Call compiler exception\n");
             }
             gc = visit(ceast);
             break;
         case (ExpressionType::End) :
             eeast = dynamic_cast<EndExprAST*>(ast);
             if (eeast == NULL) {
-                printf("FIXME: Variable compiler exception\n");
+                printf("FIXME: End compiler exception\n");
             }
             gc = visit(eeast);
             break;
         case (ExpressionType::VarDecl) :
             vdeast = dynamic_cast<VarDeclExprAST*>(ast);
             if (vdeast == NULL) {
-                printf("FIXME: Variable compiler exception\n");
+                printf("FIXME: VarDecl compiler exception\n");
             }
             gc = visit(vdeast);
             break;
         case (ExpressionType::ArrayDecl) :
             adeast = dynamic_cast<ArrayDeclExprAST*>(ast);
             if (adeast == NULL) {
-                printf("FIXME: Variable compiler exception\n");
+                printf("FIXME: ArrayDecl compiler exception\n");
             }
             gc = visit(adeast);
             break;
         case (ExpressionType::If) :
             ieast = dynamic_cast<IfExprAST*>(ast);
             if (ieast == NULL) {
-                printf("FIXME: Variable compiler exception\n");
+                printf("FIXME: If compiler exception\n");
             }
             
             gc = visit(ieast);
@@ -100,7 +100,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ExpressionAST *ast) {
         case (ExpressionType::While) :
             weast = dynamic_cast<WhileExprAST*>(ast);
             if (weast == NULL) {
-                printf("FIXME: Variable compiler exception\n");
+                printf("FIXME: While compiler exception\n");
             }
             gc = visit(weast);
             break;

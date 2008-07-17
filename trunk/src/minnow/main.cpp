@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
             //OS X + MacPorts
             exe_cmdline << "g++ -O3 -o " << outexe_name << " tmpXXXXX.cpp -Isrc/aquarium -L. -laquarium -I/opt/local/include/boost-1_35 -L/opt/local/lib -lboost_thread-mt -lboost_program_options-mt";
             if (system(exe_cmdline.str().c_str()) == 0) {
-                //remove("tmpXXXXX.cpp");
+                remove("tmpXXXXX.cpp");
             }
             else {
                 std::cout << "Used cmdline: " << exe_cmdline.str() << std::endl;
@@ -142,14 +142,4 @@ int main(int argc, char *argv[]) {
         std::cout << "Error: " << ce.what() << std::endl;
     }
 
-    /*
-    AnalyserMachine am;
-    //Once parsed and tokenized, we need to run some filters and sanity checks on the model to make sure the program is valid in a higher level before we try to
-    //translate/compile it to its output format
-    if (am.analyse(ps.tokens)) {
-
-        //if we get to here, we're ready to translate to our output format (which for the current version is C++)
-        ps.translate(outfile_name);
-    }
-    */
 }
