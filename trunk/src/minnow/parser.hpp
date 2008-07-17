@@ -22,7 +22,7 @@ class ScopeType {
 
 class ExpressionType {
 public:
-    enum Type { Number, Variable, ArrayIndexed, Binary, Quote, Call, End, VarDecl, ArrayDecl, If, While, Pointcut, Lambda };
+    enum Type { Number, Boolean, Variable, ArrayIndexed, Binary, Quote, Call, End, VarDecl, ArrayDecl, If, While, Pointcut, Lambda };
 };
 
 class ExpressionAST {
@@ -60,6 +60,16 @@ public:
 
     virtual ExpressionType::Type type() { return ExpressionType::Number; }
     virtual std::string resultType() { return "num"; };
+};
+
+class BooleanExprAST : public ExpressionAST {
+public:
+    bool val;
+
+    BooleanExprAST(bool bVal) : val(bVal) {}
+
+    virtual ExpressionType::Type type() { return ExpressionType::Boolean; }
+    virtual std::string resultType() { return "bool"; };
 };
 
 class QuoteExprAST : public ExpressionAST {

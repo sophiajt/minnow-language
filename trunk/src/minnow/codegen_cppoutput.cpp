@@ -8,6 +8,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ExpressionAST *ast) {
     boost::shared_ptr<GeneratedCode> gc;
     
     NumberExprAST *neast;
+    BooleanExprAST *boeast;
     QuoteExprAST *qeast;
     VariableExprAST *veast;
     VarDeclExprAST *vdeast;
@@ -32,6 +33,13 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ExpressionAST *ast) {
                 printf("FIXME: Number compiler exception\n");
             }
             gc = visit(neast);
+            break;
+        case (ExpressionType::Boolean) :
+            boeast = dynamic_cast<BooleanExprAST*>(ast);
+            if (boeast == NULL) {
+                printf("FIXME: Number compiler exception\n");
+            }
+            gc = visit(boeast);
             break;
         case (ExpressionType::Variable) :
             veast = dynamic_cast<VariableExprAST*>(ast);
@@ -123,21 +131,33 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(QuoteExprAST *ast) {
     
     return gc;
 }
+boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BooleanExprAST *ast) {
+    boost::shared_ptr<GeneratedCode> gc(new GeneratedCode);
+
+    if (ast->val == true) {
+        gc.get()->output << "true";
+    }
+    else {
+        gc.get()->output << "false";
+    }
+    return gc;
+}
+
 boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(VariableExprAST *ast) {
     boost::shared_ptr<GeneratedCode> gc(new GeneratedCode);
-    
+
     VariableInfo *vi = findVarInScope(ast->name);
     if (vi == NULL) {
         std::ostringstream oss;
         oss << "Unknown variable '" << ast->name << "'";
         throw CompilerException(oss.str(), ast->pos);
     }
-
+    
     if (vi->scopeType == ScopeType::Actor) {
         gc.get()->output << "actor__->";
     }
     gc.get()->output << ast->name;
-
+    
     return gc;
 }
 boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(VarDeclExprAST *ast) {

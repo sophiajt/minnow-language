@@ -90,6 +90,15 @@ class CodegenCPPOutput {
         if (vi->declType == "int") {
             o << "  tmpTU__.UInt32 = " << vi->name << ";" << std::endl;
         }
+        else if (vi->declType == "double") {
+            o << "  tmpTU__.Double = " << vi->name << ";" << std::endl;
+        }
+        else if (vi->declType == "float") {
+            o << "  tmpTU__.Float = " << vi->name << ";" << std::endl;
+        }
+        else if (vi->declType == "bool") {
+            o << "  tmpTU__.Bool = " << vi->name << ";" << std::endl;
+        }
         else {
             o << "  tmpTU__.VoidPtr = " << vi->name << ";" << std::endl;
         }
@@ -101,6 +110,15 @@ class CodegenCPPOutput {
         std::ostringstream o;
         if (vi->declType == "int") {
             o << "  " << vi->name << " = actor__->heapStack.back().UInt32; actor__->heapStack.pop_back();" << std::endl;
+        }
+        else if (vi->declType == "double") {
+            o << "  " << vi->name << " = actor__->heapStack.back().Double; actor__->heapStack.pop_back();" << std::endl;
+        }
+        else if (vi->declType == "float") {
+            o << "  " << vi->name << " = actor__->heapStack.back().Float; actor__->heapStack.pop_back();" << std::endl;
+        }
+        else if (vi->declType == "bool") {
+            o << "  " << vi->name << " = actor__->heapStack.back().Bool; actor__->heapStack.pop_back();" << std::endl;
         }
         else {
             o << "  " << vi->name << " = (" << lookupInternalType(vi) << ")(actor__->heapStack.back().VoidPtr); actor__->heapStack.pop_back();" << std::endl;
@@ -229,6 +247,7 @@ class CodegenCPPOutput {
     
     boost::shared_ptr<GeneratedCode> visit(ExpressionAST *ast);  //catch all that will dispatch out to others
     boost::shared_ptr<GeneratedCode> visit(NumberExprAST *ast);
+    boost::shared_ptr<GeneratedCode> visit(BooleanExprAST *ast);
     boost::shared_ptr<GeneratedCode> visit(QuoteExprAST *ast);
     boost::shared_ptr<GeneratedCode> visit(VariableExprAST *ast);
     boost::shared_ptr<GeneratedCode> visit(VarDeclExprAST *ast);

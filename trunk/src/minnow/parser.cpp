@@ -382,6 +382,8 @@ ExpressionAST *parsePrimary(std::vector<Token*>::iterator &iter, std::vector<Tok
     ExpressionAST *returnVal = NULL;
     ExpressionAST *index = NULL;
     double val;
+    bool boolval;
+
     std::string name, type;
 
     switch ((*iter)->tokenType) {
@@ -456,8 +458,26 @@ ExpressionAST *parsePrimary(std::vector<Token*>::iterator &iter, std::vector<Tok
                 throw CompilerException("Unknown symbol", *iter);
             }
             break;
+        case (TokenType::Bool) :
+            
+            if ((*iter)->data == "true") {
+                boolval = true;
+            }
+            else if ((*iter)->data == "false") {
+                boolval = false;
+            }
+            else {
+                throw CompilerException("Unknown boolean value", *iter);
+            }
+            returnVal = new BooleanExprAST(boolval);
+            returnVal->pos = (*iter)->pos;
+            ++iter;
+            
+            break;
         default:
-            throw CompilerException("Unknown token type", *iter);
+            std::ostringstream msg;
+            msg << "Unknown token type:" << (*iter)->tokenType;
+            throw CompilerException(msg.str(), *iter);
     }
 
     return returnVal;
