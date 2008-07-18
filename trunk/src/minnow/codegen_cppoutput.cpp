@@ -460,11 +460,31 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
     
     if (ast->op == "::") {
         CallExprAST *ceast = dynamic_cast<CallExprAST*>(ast->RHS);
-        if (ceast == NULL) {
-            std::cout << "Can't build message, is type: " << ast->RHS->type() << std::endl;
-            exit(1);
-        }
+        VariableExprAST *veast = dynamic_cast<VariableExprAST*>(ast->LHS);
+        ArrayIndexedExprAST *aieast = dynamic_cast<ArrayIndexedExprAST*>(ast->LHS);
+        
+        VariableInfo *vi;
 
+        if (ceast == NULL) {
+            //std::cout << "Can't build message, is type: " << ast->RHS->type() << std::endl;
+            //exit(1);
+            std::ostringstream msg;
+            msg << "Can't build message, right hand side is type: " << ast->RHS->type();
+            throw CompilerException(msg.str(), ast->pos);
+        }
+        
+        if ((veast == NULL) && (aieast == NULL)) {
+            std::ostringstream msg;
+            msg << "Can't build message, left hand side is type: " << ast->LHS->type();
+            throw CompilerException(msg.str(), ast->pos);
+        }
+        else if (veast != NULL) {
+            vi = findVarInScope(veast->name);
+        }
+        else if (aieast != NULL) {
+            vi = findVarInScope(aieast->name);
+        }   
+        
         //int argSize = ceast->args.size();
         std::string msgName = nextTemp();
         std::string actorIfLocal = nextTemp();
@@ -503,7 +523,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
         gc.get()->output << ";" << std::endl;
         gc.get()->output << "  " << msgName << ".numArgs = " << ceast->args.size() << ";" << std::endl;
         gc.get()->output << "  " << msgName << ".messageType = MessageType::ACTION_MESSAGE;" << std::endl;
-        gc.get()->output << "  " << msgName << ".task = &" << ceast->name << "_action;" << std::endl;
+        gc.get()->output << "  " << msgName << ".task = &" << vi->type.declType << "__" << ceast->name << "_action;" << std::endl;
         
         for (unsigned int i = 0; i < ceast->args.size(); ++i) {
             gc.get()->output << "  " << msgName << ".arg[" << i << "].UInt32 = ";
@@ -544,7 +564,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
             gc.get()->output << actorIfLocal << "->heapStack.push_back(tmpTU__);" << std::endl;
         }
         
-        gc.get()->output << actorIfLocal << "->task = &" << ceast->name << "_action;" << std::endl;
+        gc.get()->output << actorIfLocal << "->task = &" << vi->type.declType << "__" << ceast->name << "_action;" << std::endl;
         gc.get()->output << actorIfLocal << "->actorState = ActorState::ACTIVE;" << std::endl;
         
         gc.get()->output << "actor__->parentThread->hotActor = " << actorIfLocal << ";" << std::endl;
@@ -1041,10 +1061,10 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ActionAST *ast, std::st
     boost::shared_ptr<GeneratedCode> gc(new GeneratedCode);
 
     if (stage == DeclStage::DECL) {
-        gc.get()->output << "void " << ast->proto->name << "_action(Actor *a__);" << std::endl;
+        gc.get()->output << "void " << actorName << "__" << ast->proto->name << "_action(Actor *a__);" << std::endl;
     }
     else if (stage == DeclStage::IMPL) {
-        gc.get()->decls << "void " << ast->proto->name << "_action(Actor *a__) ";
+        gc.get()->decls << "void " << actorName << "__" << ast->proto->name << "_action(Actor *a__) ";
         
         scopeContainerId = currentScopeCount.size(); //remember where we started
         currentScopeCount.push_back(0);
@@ -1292,10 +1312,10 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(AppAST *ast) {
     }
     
     else if (ast->actions[0]->proto->args.size() > 0) {
-        gc.get()->output << "VM_Main(argc, argv, main_action, true);" << std::endl;
+        gc.get()->output << "VM_Main(argc, argv, Actor__main_action, true);" << std::endl;
     }
     else {
-        gc.get()->output << "VM_Main(argc, argv, main_action, false);" << std::endl;
+        gc.get()->output << "VM_Main(argc, argv, Actor__main_action, false);" << std::endl;
     }
     
     gc.get()->output << "return(0);" << std::endl;
