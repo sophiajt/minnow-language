@@ -129,6 +129,43 @@ class CodegenCPPOutput {
         }
     }
 
+    std::string lookupPushForTypeAndBlock(const boost::shared_ptr<TypeInfo> ti, const std::string &block) {
+        std::ostringstream o;
+        std::map<std::string, ActorAST*>::iterator finder = actors.find(ti.get()->declType);
+        if (finder != actors.end()) {
+            o << "  tmpTU__.UInt32 = " << block << ";" << std::endl;
+        }
+        else if (ti.get()->typeType == TypeType::Array) {
+            o << "  tmpTU__.VoidPtr = " << block << ";" << std::endl;
+        }   
+        else if (ti.get()->declType == "int") {
+            o << "  tmpTU__.UInt32 = " << block << ";" << std::endl;
+        }
+        else if (ti.get()->declType == "string") {
+            o << "  tmpTU__.VoidPtr = strcpy(new char[" << block << ".size() + 1], " << block << ".c_str());" << std::endl;
+        }
+        else if (ti.get()->declType == "double") {
+            o << "  tmpTU__.Double = " << block << ";" << std::endl;
+        }
+        else if (ti.get()->declType == "float") {
+            o << "  tmpTU__.Float = " << block << ";" << std::endl;
+        }
+        else if (ti.get()->declType == "bool") {
+            o << "  tmpTU__.Bool = " << block << ";" << std::endl;
+        }
+        else {
+            //FIXME: This is a work around to external functions not having return types yet.
+            /*
+            std::ostringstream msg;
+            msg << "Unknown type '" << ti.get()->declType << "'";
+            throw CompilerException(msg.str());
+            */
+            o << "  tmpTU__.UInt32 = " << block << ";" << std::endl;
+        }
+        //o << "  actor__->heapStack.push_back(tmpTU__);" << std::endl;
+        return o.str();
+    }
+
     std::string lookupPushForVar(const VariableInfo *vi) {
         std::ostringstream o;
         if (vi->type.typeType == TypeType::Array) {
@@ -136,6 +173,9 @@ class CodegenCPPOutput {
         }   
         else if (vi->type.declType == "int") {
             o << "  tmpTU__.UInt32 = " << vi->name << ";" << std::endl;
+        }
+        else if (vi->type.declType == "string") {
+            o << "  tmpTU__.VoidPtr = strcpy(new char[" << vi->name << ".size() + 1], " << vi->name << ".c_str());" << std::endl;
         }
         else if (vi->type.declType == "double") {
             o << "  tmpTU__.Double = " << vi->name << ";" << std::endl;
@@ -147,7 +187,15 @@ class CodegenCPPOutput {
             o << "  tmpTU__.Bool = " << vi->name << ";" << std::endl;
         }
         else {
-            o << "  tmpTU__.VoidPtr = " << vi->name << ";" << std::endl;
+            std::map<std::string, ActorAST*>::iterator finder = actors.find(vi->type.declType);
+
+            if (finder != actors.end()) {
+                o << "  tmpTU__.UInt32 = " << vi->name << ";" << std::endl;
+            }
+            else {
+                o << "  tmpTU__.VoidPtr = " << vi->name << ";" << std::endl;
+            }
+            
         }
         o << "  actor__->heapStack.push_back(tmpTU__);" << std::endl;
         return o.str();
@@ -161,6 +209,9 @@ class CodegenCPPOutput {
         else if (vi->type.declType == "int") {
             o << "  " << vi->name << " = actor__->heapStack.back().UInt32; actor__->heapStack.pop_back();" << std::endl;
         }
+        else if (vi->type.declType == "string") {
+            o << "  " << vi->name << ".assign((char *)(actor__->heapStack.back().VoidPtr)); actor__->heapStack.pop_back(); delete((char *)(tmpTU__.VoidPtr));" << std::endl;
+        }
         else if (vi->type.declType == "double") {
             o << "  " << vi->name << " = actor__->heapStack.back().Double; actor__->heapStack.pop_back();" << std::endl;
         }
@@ -171,7 +222,15 @@ class CodegenCPPOutput {
             o << "  " << vi->name << " = actor__->heapStack.back().Bool; actor__->heapStack.pop_back();" << std::endl;
         }
         else {
-            o << "  " << vi->name << " = (" << lookupAssocType(vi->type) << ")(actor__->heapStack.back().VoidPtr); actor__->heapStack.pop_back();" << std::endl;
+            std::map<std::string, ActorAST*>::iterator finder = actors.find(vi->type.declType);
+
+            if (finder != actors.end()) {
+                o << "  " << vi->name << " = (" << lookupAssocType(vi->type) << ")(actor__->heapStack.back().UInt32); actor__->heapStack.pop_back();" << std::endl;
+            }
+            else {
+                o << "  " << vi->name << " = (" << lookupAssocType(vi->type) << ")(actor__->heapStack.back().VoidPtr); actor__->heapStack.pop_back();" << std::endl;
+            }
+            
         }
         return o.str();
     }
@@ -201,6 +260,31 @@ class CodegenCPPOutput {
     }
     */
 
+    TypeInfo lookupReturnTypeInfo(const CallExprAST *ast) {
+        //std::string returnVal("int");
+
+        for (std::vector<PrototypeAST*>::reverse_iterator iter = funStack.rbegin(), end = funStack.rend(); iter != end; ++iter) {
+            //FIXME: This is insufficient for overloaded functions
+            if ((*iter)->name == ast->name) {
+                //TypeInfo ti((*iter)->type, TypeType::Scalar);
+                return (*iter)->type;
+            }
+        }
+
+        if (find(externFns.begin(), externFns.end(), ast->name) == externFns.end()) {
+            std::ostringstream msg;
+            msg << "Can not find function '" << ast->name << "'";
+            std::string outmsg = msg.str();
+            throw CompilerException(outmsg, ast->pos);
+        }
+        else {
+            TypeInfo ti;
+            return ti;
+        }
+        //return "";
+        //return returnVal;
+    }
+
     std::string lookupReturnType(const CallExprAST *ast) {
         //std::string returnVal("int");
 
@@ -212,11 +296,16 @@ class CodegenCPPOutput {
             }
         }
 
-        std::ostringstream msg;
-        msg << "Can not find function '" << ast->name << "'";
-        std::string outmsg = msg.str();
-        throw CompilerException(outmsg, ast->pos);
-        return "";
+        if (find(externFns.begin(), externFns.end(), ast->name) == externFns.end()) {
+            std::ostringstream msg;
+            msg << "Can not find function '" << ast->name << "'";
+            std::string outmsg = msg.str();
+            throw CompilerException(outmsg, ast->pos);
+            return "";
+        }
+        else {
+            return "";
+        }
         //return returnVal;
     }
     
@@ -274,7 +363,9 @@ class CodegenCPPOutput {
 
         return output.str();
     }
-    
+
+    boost::shared_ptr<TypeInfo> resolveType(ExpressionAST *ast);
+        
     boost::shared_ptr<GeneratedCode> visit(ExpressionAST *ast);  //catch all that will dispatch out to others
     boost::shared_ptr<GeneratedCode> visit(NumberExprAST *ast);
     boost::shared_ptr<GeneratedCode> visit(BooleanExprAST *ast);

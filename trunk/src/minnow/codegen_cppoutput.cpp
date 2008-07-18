@@ -4,6 +4,108 @@
 #include <string>
 
 //catch all that will dispatch out to others
+boost::shared_ptr<TypeInfo> CodegenCPPOutput::resolveType(ExpressionAST *ast) {
+    boost::shared_ptr<TypeInfo> ti= boost::shared_ptr<TypeInfo>(new TypeInfo);
+    TypeInfo typeInfo;
+    
+    VariableInfo *vi;
+    
+    NumberExprAST *neast;
+    BooleanExprAST *boeast;
+    QuoteExprAST *qeast;
+    VariableExprAST *veast;
+    ArrayIndexedExprAST *aieast;
+    BinaryExprAST *beast;
+    CallExprAST *ceast;
+
+    if (ast == NULL) {
+        //NOP
+        ti = boost::shared_ptr<TypeInfo>(new TypeInfo);
+        return ti;
+    }
+    //Number, Variable, ArrayIndexed, Binary, Quote, Call, DefFun, End, VarDecl, ArrayDecl, If, While
+    switch (ast->type()) {
+        case (ExpressionType::Number) :
+            neast = dynamic_cast<NumberExprAST*>(ast);
+            if (neast == NULL) {
+                printf("FIXME: Number compiler exception\n");
+            }
+            ti.get()->declType = "int";
+            ti.get()->typeType = TypeType::Scalar;
+            break;
+        case (ExpressionType::Boolean) :
+            boeast = dynamic_cast<BooleanExprAST*>(ast);
+            if (boeast == NULL) {
+                printf("FIXME: Number compiler exception\n");
+            }
+            ti.get()->declType = "bool";
+            ti.get()->typeType = TypeType::Scalar;
+            break;
+        case (ExpressionType::Variable) :
+            veast = dynamic_cast<VariableExprAST*>(ast);
+            if (veast == NULL) {
+                printf("FIXME: Variable compiler exception\n");
+            }
+            vi = findVarInScope(veast->name);
+            if (vi != NULL) {
+                ti.get()->declType = vi->type.declType;
+                ti.get()->typeType = vi->type.typeType;
+            }
+            else {
+                std::ostringstream msg;
+                msg << "Can not find variable '" << veast->name << "'";
+                throw CompilerException(msg.str(), ast->pos);
+            }
+            break;
+        case (ExpressionType::ArrayIndexed) :
+            aieast = dynamic_cast<ArrayIndexedExprAST*>(ast);
+            if (aieast == NULL) {
+                printf("FIXME: Array indexed compiler exception\n");
+            }
+            vi = findVarInScope(aieast->name);
+            if (vi != NULL) {
+                ti.get()->declType = vi->type.declType;
+                ti.get()->typeType = vi->type.typeType;
+            }
+            else {
+                std::ostringstream msg;
+                msg << "Can not find variable '" << aieast->name << "'";
+                throw CompilerException(msg.str(), ast->pos);
+            }
+            break;
+        case (ExpressionType::Binary) :
+            beast = dynamic_cast<BinaryExprAST*>(ast);
+            if (beast == NULL) {
+                printf("FIXME: Variable compiler exception\n");
+            }
+            ti = resolveType(beast->LHS);
+            break;
+        case (ExpressionType::Quote) :
+            qeast = dynamic_cast<QuoteExprAST*>(ast);
+            if (qeast == NULL) {
+                printf("FIXME: Variable compiler exception\n");
+            }
+            ti.get()->declType = "quote";
+            ti.get()->typeType = TypeType::Scalar;
+            break;
+        case (ExpressionType::Call) :
+            ceast = dynamic_cast<CallExprAST*>(ast);
+            if (ceast == NULL) {
+                printf("FIXME: Call compiler exception\n");
+            }
+            typeInfo = lookupReturnTypeInfo(ceast);
+            ti.get()->declType = typeInfo.declType;
+            ti.get()->typeType = typeInfo.typeType;
+            //gc = visit(ceast);
+            break;
+        default:
+            throw CompilerException("Can't resolve type during lookup", ast->pos);
+    }
+
+    return ti;
+}
+
+//catch all that will dispatch out to others
 boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ExpressionAST *ast) {
     boost::shared_ptr<GeneratedCode> gc;
     
@@ -53,7 +155,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ExpressionAST *ast) {
             if (aieast == NULL) {
                 printf("FIXME: Array indexed compiler exception\n");
             }
-            return visit(aieast);
+            gc = visit(aieast);
             break;
         case (ExpressionType::Binary) :
             beast = dynamic_cast<BinaryExprAST*>(ast);
@@ -526,8 +628,8 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
         gc.get()->output << "  " << msgName << ".task = &" << vi->type.declType << "__" << ceast->name << "_action;" << std::endl;
         
         for (unsigned int i = 0; i < ceast->args.size(); ++i) {
-            gc.get()->output << "  " << msgName << ".arg[" << i << "].UInt32 = ";
-
+            boost::shared_ptr<TypeInfo> ti = resolveType(ceast->args[i]);
+            
             boost::shared_ptr<GeneratedCode> gc_temp = visit (ceast->args[i]);
             if (gc_temp.get()->decls.str() != "") {
                 gc.get()->decls << gc_temp.get()->decls.str();
@@ -536,10 +638,13 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
                 gc.get()->output << gc_temp.get()->inits.str();
             }
             if (gc_temp.get()->output.str() != "") {
-                gc.get()->output << gc_temp.get()->output.str();
+                //gc.get()->output << gc_temp.get()->output.str();
+                gc.get()->output << "  " << lookupPushForTypeAndBlock(ti, gc_temp.get()->output.str());
+                gc.get()->output << "  " << msgName << ".arg[" << i << "] = tmpTU__;" << std::endl;
             }
-            
-            gc.get()->output << ";" << std::endl;
+
+            //gc.get()->output << lookupPushForVar(ceast->args[i]);
+            //gc.get()->output << ";" << std::endl;
         }
 
         gc.get()->output << "actor__->parentThread->SendMessage(" << msgName << ");" << std::endl;
@@ -547,7 +652,8 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
         gc.get()->output << "else {" << std::endl;
 
         for (unsigned int i = 0; i < ceast->args.size(); ++i) {
-            gc.get()->output << "tmpTU__.UInt32 = ";
+            boost::shared_ptr<TypeInfo> ti = resolveType(ceast->args[i]);
+            //gc.get()->output << "tmpTU__.UInt32 = ";
 
             boost::shared_ptr<GeneratedCode> gc_temp = visit (ceast->args[i]);
             if (gc_temp.get()->decls.str() != "") {
@@ -557,7 +663,9 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
                 gc.get()->output << gc_temp.get()->inits.str();
             }
             if (gc_temp.get()->output.str() != "") {
-                gc.get()->output << gc_temp.get()->output.str();
+                //gc.get()->output << gc_temp.get()->output.str();
+                gc.get()->output << "  " << lookupPushForTypeAndBlock(ti, gc_temp.get()->output.str());
+                //gc.get()->output << "  " << msgName << ".arg[" << i << "] = tmpTU__;" << std::endl;
             }
             
             gc.get()->output << ";" << std::endl;
@@ -1139,6 +1247,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(AppAST *ast) {
     gc.get()->decls << "#include \"aquarium.hpp\"" << std::endl;
     gc.get()->decls << "inline int convertToInt(const std::string& s){std::istringstream i(s);int x;i >> x;return x;}" << std::endl;
     gc.get()->decls << "inline void puti(int i){std::cout << i << std::endl; }" << std::endl;
+    gc.get()->decls << "inline void putstring(std::string &s){std::cout << s << std::endl; }" << std::endl;
     gc.get()->decls << "extern void exit(int i);" << std::endl;
     gc.get()->decls << "extern int puts(char *s);" << std::endl;
 
@@ -1146,6 +1255,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(AppAST *ast) {
     externFns.push_back("puti");
     externFns.push_back("exit");
     externFns.push_back("puts");
+    externFns.push_back("putstring");
     externFns.push_back("return");
     
     for (std::vector<StructAST*>::iterator iter = ast->structs.begin(), end = ast->structs.end(); iter != end; ++iter) {
