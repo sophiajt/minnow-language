@@ -28,5 +28,6 @@ action main(string[] args)
     passers[502]::setIdAndNext(503, passers[0])
 
     passers[0]::pass(convertToInt(args[0]))
+    done
 end
 

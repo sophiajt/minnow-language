@@ -33,6 +33,8 @@ class CodegenCPPOutput {
     int currentContId;
     int tempNumber;
 
+    bool inAction;
+
     std::string nextTemp() {
         char buffer[30];
         sprintf(buffer, "tmp%i__", tempNumber);
@@ -391,6 +393,7 @@ public:
     CodegenCPPOutput() {
         builtins.push_back("int");
         tempNumber = 0;
+        inAction = false;
     };
 };
 

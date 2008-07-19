@@ -248,6 +248,24 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BooleanExprAST *ast) {
 boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(VariableExprAST *ast) {
     boost::shared_ptr<GeneratedCode> gc(new GeneratedCode);
 
+    if ((ast->name == "return") || (ast->name == "done")) {
+        if (inAction) {
+            if (ast->name == "return") {
+                gc.get()->output << "--timeLeft__;" << std::endl;
+                gc.get()->output << "actor__->parentThread->timeSliceEndTime = timeLeft__;" << std::endl;
+                gc.get()->output << "actor__->actorState = ActorState::WAITING_FOR_ACTION;" << std::endl;
+                gc.get()->output << "return; " << std::endl;
+            }
+            else if (ast->name == "done") {
+                gc.get()->output << "--timeLeft__;" << std::endl;
+                gc.get()->output << "actor__->parentThread->timeSliceEndTime = timeLeft__;" << std::endl;
+                gc.get()->output << "actor__->actorState = ActorState::DELETED;" << std::endl;
+                gc.get()->output << "return; " << std::endl;
+            }
+            return gc;
+        }
+    }
+        
     VariableInfo *vi = findVarInScope(ast->name);
     if (vi == NULL) {
         std::ostringstream oss;
@@ -1181,6 +1199,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(FunctionAST *ast, DeclS
 
 boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ActionAST *ast, std::string actorName, DeclStage::Stage stage) {
     boost::shared_ptr<GeneratedCode> gc(new GeneratedCode);
+    inAction = true;
 
     if (stage == DeclStage::DECL) {
         gc.get()->output << "void " << actorName << "__" << ast->proto->name << "_action(Actor *a__);" << std::endl;
@@ -1242,8 +1261,8 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ActionAST *ast, std::st
         }
         
         gc.get()->output << "}" << std::endl;
+        gc.get()->output << "--timeLeft__;" << std::endl;
         gc.get()->output << "actor__->parentThread->timeSliceEndTime = timeLeft__;" << std::endl;
-
         gc.get()->output << "actor__->actorState = ActorState::WAITING_FOR_ACTION;" << std::endl;
         gc.get()->output << "}" << std::endl;
 
@@ -1253,6 +1272,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ActionAST *ast, std::st
         }
         currentScopeCount.pop_back();
     }
+    inAction = false;
     return gc;
 }
 boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(AppAST *ast) {

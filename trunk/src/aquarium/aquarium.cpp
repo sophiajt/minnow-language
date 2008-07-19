@@ -824,6 +824,7 @@ void Thread::SchedulerLoop() {
                                 deletedActors.push_back(thisActor);
                                 break;
                         }
+                        
                         if ((thisActor->actorState != ActorState::ACTIVE) && (this->hotActor != NULL)) {
                             if (slicePos >= 0) {
                                 thisActor->actionMessages.erase(thisActor->actionMessages.begin(), thisActor->actionMessages.begin() + slicePos  + 1);
@@ -863,7 +864,7 @@ void Thread::SchedulerLoop() {
                                     //std::cout << "NAA: " << this->numberActiveActors << std::endl;
                                 }
                                 //If instead it's waiting for an action message, see if we have one to give it
-                                else if (hotActor->actorState == ActorState::WAITING_FOR_ACTION) {
+                                                                else if (hotActor->actorState == ActorState::WAITING_FOR_ACTION) {
                                     if (hotActor->actionMessages.size() > slicePos+1) {
                                         ++slicePos;
                                         Message message = hotActor->actionMessages[slicePos];
