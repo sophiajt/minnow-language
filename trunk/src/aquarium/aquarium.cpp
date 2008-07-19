@@ -794,42 +794,58 @@ void Thread::SchedulerLoop() {
                         //Run the actor's current task
                         thisActor->task(thisActor);
 
-                        //If it's still active afterward, it's an active actor, so count it
-                        if (thisActor->actorState == ActorState::ACTIVE) {
-                            thisActor->isResuming = true;
-                            ++this->numberActiveActors;
-                            //std::cout << "NAA: " << this->numberActiveActors << std::endl;
-                        }
-                        //If instead it's waiting for an action message, see if we have one to give it
-                        else if (thisActor->actorState == ActorState::WAITING_FOR_ACTION) {
-                            if (thisActor->actionMessages.size() > slicePos+1) {
-                                ++slicePos;
-                                Message message = thisActor->actionMessages[slicePos];
-                                thisActor->task = message.task;
-                                //BOOST_ASSERT(message.numArgs <= 4);
-            
-                                for (int i=0; i < message.numArgs; ++i) {
-                                    thisActor->heapStack.push_back(message.arg[i]);
-                                }            
-                                thisActor->actorState = ActorState::ACTIVE;
-
-                                if (this->timeSliceEndTime == 0) {
-                                    thisActor->runQueueRevId = this->runQueueRevId;
-                                    this->runningActors.push_back(thisActor);
+                        switch(thisActor->actorState) {
+                            case (ActorState::ACTIVE) :
+                                thisActor->isResuming = true;
+                                ++this->numberActiveActors;
+                                //std::cout << "NAA: " << this->numberActiveActors << std::endl;
+                                break;
+                            case (ActorState::WAITING_FOR_ACTION) :
+                                if (thisActor->actionMessages.size() > slicePos+1) {
+                                    ++slicePos;
+                                    Message message = thisActor->actionMessages[slicePos];
+                                    thisActor->task = message.task;
+                                    //BOOST_ASSERT(message.numArgs <= 4);
+                                    
+                                    for (int i=0; i < message.numArgs; ++i) {
+                                        thisActor->heapStack.push_back(message.arg[i]);
+                                    }            
+                                    thisActor->actorState = ActorState::ACTIVE;
+                                    
+                                    if (this->timeSliceEndTime == 0) {
+                                        if (thisActor->runQueueRevId != this->runQueueRevId) {
+                                            thisActor->runQueueRevId = this->runQueueRevId;
+                                            this->runningActors.push_back(thisActor);
+                                        }
+                                    }
                                 }
-                            }
+                                break;
+                            case (ActorState::DELETED) :
+                                deletedActors.push_back(thisActor);
+                                break;
                         }
+                        if ((thisActor->actorState != ActorState::ACTIVE) && (this->hotActor != NULL)) {
+                            if (slicePos >= 0) {
+                                thisActor->actionMessages.erase(thisActor->actionMessages.begin(), thisActor->actionMessages.begin() + slicePos  + 1);
+                                --slicePos;
+                            }
+                            thisActor = this->hotActor;
+                            slicePos = -1;
+                        }
+                        
                     }
+                    
                     
                     if (slicePos >= 0) {
                         thisActor->actionMessages.erase(thisActor->actionMessages.begin(), thisActor->actionMessages.begin() + slicePos  + 1);
                         --slicePos;
                     }
 
+                    
                     //In the case the actor is no longer active, it may have just sent a message.  This will let another
                     //actor immediately go active (called here a 'hot actor'), allowing them to use the rest of the slice.
                     //This idea comes from "Improving IPC by Kernel Design" (l4ka.org/publications/1993/improving-ipc.pdf)
-                    
+                    /*
                     if (thisActor->actorState != ActorState::ACTIVE) {
                         
                         if (this->hotActor != NULL) {                            
@@ -839,20 +855,47 @@ void Thread::SchedulerLoop() {
 
                                 this->hotActor = NULL;
                                 hotActor->task(hotActor);
-                                
-                                if (hotActor->actorState == ActorState::DELETED) {
+
+                                //If it's still active afterward, it's an active actor, so count it
+                                if (hotActor->actorState == ActorState::ACTIVE) {
+                                    hotActor->isResuming = true;
+                                    ++this->numberActiveActors;
+                                    //std::cout << "NAA: " << this->numberActiveActors << std::endl;
+                                }
+                                //If instead it's waiting for an action message, see if we have one to give it
+                                else if (hotActor->actorState == ActorState::WAITING_FOR_ACTION) {
+                                    if (hotActor->actionMessages.size() > slicePos+1) {
+                                        ++slicePos;
+                                        Message message = hotActor->actionMessages[slicePos];
+                                        hotActor->task = message.task;
+                                        //BOOST_ASSERT(message.numArgs <= 4);
+                                        
+                                        for (int i=0; i < message.numArgs; ++i) {
+                                            hotActor->heapStack.push_back(message.arg[i]);
+                                        }            
+                                        hotActor->actorState = ActorState::ACTIVE;
+                                        
+                                        if (this->timeSliceEndTime == 0) {
+                                            if (hotActor->runQueueRevId != this->runQueueRevId) {
+                                                hotActor->runQueueRevId = this->runQueueRevId;
+                                                this->runningActors.push_back(hotActor);
+                                            }
+                                        }
+                                    }
+                                }
+                                else if (hotActor->actorState == ActorState::DELETED) {
                                     deletedActors.push_back(hotActor);
-                                }        
-                                                        
+                                }
                             }
                             
                         }
-                        
-                        
+                          
                         if (thisActor->actorState == ActorState::DELETED) {
                             deletedActors.push_back(thisActor);
                         }
                     }
+                    */
+                    
                     ++pos;
                     break;
                 

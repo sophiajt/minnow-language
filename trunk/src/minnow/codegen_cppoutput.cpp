@@ -256,9 +256,16 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(VariableExprAST *ast) {
     }
     
     if (vi->scopeType == ScopeType::Actor) {
-        gc.get()->output << "actor__->";
+        if (vi->name == "this") {
+            gc.get()->output << "actor__->actorId";
+        }
+        else {
+            gc.get()->output << "actor__->" << ast->name;
+        }
     }
-    gc.get()->output << ast->name;
+    else {
+        gc.get()->output << ast->name;
+    }
     
     return gc;
 }
@@ -583,7 +590,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
         else if (veast != NULL) {
             vi = findVarInScope(veast->name);
         }
-        else if (aieast != NULL) {
+        else { //if (aieast != NULL) {
             vi = findVarInScope(aieast->name);
         }   
         
@@ -917,6 +924,13 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ActorAST *ast, DeclStag
         scopeContainerId = currentScopeCount.size(); //remember where we started
         
         gc.get()->output << "class " << ast->name << " : public Actor {" << std::endl << "public: " << std::endl;
+
+        //then push a variable that will be how we message ourselves
+        std::string name("this");
+        VariableInfo *vi = new VariableInfo(name, ast->name, TypeType::Scalar, ScopeType::Actor);
+        ++(currentScopeCount.back());
+        scopeStack.push_back(vi);
+        
         for (std::map<std::string, VariableInfo*>::iterator iter = ast->vars.begin(), end = ast->vars.end(); iter != end; ++iter) {
             ++(currentScopeCount.back());
             scopeStack.push_back(iter->second);
@@ -1176,6 +1190,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ActionAST *ast, std::st
         
         scopeContainerId = currentScopeCount.size(); //remember where we started
         currentScopeCount.push_back(0);
+        
         currentContId = 0;
         //std::string retVal = "void";
         //setupDontCare(retVal);

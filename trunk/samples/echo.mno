@@ -1,0 +1,17 @@
+actor echo
+  action ping()
+    puts("ponging this")
+    this::pong()
+  end
+
+  action pong()
+    puts("done")
+    exit(0)
+  end
+end
+
+action main()
+  spawn echo e
+  puts("pinging e")
+  e::ping()
+end
