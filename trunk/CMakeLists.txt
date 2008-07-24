@@ -14,6 +14,8 @@ SET(Boost_USE_MULTITHREAD ON)
 #For MinGW+Boost install
 IF (WIN32)
    SET(BOOST_ROOT c:/MinGW)
+   SET(BOOST_INCLUDEDIR c:/MinGW/include)
+   SET(BOOST_LIBRARYDIR c:/MinGW/lib)
 ENDIF (WIN32)
 
 FIND_PACKAGE(Boost 1.35.0 REQUIRED COMPONENTS thread program_options )
