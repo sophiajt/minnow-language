@@ -121,6 +121,9 @@ int main(int argc, char *argv[]) {
 
             //OS X + MacPorts
             exe_cmdline << "g++ -O3 -o " << outexe_name << " tmpXXXXX.cpp -Isrc/aquarium -L. -laquarium -I/opt/local/include/boost-1_35 -L/opt/local/lib -lboost_thread-mt -lboost_program_options-mt";
+
+            //MinGW+Boost setup
+            //exe_cmdline << "g++ -O3 -o " << outexe_name << " tmpXXXXX.cpp -Isrc/aquarium -L. -laquarium -I/mingw/include -L/mingw/lib -lboost_thread -lboost_program_options";
             if (system(exe_cmdline.str().c_str()) == 0) {
                 remove("tmpXXXXX.cpp");
             }
