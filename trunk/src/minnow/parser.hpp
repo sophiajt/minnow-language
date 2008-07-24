@@ -48,11 +48,31 @@ class VariableInfo {
     TypeInfo type;
     ExpressionAST *size;
     ScopeType::Type scopeType;
+    bool needsCopyDelete;
     
     VariableInfo(std::string &vname, std::string &decl, TypeType::Type ty, ScopeType::Type scope) : 
-        name(vname), type(decl, ty), scopeType(scope) { }
+        name(vname), type(decl, ty), scopeType(scope), needsCopyDelete(false)
+    {
+        needsCopyDelete = false; //default, now check for exceptions
+        if (type.typeType == TypeType::Array) {
+            needsCopyDelete = true;
+        }
+        //FIXME: This is _ugly_
+        else if ((type.declType != "void") && (type.declType != "bool") && (type.declType != "int") && (type.declType != "double") && (type.declType != "string")) {
+            needsCopyDelete = true;
+        }
+    }
     VariableInfo(std::string &vname, std::string &decl, TypeType::Type ty, ExpressionAST *sizeexpr, ScopeType::Type scope) : 
-        name(vname), type(decl, ty), size(sizeexpr), scopeType(scope) { }
+        name(vname), type(decl, ty), size(sizeexpr), scopeType(scope), needsCopyDelete(true) {
+        needsCopyDelete = false; //default, now check for exceptions
+        if (type.typeType == TypeType::Array) {
+            needsCopyDelete = true;
+        }
+        //FIXME: This is _ugly_
+        else if ((type.declType != "void") && (type.declType != "bool") && (type.declType != "int") && (type.declType != "double") && (type.declType != "string")) {
+            needsCopyDelete = true;
+        }
+    }
 };
 
 class CodeHolder {

@@ -124,6 +124,7 @@ int main(int argc, char *argv[]) {
 
             //MinGW+Boost setup
             //exe_cmdline << "g++ -O3 -o " << outexe_name << " tmpXXXXX.cpp -Isrc/aquarium -L. -laquarium -I/mingw/include -L/mingw/lib -lboost_thread -lboost_program_options";
+
             if (system(exe_cmdline.str().c_str()) == 0) {
                 remove("tmpXXXXX.cpp");
             }

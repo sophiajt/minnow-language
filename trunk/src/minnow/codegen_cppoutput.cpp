@@ -248,8 +248,20 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BooleanExprAST *ast) {
 boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(VariableExprAST *ast) {
     boost::shared_ptr<GeneratedCode> gc(new GeneratedCode);
 
+    //FIXME: Putting these here for now, but we should handle keywords in a more special place in the future
     if ((ast->name == "return") || (ast->name == "done")) {
         if (inAction) {
+            //if this is a return call, we need to clear our scope stack up to where we came from
+            int unwindAmount = currentScopeCount.back();
+            for (int i = 0; i < unwindAmount; ++i) {
+                VariableInfo *vi = scopeStack[scopeStack.size()-1-i];
+                if ((vi->needsCopyDelete)&&(!checkIfActor(vi->type.declType))) {
+                    gc.get()->output << "if (" << vi->name << " != NULL) {" << std::endl;
+                    gc.get()->output << "  delete(" << vi->name << ");" << std::endl;
+                    gc.get()->output << "}" << std::endl;
+                }
+            }
+
             if (ast->name == "return") {
                 gc.get()->output << "--timeLeft__;" << std::endl;
                 gc.get()->output << "actor__->parentThread->timeSliceEndTime = timeLeft__;" << std::endl;
@@ -291,8 +303,6 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(VarDeclExprAST *ast) {
     boost::shared_ptr<GeneratedCode> gc(new GeneratedCode);
     
     VariableInfo *vi = new VariableInfo(ast->name, ast->declType, TypeType::Scalar, ScopeType::CodeBlock);
-    ++(currentScopeCount.back());
-    scopeStack.push_back(vi);
     
     std::map<std::string, ActorAST*>::iterator finder = actors.find(ast->declType);
 
@@ -322,6 +332,9 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(VarDeclExprAST *ast) {
         gc.get()->output << ast->name;
     }
     
+    ++(currentScopeCount.back());
+    scopeStack.push_back(vi);
+
     return gc;
 }
 boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ArrayIndexedExprAST *ast) {
@@ -363,6 +376,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ArrayDeclExprAST *ast) 
     boost::shared_ptr<GeneratedCode> gc(new GeneratedCode);
 
     VariableInfo *vi = new VariableInfo(ast->name, ast->declType, TypeType::Array, ast->size, ScopeType::CodeBlock);
+    
     ++(currentScopeCount.back());
     scopeStack.push_back(vi);
     
@@ -816,6 +830,19 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(CallExprAST *ast) {
         gc.get()->output << tmpName;
     }
     else {
+        if (ast->name == "return") {
+            //if this is a return call, we need to clear our scope stack up to where we came from
+            int unwindAmount = currentScopeCount.back();
+            for (int i = 0; i < unwindAmount; ++i) {
+                VariableInfo *vi = scopeStack[scopeStack.size()-1-i];
+                if ((vi->needsCopyDelete)&&(!checkIfActor(vi->type.declType))) {
+                    //if (ast->args.
+                    gc.get()->output << "if (" << vi->name << " != NULL) {" << std::endl;
+                    gc.get()->output << "  delete(" << vi->name << ");" << std::endl;
+                    gc.get()->output << "}" << std::endl;
+                }
+            }
+        }
         gc.get()->output << ast->name << "(";
         for (int i = 0, j = ast->args.size(); i != j; ++i) {
             if (i != 0)
@@ -1185,13 +1212,21 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(FunctionAST *ast, DeclS
             }
             
             gc.get()->output << "  }" << std::endl;
-            gc.get()->output << "}" << std::endl;
 
             int unwindAmount = currentScopeCount.back();
             for (int i = 0; i < unwindAmount; ++i) {
+                VariableInfo *vi = scopeStack.back();
+                if ((vi->needsCopyDelete)&&(!checkIfActor(vi->type.declType))) {
+                    gc.get()->output << "if (" << vi->name << " != NULL) {" << std::endl;
+                    gc.get()->output << "  delete(" << vi->name << ");" << std::endl;
+                    gc.get()->output << "}" << std::endl;
+                }
                 scopeStack.pop_back();
             }
             currentScopeCount.pop_back();
+
+            gc.get()->output << "}" << std::endl;
+
         }
     }
     return gc;
@@ -1264,13 +1299,21 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ActionAST *ast, std::st
         gc.get()->output << "--timeLeft__;" << std::endl;
         gc.get()->output << "actor__->parentThread->timeSliceEndTime = timeLeft__;" << std::endl;
         gc.get()->output << "actor__->actorState = ActorState::WAITING_FOR_ACTION;" << std::endl;
-        gc.get()->output << "}" << std::endl;
-
+        
         int unwindAmount = currentScopeCount.back();
         for (int i = 0; i < unwindAmount; ++i) {
+            VariableInfo *vi = scopeStack.back();
+            if ((vi->needsCopyDelete)&&(!checkIfActor(vi->type.declType))) {
+                gc.get()->output << "if (" << vi->name << " != NULL) {" << std::endl;
+                gc.get()->output << "  delete(" << vi->name << ");" << std::endl;
+                gc.get()->output << "}" << std::endl;
+            }
             scopeStack.pop_back();
         }
         currentScopeCount.pop_back();
+
+        gc.get()->output << "}" << std::endl;
+
     }
     inAction = false;
     return gc;

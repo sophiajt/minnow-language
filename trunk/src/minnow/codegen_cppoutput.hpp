@@ -61,6 +61,12 @@ class CodegenCPPOutput {
         }
     }
 
+    bool checkIfActor(const std::string &s) {
+        std::map<std::string, ActorAST*>::iterator finder = actors.find(s);
+
+        return (finder != actors.end());
+    }
+
     //void setupDontCare(const std::string &typeName) {
     void setupDontCare(const TypeInfo &ti) {
         //FIXME: Add in the position this happened
@@ -92,9 +98,10 @@ class CodegenCPPOutput {
     }
     
     std::string lookupAssocType(const TypeInfo &ti) {
-        std::map<std::string, ActorAST*>::iterator finder = actors.find(ti.declType);
+        //std::map<std::string, ActorAST*>::iterator finder = actors.find(ti.declType);
 
-        if (finder != actors.end()) {
+        //if (finder != actors.end()) {
+        if (checkIfActor(ti.declType)) {
             if (ti.typeType == TypeType::Array) {
                 return "std::vector<actorId_t>*";
             }
@@ -133,8 +140,9 @@ class CodegenCPPOutput {
 
     std::string lookupPushForTypeAndBlock(const boost::shared_ptr<TypeInfo> ti, const std::string &block) {
         std::ostringstream o;
-        std::map<std::string, ActorAST*>::iterator finder = actors.find(ti.get()->declType);
-        if (finder != actors.end()) {
+        //std::map<std::string, ActorAST*>::iterator finder = actors.find(ti.get()->declType);
+        //if (finder != actors.end()) {
+        if (checkIfActor(ti.get()->declType)) {
             o << "  tmpTU__.UInt32 = " << block << ";" << std::endl;
         }
         else if (ti.get()->typeType == TypeType::Array) {
@@ -189,9 +197,10 @@ class CodegenCPPOutput {
             o << "  tmpTU__.Bool = " << vi->name << ";" << std::endl;
         }
         else {
-            std::map<std::string, ActorAST*>::iterator finder = actors.find(vi->type.declType);
+            //std::map<std::string, ActorAST*>::iterator finder = actors.find(vi->type.declType);
 
-            if (finder != actors.end()) {
+            //if (finder != actors.end()) {
+            if (checkIfActor(vi->type.declType)) {
                 o << "  tmpTU__.UInt32 = " << vi->name << ";" << std::endl;
             }
             else {
@@ -224,9 +233,10 @@ class CodegenCPPOutput {
             o << "  " << vi->name << " = actor__->heapStack.back().Bool; actor__->heapStack.pop_back();" << std::endl;
         }
         else {
-            std::map<std::string, ActorAST*>::iterator finder = actors.find(vi->type.declType);
+            //std::map<std::string, ActorAST*>::iterator finder = actors.find(vi->type.declType);
 
-            if (finder != actors.end()) {
+            //if (finder != actors.end()) {
+            if (checkIfActor(vi->type.declType)) {
                 o << "  " << vi->name << " = (" << lookupAssocType(vi->type) << ")(actor__->heapStack.back().UInt32); actor__->heapStack.pop_back();" << std::endl;
             }
             else {
