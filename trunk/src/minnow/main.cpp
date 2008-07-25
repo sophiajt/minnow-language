@@ -43,6 +43,14 @@ int main(int argc, char *argv[]) {
     po::store(po::command_line_parser(argc, argv).options(all_opts).positional(p).run(), vm);
     po::notify(vm);
 
+    std::ostringstream headerBlock;
+    headerBlock << "extern int convertToInt(string s)" << std::endl;
+    headerBlock << "extern void puti(int i)" << std::endl;
+    headerBlock << "extern void putstring(string s)" << std::endl;
+    headerBlock << "extern void exit(int i)" << std::endl;
+    std::vector<Token*> toksPrelude = tokenize(headerBlock.str(), "standard include");
+    allToks.insert(allToks.end(), toksPrelude.begin(), toksPrelude.end());
+                
     if (vm.count("help")) {
         std::cout << "Usage: minnow <options> <input files>" << std::endl;
         std::cout << visible_opts << std::endl;
@@ -78,6 +86,7 @@ int main(int argc, char *argv[]) {
                 sourceFile.read(fBuffer, length);
                 fBuffer[length] = 0;
                 std::string sourceCode(fBuffer);
+
                 //std::string sourceFilename(argv[i]);
 
                 //printf("Size: %i %i\n", length, strlen(fBuffer));
@@ -97,7 +106,7 @@ int main(int argc, char *argv[]) {
         std::cout << visible_opts << std::endl;
         return 0;
     }
-
+    
     std::vector<Token*>::iterator beginToks = allToks.begin(), endToks = allToks.end();
 
     try {

@@ -777,6 +777,8 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
     }
     return gc;
 }
+
+/*
 boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(CallExprAST *ast) {
     boost::shared_ptr<GeneratedCode> gc(new GeneratedCode), gc_temp;
     std::vector<boost::shared_ptr<GeneratedCode> > gc_args;
@@ -847,15 +849,13 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(CallExprAST *ast) {
         for (int i = 0, j = ast->args.size(); i != j; ++i) {
             if (i != 0)
                 gc.get()->output << ", ";
-            /*
-            gc_temp = visit (ast->args[i]);
-            if (gc_temp.get()->decls.str() != "") {
-                gc.get()->decls << gc_temp.get()->decls.str();
-            }
-            if (gc_temp.get()->inits.str() != "") {
-                gc.get()->output << gc_temp.get()->inits.str();
-            }
-            */
+//             gc_temp = visit (ast->args[i]);
+//             if (gc_temp.get()->decls.str() != "") {
+//                 gc.get()->decls << gc_temp.get()->decls.str();
+//             }
+//             if (gc_temp.get()->inits.str() != "") {
+//                 gc.get()->output << gc_temp.get()->inits.str();
+//             }
             if (gc_args[i].get()->output.str() != "") {
                 gc.get()->output << gc_args[i].get()->output.str();
             }
@@ -865,6 +865,119 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(CallExprAST *ast) {
 
     return gc;
 }
+*/
+
+boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(CallExprAST *ast) {
+    boost::shared_ptr<GeneratedCode> gc(new GeneratedCode), gc_temp;
+    std::vector<boost::shared_ptr<GeneratedCode> > gc_args;
+    bool isExtern = checkIfExtern(ast->name);
+
+    for (int i = 0, j = ast->args.size(); i != j; ++i) {
+        gc_args.push_back(visit (ast->args[i]));
+    }
+    
+    for (int i = 0, j = ast->args.size(); i != j; ++i) {
+        //if (i != 0)
+        //    gc.get()->inits << ", ";
+        if (gc_args[i].get()->decls.str() != "") {
+            gc.get()->decls << gc_args[i].get()->decls.str();
+        }
+        if (gc_args[i].get()->inits.str() != "") {
+            gc.get()->inits << gc_args[i].get()->inits.str();
+        }            
+    }
+  
+    if (ast->name == "return") {
+        //if this is a return call, we need to clear our scope stack up to where we came from
+
+        if (gc_args.size() > 1) {
+            throw CompilerException("Too many arguments in return", ast->pos);
+        }
+        
+        int unwindAmount = currentScopeCount.back();
+        for (int i = 0; i < unwindAmount; ++i) {
+            VariableInfo *vi = scopeStack[scopeStack.size()-1-i];
+            if ((vi->needsCopyDelete)&&(!checkIfActor(vi->type.declType))) {
+                //since it's a return, we don't want to delete what we're returning, so be careful.  This isn't the best way to do this, so I'm open to suggestions.
+                if ((gc_args.size() == 1) && (vi->name != gc_args[0].get()->output.str())) {
+                    gc.get()->inits << "if (" << vi->name << " != NULL) {" << std::endl;
+                    gc.get()->inits << "  delete(" << vi->name << ");" << std::endl;
+                    gc.get()->inits << "}" << std::endl;
+                }
+            }
+        }
+
+        gc.get()->output << "return (";
+        for (int i = 0, j = ast->args.size(); i != j; ++i) {
+            if (i != 0)
+                gc.get()->output << ", ";
+                
+            if (gc_args[i].get()->output.str() != "") {
+                gc.get()->output << gc_args[i].get()->output.str();
+            }
+        }
+        gc.get()->output << ")";
+
+        //"return" is a special case, so get out of here
+        return gc;
+    }
+    
+    std::string tmpName = nextTemp();
+    std::string retType = lookupReturnType(ast);
+    if (retType != "void") {
+        gc.get()->decls << retType << " " << tmpName << ";" << std::endl;
+    }
+    
+    gc.get()->inits << "case(" << currentContId << "):" << std::endl;
+    ++currentContId;
+    
+    gc.get()->inits << outputResumeBlock();
+
+    if (!isExtern) {
+        gc.get()->inits << "actor__->parentThread->timeSliceEndTime = timeLeft__;" << std::endl;
+    }
+    
+    if (retType != "void") {
+        gc.get()->inits << tmpName << " = " << ast->name << "(";
+    }
+    else {
+        gc.get()->inits << ast->name << "(";
+    }
+    
+    for (int i = 0, j = ast->args.size(); i != j; ++i) {
+        if (i != 0)
+            gc.get()->inits << ", ";
+        
+        if (gc_args[i].get()->output.str() != "") {
+            gc.get()->inits << gc_args[i].get()->output.str();
+        }
+    }
+
+    if (!isExtern) {
+        if (ast->args.size() > 0) {
+            gc.get()->inits << ", ";
+        }
+        gc.get()->inits << "actor__";
+    }
+    
+    gc.get()->inits << ");" << std::endl;
+    if (isExtern) {
+        //since the external call will no decrement the timeslice, we need to do it manually
+        gc.get()->inits << "--timeLeft__;" << std::endl;
+    }
+    if (!isExtern) {
+        gc.get()->inits << "timeLeft__ = actor__->parentThread->timeSliceEndTime;" << std::endl;
+    }
+    gc.get()->inits << outputPauseBlock(false);
+
+    if (retType != "void") {    
+        gc.get()->output << tmpName;
+    }
+
+    return gc;
+}
+
+
 boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(StructAST *ast, DeclStage::Stage stage) {
     boost::shared_ptr<GeneratedCode> gc(new GeneratedCode);
 
@@ -1137,7 +1250,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(FunctionAST *ast, DeclS
     if (stage == DeclStage::FORWARD) {
         if (ast->body.size() == 0) {
             gc.get()->output << "extern ";
-            this->externFns.push_back(ast->proto->name);
+            //this->externFns.push_back(ast->proto->name);
         }
         boost::shared_ptr<GeneratedCode> gc_temp = visit (ast->proto, stage);
         if (gc_temp.get()->decls.str() != "") {
@@ -1323,9 +1436,13 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(AppAST *ast) {
 
     gc.get()->decls << "//automatically generated by Minnow->C++ codegen (0.1)" << std::endl;
     gc.get()->decls << "#include \"aquarium.hpp\"" << std::endl;
-    gc.get()->decls << "inline int convertToInt(const std::string& s){std::istringstream i(s);int x;i >> x;return x;}" << std::endl;
+    
+    gc.get()->decls << "inline int convertToInt(std::string s){std::istringstream i(s);int x;i >> x;return x;}" << std::endl;
     gc.get()->decls << "inline void puti(int i){std::cout << i << std::endl; }" << std::endl;
-    gc.get()->decls << "inline void putstring(std::string &s){std::cout << s << std::endl; }" << std::endl;
+    gc.get()->decls << "inline void putstring(std::string s){std::cout << s << std::endl; }" << std::endl;
+
+    
+    /*
     gc.get()->decls << "extern void exit(int i);" << std::endl;
     gc.get()->decls << "extern int puts(char *s);" << std::endl;
 
@@ -1335,6 +1452,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(AppAST *ast) {
     externFns.push_back("puts");
     externFns.push_back("putstring");
     externFns.push_back("return");
+    */
     
     for (std::vector<StructAST*>::iterator iter = ast->structs.begin(), end = ast->structs.end(); iter != end; ++iter) {
         gc_temp = visit(*iter, DeclStage::FORWARD);
@@ -1363,6 +1481,8 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(AppAST *ast) {
     }
 
     for (std::vector<FunctionAST*>::iterator iter = ast->functions.begin(), end = ast->functions.end(); iter != end; ++iter) {
+        funStack.push_back((*iter)->proto);
+        
         gc_temp = visit(*iter, DeclStage::FORWARD);
         if (gc_temp.get()->decls.str() != "") {
             gc.get()->output << gc_temp.get()->decls.str();
@@ -1374,7 +1494,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(AppAST *ast) {
             gc.get()->output << gc_temp.get()->output.str();
         }
 
-        funStack.push_back((*iter)->proto);
+        //std::cout << "Pushing proto: " << (*iter)->proto->name << std::endl;
     }
 
     for (std::vector<ActionAST*>::iterator iter = ast->actions.begin(), end = ast->actions.end(); iter != end; ++iter) {

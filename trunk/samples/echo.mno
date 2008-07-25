@@ -1,17 +1,17 @@
 actor echo
   action ping()
-    puts("ponging this")
+    putstring("ponging this")
     this::pong()
   end
 
   action pong()
-    puts("done")
+    putstring("done")
     exit(0)
   end
 end
 
 action main()
   spawn echo e
-  puts("pinging e")
+  putstring("pinging e")
   e::ping()
 end

@@ -1,6 +1,6 @@
 isolated actor isolated_actor
   action greet()
-    puts("Hello from an isolated actor")
+    putstring("Hello from an isolated actor")
     exit(0)
   end
 end

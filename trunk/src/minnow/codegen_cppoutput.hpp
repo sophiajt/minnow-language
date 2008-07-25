@@ -21,10 +21,11 @@ struct GeneratedCode {
 class CodegenCPPOutput {    
     std::map<std::string, ActorAST*> actors;
     std::map<std::string, StructAST*> structs;
-    std::vector<std::string> builtins;
+    //std::vector<std::string> builtins;
     std::vector<VariableInfo*> scopeStack;
     std::vector<PrototypeAST*> funStack;
-    std::vector<std::string> externFns;
+    //std::vector<std::string> externFns;
+    //std::vector<PrototypeAST*> externFns;
     std::string dontCareReturnVal;
     long startOfLinePos;
     int scopeContainerId;
@@ -52,13 +53,23 @@ class CodegenCPPOutput {
         return NULL;
     }
 
+    //FIXME: This won't work with function overloading
+    
     bool checkIfExtern(const std::string &fn) {
-        if (find(externFns.begin(), externFns.end(), fn) != externFns.end()) {
-            return true;
+        for (std::vector<PrototypeAST*>::reverse_iterator iter = funStack.rbegin(), end = funStack.rend(); iter != end; ++iter) {
+            if ((*iter)->name == fn) {
+                return (*iter)->isExtern;
+            }
         }
-        else {
-            return false;
-        }
+        
+        return false;
+
+//         if (find(externFns.begin(), externFns.end(), fn) != externFns.end()) {
+//             return true;
+//         }
+//         else {
+//             return false;
+//         }
     }
 
     bool checkIfActor(const std::string &s) {
@@ -283,6 +294,7 @@ class CodegenCPPOutput {
             }
         }
 
+        /*
         if (find(externFns.begin(), externFns.end(), ast->name) == externFns.end()) {
             std::ostringstream msg;
             msg << "Can not find function '" << ast->name << "'";
@@ -293,8 +305,14 @@ class CodegenCPPOutput {
             TypeInfo ti;
             return ti;
         }
+        */
         //return "";
         //return returnVal;
+
+        std::ostringstream msg;
+        msg << "Can not find function '" << ast->name << "'";
+        std::string outmsg = msg.str();
+        throw CompilerException(outmsg, ast->pos);
     }
 
     std::string lookupReturnType(const CallExprAST *ast) {
@@ -308,6 +326,12 @@ class CodegenCPPOutput {
             }
         }
 
+        std::ostringstream msg;
+        msg << "Can not find function '" << ast->name << "'";
+        std::string outmsg = msg.str();
+        throw CompilerException(outmsg, ast->pos);
+        
+        /*
         if (find(externFns.begin(), externFns.end(), ast->name) == externFns.end()) {
             std::ostringstream msg;
             msg << "Can not find function '" << ast->name << "'";
@@ -318,6 +342,7 @@ class CodegenCPPOutput {
         else {
             return "";
         }
+        */
         //return returnVal;
     }
     
@@ -401,7 +426,7 @@ public:
     std::string translate(AppAST *ast);
 
     CodegenCPPOutput() {
-        builtins.push_back("int");
+        //builtins.push_back("int");
         tempNumber = 0;
         inAction = false;
     };

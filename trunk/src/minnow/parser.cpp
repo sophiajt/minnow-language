@@ -655,8 +655,8 @@ FunctionAST *parseFunction(std::vector<Token*>::iterator &iter, std::vector<Toke
             if (proto == NULL) {
                 throw CompilerException("Expecting external function definition", *iter);
             }
+            proto->isExtern = true;
             returnVal->proto = proto;
-
         }
     }
     else if ((iter != end) && ((*iter)->data == "def")) {
@@ -669,6 +669,7 @@ FunctionAST *parseFunction(std::vector<Token*>::iterator &iter, std::vector<Toke
             if (proto == NULL) {
                 throw CompilerException("Expecting function definition", *iter);
             }
+            proto->isExtern = false;
             returnVal->proto = proto;
 
             ExpressionAST *ast = parseExpression(iter, end);

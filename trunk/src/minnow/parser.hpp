@@ -237,6 +237,7 @@ class PrototypeAST {
     TypeInfo type;
     //std::vector<std::string> argNames;
     //std::vector<std::string> argTypes;
+    bool isExtern;
     std::vector<VariableInfo*> args;
 };
 
