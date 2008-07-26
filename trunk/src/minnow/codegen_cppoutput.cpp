@@ -940,7 +940,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(StructAST *ast, DeclSta
                     gc.get()->output << "actorId_t " << iter->first << "[";
                     boost::shared_ptr<GeneratedCode> gc_temp = visit (iter->second->size);
                     if (gc_temp.get()->decls.str() != "") {
-                        gc.get()->decls << gc_temp.get()->decls.str();
+                        gc.get()->output << gc_temp.get()->decls.str();
                     }
                     if (gc_temp.get()->inits.str() != "") {
                         gc.get()->output << gc_temp.get()->inits.str();
@@ -960,7 +960,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(StructAST *ast, DeclSta
                     gc.get()->output << lookupAssocType(iter->second->type) << " " << iter->first << "[";
                     boost::shared_ptr<GeneratedCode> gc_temp = visit (iter->second->size);
                     if (gc_temp.get()->decls.str() != "") {
-                        gc.get()->decls << gc_temp.get()->decls.str();
+                        gc.get()->output << gc_temp.get()->decls.str();
                     }
                     if (gc_temp.get()->inits.str() != "") {
                         gc.get()->output << gc_temp.get()->inits.str();
