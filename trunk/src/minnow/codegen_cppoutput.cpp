@@ -327,7 +327,11 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(VarDeclExprAST *ast) {
     else {
         gc.get()->decls << lookupAssocType(vi->type) << " " << ast->name << ";" << std::endl;
         if (ast->isAlloc) {
-            gc.get()->output << ast->name << " = new " << ast->declType << "();" << std::endl;
+            //TRIM
+            std::string allocType = lookupAssocType(vi->type);
+            allocType = allocType.erase(allocType.size()-1);
+            
+            gc.get()->output << ast->name << " = new " << allocType << "();" << std::endl;
         }
         gc.get()->output << ast->name;
     }
@@ -448,7 +452,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ArrayDeclExprAST *ast) 
     else {
         gc.get()->decls << lookupAssocType(vi->type) << " " << ast->name << ";" << std::endl;
         std::string allocType = lookupAssocType(vi->type);
-        allocType = allocType.erase(allocType.size()-1); //trim off the trailing '*'
+        allocType = allocType.erase(allocType.size()-1); //TRIM off the trailing '*'
         gc.get()->output << ast->name << " = new " << allocType << "(";
         if (ast->size != NULL) {
             boost::shared_ptr<GeneratedCode> gc_temp = visit (ast->size);
@@ -962,16 +966,19 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(StructAST *ast, DeclSta
 
         gc.get()->output << ast->name << "() { }" << std::endl;
 
-        gc.get()->output << ast->name << "(const " << ast->name << "& p) {" << std::endl;
+        //TODO: I'm not sure if I need a traditional copy constructor, or this pointer style
+        //gc.get()->output << ast->name << "(const " << ast->name << "& p) {" << std::endl;
+        gc.get()->output << ast->name << "(" << ast->name << "* p) {" << std::endl;
         for (std::map<std::string, VariableInfo*>::iterator iter = ast->vars.begin(), end = ast->vars.end(); iter != end; ++iter) {
             if ((iter->second)->needsCopyDelete) {
                 gc.get()->output << "if (" << (iter->second)->name << " != NULL) { delete " << (iter->second)->name << "; };" << std::endl;
-                gc.get()->output << (iter->second)->name << " = new " << lookupAssocType((iter->second)->type) << "(p." << (iter->second)->name << ");" << std::endl;
+                gc.get()->output << (iter->second)->name << " = new " << lookupAssocType((iter->second)->type) << "(p->" << (iter->second)->name << ");" << std::endl;
             }
             else {
-                gc.get()->output << (iter->second)->name << " = " << "p." << (iter->second)->name << ";" << std::endl;
+                gc.get()->output << (iter->second)->name << " = " << "p->" << (iter->second)->name << ";" << std::endl;
             }
         }
+        gc.get()->output << "}" << std::endl;
         gc.get()->output << "};" << std::endl;
         int unwindAmount = currentScopeCount.back();
         for (int i = 0; i < unwindAmount; ++i) {

@@ -175,15 +175,11 @@ class CodegenCPPOutput {
             o << "  tmpTU__.Bool = " << block << ";" << std::endl;
         }
         else {
-            //FIXME: This is a work around to external functions not having return types yet.
-            /*
-            std::ostringstream msg;
-            msg << "Unknown type '" << ti.get()->declType << "'";
-            throw CompilerException(msg.str());
-            */
-            o << "  tmpTU__.UInt32 = " << block << ";" << std::endl;
+            //TRIM
+            std::string allocType = lookupAssocType(*(ti.get()));
+            allocType = allocType.erase(allocType.size()-1);
+            o << "  tmpTU__.VoidPtr = new " << allocType << "(" << block << ");" << std::endl;
         }
-        //o << "  actor__->heapStack.push_back(tmpTU__);" << std::endl;
         return o.str();
     }
 
