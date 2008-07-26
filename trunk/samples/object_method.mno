@@ -1,0 +1,11 @@
+class MethodHolder
+  def void greet()
+    putstring("Hello, from an object")
+  end
+end
+
+action main()
+  new MethodHolder mh
+  mh.greet()
+  exit(0)
+end

@@ -105,6 +105,123 @@ boost::shared_ptr<TypeInfo> CodegenCPPOutput::resolveType(ExpressionAST *ast) {
     return ti;
 }
 
+boost::shared_ptr<GeneratedCode> CodegenCPPOutput::handleCall(CallExprAST *ast, const std::string &container, const std::string &container_name) {
+    boost::shared_ptr<GeneratedCode> gc(new GeneratedCode), gc_temp;
+    std::vector<boost::shared_ptr<GeneratedCode> > gc_args;
+    bool isExtern = checkIfExtern(ast->name);
+
+    for (int i = 0, j = ast->args.size(); i != j; ++i) {
+        gc_args.push_back(visit (ast->args[i]));
+    }
+    
+    for (int i = 0, j = ast->args.size(); i != j; ++i) {
+        //if (i != 0)
+        //    gc.get()->inits << ", ";
+        if (gc_args[i].get()->decls.str() != "") {
+            gc.get()->decls << gc_args[i].get()->decls.str();
+        }
+        if (gc_args[i].get()->inits.str() != "") {
+            gc.get()->inits << gc_args[i].get()->inits.str();
+        }            
+    }
+  
+    if (ast->name == "return") {
+        //if this is a return call, we need to clear our scope stack up to where we came from
+
+        if (gc_args.size() > 1) {
+            throw CompilerException("Too many arguments in return", ast->pos);
+        }
+        
+        int unwindAmount = currentScopeCount.back();
+        for (int i = 0; i < unwindAmount; ++i) {
+            VariableInfo *vi = scopeStack[scopeStack.size()-1-i];
+            if ((vi->needsCopyDelete)&&(!checkIfActor(vi->type.declType))) {
+                //since it's a return, we don't want to delete what we're returning, so be careful.  This isn't the best way to do this, so I'm open to suggestions.
+                if ((gc_args.size() == 1) && (vi->name != gc_args[0].get()->output.str())) {
+                    gc.get()->inits << "if (" << vi->name << " != NULL) {" << std::endl;
+                    gc.get()->inits << "  delete(" << vi->name << ");" << std::endl;
+                    gc.get()->inits << "}" << std::endl;
+                }
+            }
+        }
+
+        gc.get()->output << "return (";
+        for (int i = 0, j = ast->args.size(); i != j; ++i) {
+            if (i != 0)
+                gc.get()->output << ", ";
+                
+            if (gc_args[i].get()->output.str() != "") {
+                gc.get()->output << gc_args[i].get()->output.str();
+            }
+        }
+        gc.get()->output << ")";
+
+        //"return" is a special case, so get out of here
+        return gc;
+    }
+    
+    std::string tmpName = nextTemp();
+    std::string retType = lookupReturnType(ast, container);
+    if (retType != "void") {
+        gc.get()->decls << retType << " " << tmpName << ";" << std::endl;
+    }
+    
+    gc.get()->inits << "case(" << currentContId << "):" << std::endl;
+    ++currentContId;
+    
+    gc.get()->inits << outputResumeBlock();
+
+    if (!isExtern) {
+        gc.get()->inits << "actor__->parentThread->timeSliceEndTime = timeLeft__;" << std::endl;
+    }
+    
+    if (retType != "void") {
+        gc.get()->inits << tmpName << " = ";
+        if (container_name != "") {
+            gc.get()->inits << container_name << "->";
+        }
+        gc.get()->inits << ast->name << "(";
+    }
+    else {
+        if (container_name != "") {
+            gc.get()->inits << container_name << "->";
+        }
+        gc.get()->inits << ast->name << "(";
+    }
+    
+    for (int i = 0, j = ast->args.size(); i != j; ++i) {
+        if (i != 0)
+            gc.get()->inits << ", ";
+        
+        if (gc_args[i].get()->output.str() != "") {
+            gc.get()->inits << gc_args[i].get()->output.str();
+        }
+    }
+
+    if (!isExtern) {
+        if (ast->args.size() > 0) {
+            gc.get()->inits << ", ";
+        }
+        gc.get()->inits << "actor__";
+    }
+    
+    gc.get()->inits << ");" << std::endl;
+    if (isExtern) {
+        //since the external call will no decrement the timeslice, we need to do it manually
+        gc.get()->inits << "--timeLeft__;" << std::endl;
+    }
+    if (!isExtern) {
+        gc.get()->inits << "timeLeft__ = actor__->parentThread->timeSliceEndTime;" << std::endl;
+    }
+    gc.get()->inits << outputPauseBlock(false);
+
+    if (retType != "void") {    
+        gc.get()->output << tmpName;
+    }
+
+    return gc;
+}
+
 //catch all that will dispatch out to others
 boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ExpressionAST *ast) {
     boost::shared_ptr<GeneratedCode> gc;
@@ -736,9 +853,9 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
             VariableExprAST *lhs_ast = dynamic_cast<VariableExprAST*>(ast->LHS);
             boost::shared_ptr<TypeInfo> lhs_type = resolveType(ast->LHS);
             //std::cout << "Accessing type: " << lhs_type.get()->declType << std::endl;
-            StructAST* s = this->structs[lhs_type.get()->declType];
 
             if (veast != NULL) {
+                StructAST* s = this->structs[lhs_type.get()->declType];
                 //check to see if the struct has an attribute member named this
                 if (s->vars.find(veast->name) != s->vars.end()) {
                     gc.get()->output << lhs_ast->name << "->" << veast->name;
@@ -747,6 +864,18 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
                     std::ostringstream msg;
                     msg << "Can't find '" << veast->name << "' inside of '" << lhs_ast->name << "'";
                     throw CompilerException(msg.str(), ast->pos);
+                }
+            }
+            if (ceast != NULL) {
+                gc_temp = handleCall(ceast, lhs_type.get()->declType, lhs_ast->name);
+                if (gc_temp.get()->decls.str() != "") {
+                    gc.get()->decls << gc_temp.get()->decls.str();
+                }
+                if (gc_temp.get()->inits.str() != "") {
+                    gc.get()->output << gc_temp.get()->inits.str();
+                }
+                if (gc_temp.get()->output.str() != "") {
+                    gc.get()->output << gc_temp.get()->output.str();
                 }
             }
         }
@@ -778,113 +907,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
 }
 
 boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(CallExprAST *ast) {
-    boost::shared_ptr<GeneratedCode> gc(new GeneratedCode), gc_temp;
-    std::vector<boost::shared_ptr<GeneratedCode> > gc_args;
-    bool isExtern = checkIfExtern(ast->name);
-
-    for (int i = 0, j = ast->args.size(); i != j; ++i) {
-        gc_args.push_back(visit (ast->args[i]));
-    }
-    
-    for (int i = 0, j = ast->args.size(); i != j; ++i) {
-        //if (i != 0)
-        //    gc.get()->inits << ", ";
-        if (gc_args[i].get()->decls.str() != "") {
-            gc.get()->decls << gc_args[i].get()->decls.str();
-        }
-        if (gc_args[i].get()->inits.str() != "") {
-            gc.get()->inits << gc_args[i].get()->inits.str();
-        }            
-    }
-  
-    if (ast->name == "return") {
-        //if this is a return call, we need to clear our scope stack up to where we came from
-
-        if (gc_args.size() > 1) {
-            throw CompilerException("Too many arguments in return", ast->pos);
-        }
-        
-        int unwindAmount = currentScopeCount.back();
-        for (int i = 0; i < unwindAmount; ++i) {
-            VariableInfo *vi = scopeStack[scopeStack.size()-1-i];
-            if ((vi->needsCopyDelete)&&(!checkIfActor(vi->type.declType))) {
-                //since it's a return, we don't want to delete what we're returning, so be careful.  This isn't the best way to do this, so I'm open to suggestions.
-                if ((gc_args.size() == 1) && (vi->name != gc_args[0].get()->output.str())) {
-                    gc.get()->inits << "if (" << vi->name << " != NULL) {" << std::endl;
-                    gc.get()->inits << "  delete(" << vi->name << ");" << std::endl;
-                    gc.get()->inits << "}" << std::endl;
-                }
-            }
-        }
-
-        gc.get()->output << "return (";
-        for (int i = 0, j = ast->args.size(); i != j; ++i) {
-            if (i != 0)
-                gc.get()->output << ", ";
-                
-            if (gc_args[i].get()->output.str() != "") {
-                gc.get()->output << gc_args[i].get()->output.str();
-            }
-        }
-        gc.get()->output << ")";
-
-        //"return" is a special case, so get out of here
-        return gc;
-    }
-    
-    std::string tmpName = nextTemp();
-    std::string retType = lookupReturnType(ast);
-    if (retType != "void") {
-        gc.get()->decls << retType << " " << tmpName << ";" << std::endl;
-    }
-    
-    gc.get()->inits << "case(" << currentContId << "):" << std::endl;
-    ++currentContId;
-    
-    gc.get()->inits << outputResumeBlock();
-
-    if (!isExtern) {
-        gc.get()->inits << "actor__->parentThread->timeSliceEndTime = timeLeft__;" << std::endl;
-    }
-    
-    if (retType != "void") {
-        gc.get()->inits << tmpName << " = " << ast->name << "(";
-    }
-    else {
-        gc.get()->inits << ast->name << "(";
-    }
-    
-    for (int i = 0, j = ast->args.size(); i != j; ++i) {
-        if (i != 0)
-            gc.get()->inits << ", ";
-        
-        if (gc_args[i].get()->output.str() != "") {
-            gc.get()->inits << gc_args[i].get()->output.str();
-        }
-    }
-
-    if (!isExtern) {
-        if (ast->args.size() > 0) {
-            gc.get()->inits << ", ";
-        }
-        gc.get()->inits << "actor__";
-    }
-    
-    gc.get()->inits << ");" << std::endl;
-    if (isExtern) {
-        //since the external call will no decrement the timeslice, we need to do it manually
-        gc.get()->inits << "--timeLeft__;" << std::endl;
-    }
-    if (!isExtern) {
-        gc.get()->inits << "timeLeft__ = actor__->parentThread->timeSliceEndTime;" << std::endl;
-    }
-    gc.get()->inits << outputPauseBlock(false);
-
-    if (retType != "void") {    
-        gc.get()->output << tmpName;
-    }
-
-    return gc;
+    return handleCall(ast, "", "");
 }
 
 
@@ -953,7 +976,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(StructAST *ast, DeclSta
         for (std::vector<FunctionAST*>::iterator iter = ast->funs.begin(), end = ast->funs.end(); iter != end; ++iter) {
             boost::shared_ptr<GeneratedCode> gc_temp = visit (*iter, stage);
             if (gc_temp.get()->decls.str() != "") {
-                gc.get()->decls << gc_temp.get()->decls.str();
+                gc.get()->output << gc_temp.get()->decls.str();
             }
             if (gc_temp.get()->inits.str() != "") {
                 gc.get()->output << gc_temp.get()->inits.str();
@@ -968,14 +991,14 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(StructAST *ast, DeclSta
 
         //TODO: I'm not sure if I need a traditional copy constructor, or this pointer style
         //gc.get()->output << ast->name << "(const " << ast->name << "& p) {" << std::endl;
-        gc.get()->output << ast->name << "(" << ast->name << "* p) {" << std::endl;
+        gc.get()->output << ast->name << "(" << ast->name << "* p__) {" << std::endl;
         for (std::map<std::string, VariableInfo*>::iterator iter = ast->vars.begin(), end = ast->vars.end(); iter != end; ++iter) {
             if ((iter->second)->needsCopyDelete) {
                 gc.get()->output << "if (" << (iter->second)->name << " != NULL) { delete " << (iter->second)->name << "; };" << std::endl;
-                gc.get()->output << (iter->second)->name << " = new " << lookupAssocType((iter->second)->type) << "(p->" << (iter->second)->name << ");" << std::endl;
+                gc.get()->output << (iter->second)->name << " = new " << lookupAssocType((iter->second)->type) << "(p__->" << (iter->second)->name << ");" << std::endl;
             }
             else {
-                gc.get()->output << (iter->second)->name << " = " << "p->" << (iter->second)->name << ";" << std::endl;
+                gc.get()->output << (iter->second)->name << " = " << "p__->" << (iter->second)->name << ";" << std::endl;
             }
         }
         gc.get()->output << "}" << std::endl;

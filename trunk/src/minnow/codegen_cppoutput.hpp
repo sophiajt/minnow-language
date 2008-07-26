@@ -289,7 +289,7 @@ class CodegenCPPOutput {
                 return (*iter)->type;
             }
         }
-
+        
         /*
         if (find(externFns.begin(), externFns.end(), ast->name) == externFns.end()) {
             std::ostringstream msg;
@@ -311,14 +311,25 @@ class CodegenCPPOutput {
         throw CompilerException(outmsg, ast->pos);
     }
 
-    std::string lookupReturnType(const CallExprAST *ast) {
+    std::string lookupReturnType(const CallExprAST *ast, const std::string &container) {
         //std::string returnVal("int");
 
-        for (std::vector<PrototypeAST*>::reverse_iterator iter = funStack.rbegin(), end = funStack.rend(); iter != end; ++iter) {
-            //FIXME: This is insufficient for overloaded functions
-            if ((*iter)->name == ast->name) {
-                //TypeInfo ti((*iter)->type, TypeType::Scalar);
-                return lookupAssocType((*iter)->type);
+        if (container == "") {
+            for (std::vector<PrototypeAST*>::reverse_iterator iter = funStack.rbegin(), end = funStack.rend(); iter != end; ++iter) {
+                //FIXME: This is insufficient for overloaded functions
+                if ((*iter)->name == ast->name) {
+                    //TypeInfo ti((*iter)->type, TypeType::Scalar);
+                    return lookupAssocType((*iter)->type);
+                }
+            }
+        }
+        else {
+            for (std::vector<FunctionAST*>::iterator iter = structs[container]->funs.begin(), end = structs[container]->funs.end(); iter != end; ++iter) {
+                //FIXME: This is insufficient for overloaded functions
+                if ((*iter)->proto->name == ast->name) {
+                    //TypeInfo ti((*iter)->type, TypeType::Scalar);
+                    return lookupAssocType((*iter)->proto->type);
+                }
             }
         }
 
@@ -398,6 +409,7 @@ class CodegenCPPOutput {
     }
 
     boost::shared_ptr<TypeInfo> resolveType(ExpressionAST *ast);
+    boost::shared_ptr<GeneratedCode> handleCall(CallExprAST *ast, const std::string &container, const std::string &container_name);
         
     boost::shared_ptr<GeneratedCode> visit(ExpressionAST *ast);  //catch all that will dispatch out to others
     boost::shared_ptr<GeneratedCode> visit(NumberExprAST *ast);
