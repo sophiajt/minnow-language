@@ -725,30 +725,25 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
         VariableExprAST *veast = dynamic_cast<VariableExprAST*>(ast->RHS);
         CallExprAST *ceast = dynamic_cast<CallExprAST*>(ast->RHS);
         if ((veast == NULL) && (ceast == NULL)) {
-            std::cout << "Can't call to method, is type: " << ast->RHS->type() << std::endl;
+            std::cout << "Can't use '.' in this context, is type: " << ast->RHS->type() << std::endl;
             exit(1);
         }
         else {
-            gc_temp = visit (ast->LHS);
-            if (gc_temp.get()->decls.str() != "") {
-                gc.get()->decls << gc_temp.get()->decls.str();
-            }
-            if (gc_temp.get()->inits.str() != "") {
-                gc.get()->output << gc_temp.get()->inits.str();
-            }
-            if (gc_temp.get()->output.str() != "") {
-                gc.get()->output << gc_temp.get()->output.str();
-            }
-            gc.get()->output << "->";
-            gc_temp = visit (ast->RHS);
-            if (gc_temp.get()->decls.str() != "") {
-                gc.get()->decls << gc_temp.get()->decls.str();
-            }
-            if (gc_temp.get()->inits.str() != "") {
-                gc.get()->output << gc_temp.get()->inits.str();
-            }
-            if (gc_temp.get()->output.str() != "") {
-                gc.get()->output << gc_temp.get()->output.str();
+            VariableExprAST *lhs_ast = dynamic_cast<VariableExprAST*>(ast->LHS);
+            boost::shared_ptr<TypeInfo> lhs_type = resolveType(ast->LHS);
+            //std::cout << "Accessing type: " << lhs_type.get()->declType << std::endl;
+            StructAST* s = this->structs[lhs_type.get()->declType];
+
+            if (veast != NULL) {
+                //check to see if the struct has an attribute member named this
+                if (s->vars.find(veast->name) != s->vars.end()) {
+                    gc.get()->output << lhs_ast->name << "->" << veast->name;
+                }
+                else {
+                    std::ostringstream msg;
+                    msg << "Can't find '" << veast->name << "' inside of '" << lhs_ast->name << "'";
+                    throw CompilerException(msg.str(), ast->pos);
+                }
             }
         }
     }
@@ -777,95 +772,6 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
     }
     return gc;
 }
-
-/*
-boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(CallExprAST *ast) {
-    boost::shared_ptr<GeneratedCode> gc(new GeneratedCode), gc_temp;
-    std::vector<boost::shared_ptr<GeneratedCode> > gc_args;
-    bool isExtern = checkIfExtern(ast->name);
-
-    for (int i = 0, j = ast->args.size(); i != j; ++i) {
-        gc_args.push_back(visit (ast->args[i]));
-    }
-    
-    for (int i = 0, j = ast->args.size(); i != j; ++i) {
-        //if (i != 0)
-        //    gc.get()->inits << ", ";
-        if (gc_args[i].get()->decls.str() != "") {
-            gc.get()->decls << gc_args[i].get()->decls.str();
-        }
-        if (gc_args[i].get()->inits.str() != "") {
-            gc.get()->inits << gc_args[i].get()->inits.str();
-        }            
-    }
-  
-    if (!isExtern) {
-        std::string tmpName = nextTemp();
-        std::string retType = lookupReturnType(ast);
-        gc.get()->decls << retType << " " << tmpName << ";" << std::endl;
-        
-        gc.get()->inits << "case(" << currentContId << "):" << std::endl;
-        ++currentContId;
-    
-        gc.get()->inits << outputResumeBlock();
-    
-        gc.get()->inits << "actor__->parentThread->timeSliceEndTime = timeLeft__;" << std::endl;
-        gc.get()->inits << tmpName << " = " << ast->name << "(";
-        for (int i = 0, j = ast->args.size(); i != j; ++i) {
-            if (i != 0)
-                gc.get()->inits << ", ";
-            
-            if (gc_args[i].get()->output.str() != "") {
-                gc.get()->inits << gc_args[i].get()->output.str();
-            }
-        }
-        if (!isExtern) {
-            if (ast->args.size() > 0) {
-                gc.get()->inits << ", ";
-            }
-            gc.get()->inits << "actor__";
-        }
-        gc.get()->inits << ");" << std::endl;
-        gc.get()->inits << "timeLeft__ = actor__->parentThread->timeSliceEndTime;" << std::endl;
-        gc.get()->inits << outputPauseBlock(false);
-        
-        gc.get()->output << tmpName;
-    }
-    else {
-        if (ast->name == "return") {
-            //if this is a return call, we need to clear our scope stack up to where we came from
-            int unwindAmount = currentScopeCount.back();
-            for (int i = 0; i < unwindAmount; ++i) {
-                VariableInfo *vi = scopeStack[scopeStack.size()-1-i];
-                if ((vi->needsCopyDelete)&&(!checkIfActor(vi->type.declType))) {
-                    //if (ast->args.
-                    gc.get()->output << "if (" << vi->name << " != NULL) {" << std::endl;
-                    gc.get()->output << "  delete(" << vi->name << ");" << std::endl;
-                    gc.get()->output << "}" << std::endl;
-                }
-            }
-        }
-        gc.get()->output << ast->name << "(";
-        for (int i = 0, j = ast->args.size(); i != j; ++i) {
-            if (i != 0)
-                gc.get()->output << ", ";
-//             gc_temp = visit (ast->args[i]);
-//             if (gc_temp.get()->decls.str() != "") {
-//                 gc.get()->decls << gc_temp.get()->decls.str();
-//             }
-//             if (gc_temp.get()->inits.str() != "") {
-//                 gc.get()->output << gc_temp.get()->inits.str();
-//             }
-            if (gc_args[i].get()->output.str() != "") {
-                gc.get()->output << gc_args[i].get()->output.str();
-            }
-        }
-        gc.get()->output << ")";
-    }
-
-    return gc;
-}
-*/
 
 boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(CallExprAST *ast) {
     boost::shared_ptr<GeneratedCode> gc(new GeneratedCode), gc_temp;
@@ -1053,7 +959,19 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(StructAST *ast, DeclSta
             }
 
         }
-        
+
+        gc.get()->output << ast->name << "() { }" << std::endl;
+
+        gc.get()->output << ast->name << "(const " << ast->name << "& p) {" << std::endl;
+        for (std::map<std::string, VariableInfo*>::iterator iter = ast->vars.begin(), end = ast->vars.end(); iter != end; ++iter) {
+            if ((iter->second)->needsCopyDelete) {
+                gc.get()->output << "if (" << (iter->second)->name << " != NULL) { delete " << (iter->second)->name << "; };" << std::endl;
+                gc.get()->output << (iter->second)->name << " = new " << lookupAssocType((iter->second)->type) << "(p." << (iter->second)->name << ");" << std::endl;
+            }
+            else {
+                gc.get()->output << (iter->second)->name << " = " << "p." << (iter->second)->name << ";" << std::endl;
+            }
+        }
         gc.get()->output << "};" << std::endl;
         int unwindAmount = currentScopeCount.back();
         for (int i = 0; i < unwindAmount; ++i) {

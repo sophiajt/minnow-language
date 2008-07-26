@@ -233,10 +233,7 @@ class PointcutExprAST : public ExpressionAST {
 class PrototypeAST {
   public:
     std::string name;
-    //std::string type;
     TypeInfo type;
-    //std::vector<std::string> argNames;
-    //std::vector<std::string> argTypes;
     bool isExtern;
     std::vector<VariableInfo*> args;
 };
@@ -259,13 +256,13 @@ class StructAST : public CodeHolder {
   public:
     std::string name;
     std::vector<FunctionAST*> funs;
-    //std::vector<ExpressionAST*> vars;
+    //vars is in CodeHolder now
 };
 
 class ActorAST : public CodeHolder {
   public:
     std::string name;
-    //std::vector<ExpressionAST*> vars;
+    //vars is in CodeHolder now
     std::vector<FunctionAST*> funs;
     std::vector<ActionAST*> actions;
     bool isIsolated;
