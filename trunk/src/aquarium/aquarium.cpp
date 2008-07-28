@@ -132,7 +132,7 @@ void Thread::ReceiveMessages() {
                     foundActor->task = message.task;
                     //BOOST_ASSERT(message.numArgs < 5);
                     if (message.numArgs > 4) {
-                        std::vector<TypeUnion> *vtu = (std::vector<TypeUnion> *)message.arg[0].VoidPtr;
+                        std::vector<TypeUnion> *vtu = (std::vector<TypeUnion> *)(message.arg[0].VoidPtr);
                         for (std::vector<TypeUnion>::iterator vtu_iter = vtu->begin(), vtu_end = vtu->end(); vtu_iter != vtu_end; ++vtu_iter) {
                             foundActor->heapStack.push_back(*vtu_iter);                            
                         }
@@ -177,8 +177,17 @@ void Thread::ReceiveMessages() {
                         //Set up our CPS to resume into a data receive
                         TypeUnion tu1;
                         tu1.UInt32 = findHandler->second;
-                        for (int i=0; i < message.numArgs; ++i) {
-                            foundActor->heapStack.push_back(message.arg[i]);
+                        if (message.numArgs > 4) {
+                            std::vector<TypeUnion> *vtu = (std::vector<TypeUnion> *)message.arg[0].VoidPtr;
+                            for (std::vector<TypeUnion>::iterator vtu_iter = vtu->begin(), vtu_end = vtu->end(); vtu_iter != vtu_end; ++vtu_iter) {
+                                foundActor->heapStack.push_back(*vtu_iter);                            
+                            }
+                            delete vtu;
+                        }
+                        else {
+                            for (int i=0; i < message.numArgs; ++i) {
+                                foundActor->heapStack.push_back(message.arg[i]);
+                            }
                         }
                         foundActor->heapStack.push_back(tu1);
                         foundActor->actorState = ActorState::ACTIVE;
@@ -683,6 +692,7 @@ void Thread::MailCheck() {
 void Thread::SchedulerLoop() {
     int pos; 
     const bool sendStatusUpdate = this->sendStatus;
+    std::vector<TypeUnion> *vtu;
     
     std::vector<Actor *> deletedActors;
     int slicePos;
@@ -816,10 +826,24 @@ void Thread::SchedulerLoop() {
                                     Message message = thisActor->actionMessages[slicePos];
                                     thisActor->task = message.task;
                                     //BOOST_ASSERT(message.numArgs <= 4);
-                                    
+
+                                    if (message.numArgs > 4) {
+                                        vtu = (std::vector<TypeUnion> *)(message.arg[0].VoidPtr);
+                                        for (std::vector<TypeUnion>::iterator vtu_iter = vtu->begin(), vtu_end = vtu->end(); vtu_iter != vtu_end; ++vtu_iter) {
+                                            thisActor->heapStack.push_back(*vtu_iter);                            
+                                        }
+                                        delete vtu;
+                                    }
+                                    else {
+                                        for (int i=0; i < message.numArgs; ++i) {
+                                            thisActor->heapStack.push_back(message.arg[i]);
+                                        }
+                                    }
+                                    /*
                                     for (int i=0; i < message.numArgs; ++i) {
                                         thisActor->heapStack.push_back(message.arg[i]);
-                                    }            
+                                    }
+                                    */
                                     thisActor->actorState = ActorState::ACTIVE;
                                     
                                     if (this->timeSliceEndTime == 0) {
