@@ -197,6 +197,7 @@ ExpressionAST *parseFunCall(std::vector<Token*>::iterator &iter, std::vector<Tok
     ExpressionAST *returnVal = NULL;
     std::string name;
     std::vector<ExpressionAST*> args;
+    std::vector<ExpressionAST*> unwinder;
 
     name = (*iter)->data;
     ++iter;
@@ -224,12 +225,14 @@ ExpressionAST *parseFunCall(std::vector<Token*>::iterator &iter, std::vector<Tok
     }
 
     //what we have is probably a tree of args, but we want a flat list, so fix it
+    /*
     if (args.size() > 0) {
         BinaryExprAST *beast = dynamic_cast<BinaryExprAST*>(args[0]);
         ExpressionAST *RHS;
         if ((beast != NULL) && (beast->op == ",")) {
             args.clear();
             while ((beast != NULL) && (beast->op == ",")) {
+                std::cout << "PUSHING" << std::endl;
                 args.push_back(beast->LHS);
                 RHS = beast->RHS;
                 beast = dynamic_cast<BinaryExprAST*>(RHS);
@@ -237,7 +240,27 @@ ExpressionAST *parseFunCall(std::vector<Token*>::iterator &iter, std::vector<Tok
             args.push_back(RHS);
         }
     }
-
+    */
+    if (args.size() == 1) {
+        BinaryExprAST *beast = dynamic_cast<BinaryExprAST*>(args[0]);
+        ExpressionAST *LHS;
+        if ((beast != NULL) && (beast->op == ",")) {
+            while ((beast != NULL) && (beast->op == ",")) {
+                unwinder.push_back(beast->RHS);
+                LHS = beast->LHS;
+                beast = dynamic_cast<BinaryExprAST*>(LHS);
+            }
+            unwinder.push_back(LHS);
+        }
+        else {
+            unwinder.push_back(args[0]);
+        }
+    }
+    args.clear();
+    for (std::vector<ExpressionAST*>::reverse_iterator riter=unwinder.rbegin(), rend=unwinder.rend(); riter != rend; ++riter) {
+        args.push_back(*riter);
+    }
+    
     returnVal = new CallExprAST(name, args);
     returnVal->pos = (*iter)->pos;
     

@@ -750,6 +750,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
         //int argSize = ceast->args.size();
         std::string msgName = nextTemp();
         std::string actorIfLocal = nextTemp();
+        std::string msgArray;
 
         gc.get()->decls << "Actor *" << actorIfLocal << ";" << std::endl;
         
@@ -786,7 +787,12 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
         gc.get()->output << "  " << msgName << ".numArgs = " << ceast->args.size() << ";" << std::endl;
         gc.get()->output << "  " << msgName << ".messageType = MessageType::ACTION_MESSAGE;" << std::endl;
         gc.get()->output << "  " << msgName << ".task = &" << vi->type.declType << "__" << ceast->name << "_action;" << std::endl;
-        
+
+        //std::cout << "arg size: " << ceast->args.size() << std::endl;
+        if (ceast->args.size() > 4 ) {
+            msgArray = nextTemp();
+            gc.get()->decls << "std::vector<TypeUnion> *" << msgArray << " = new std::vector<TypeUnion>();" << std::endl;
+        }
         for (unsigned int i = 0; i < ceast->args.size(); ++i) {
             boost::shared_ptr<TypeInfo> ti = resolveType(ceast->args[i]);
             
@@ -800,13 +806,21 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
             if (gc_temp.get()->output.str() != "") {
                 //gc.get()->output << gc_temp.get()->output.str();
                 gc.get()->output << "  " << lookupPushForTypeAndBlock(ti, gc_temp.get()->output.str());
-                gc.get()->output << "  " << msgName << ".arg[" << i << "] = tmpTU__;" << std::endl;
+                if (ceast->args.size() > 4 ) {
+                    gc.get()->output << "  " << msgArray << "->push_back(tmpTU__);" << std::endl;
+                }
+                else {
+                    gc.get()->output << "  " << msgName << ".arg[" << i << "] = tmpTU__;" << std::endl;
+                }
             }
-
+            
             //gc.get()->output << lookupPushForVar(ceast->args[i]);
             //gc.get()->output << ";" << std::endl;
         }
-
+        if (ceast->args.size() > 4 ) {
+            gc.get()->output << "  " << msgName << ".arg[0].VoidPtr = " << msgArray << ";" << std::endl;
+        }
+        
         gc.get()->output << "actor__->parentThread->SendMessage(" << msgName << ");" << std::endl;
         gc.get()->output << "}" << std::endl;
         gc.get()->output << "else {" << std::endl;

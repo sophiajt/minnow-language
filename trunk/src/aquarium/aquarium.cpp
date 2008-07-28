@@ -41,6 +41,7 @@ Actor *Thread::ActorIfLocal(actorId_t actorId, Actor *local) {
 /**
    Thread scheduler uses this to send messages to itself
 */
+
 void Thread::SendMessage(const Message &message)
 {
     __gnu_cxx::hash_map<actorId_t, Actor*>::iterator finder = actorIds.find(message.recipient);
@@ -129,9 +130,18 @@ void Thread::ReceiveMessages() {
                 
                 if (foundActor->actorState == ActorState::WAITING_FOR_ACTION) {
                     foundActor->task = message.task;
-                    BOOST_ASSERT(message.numArgs < 5);
-                    for (int i=0; i < message.numArgs; ++i) {
-                        foundActor->heapStack.push_back(message.arg[i]);
+                    //BOOST_ASSERT(message.numArgs < 5);
+                    if (message.numArgs > 4) {
+                        std::vector<TypeUnion> *vtu = (std::vector<TypeUnion> *)message.arg[0].VoidPtr;
+                        for (std::vector<TypeUnion>::iterator vtu_iter = vtu->begin(), vtu_end = vtu->end(); vtu_iter != vtu_end; ++vtu_iter) {
+                            foundActor->heapStack.push_back(*vtu_iter);                            
+                        }
+                        delete vtu;
+                    }
+                    else {
+                        for (int i=0; i < message.numArgs; ++i) {
+                            foundActor->heapStack.push_back(message.arg[i]);
+                        }
                     }
                     foundActor->actorState = ActorState::ACTIVE;
                     if (foundActor->runQueueRevId != this->runQueueRevId) {
