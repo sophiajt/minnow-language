@@ -1,0 +1,29 @@
+class Data
+  var int x
+end
+
+actor Handler
+  action handle(Data[] input)
+
+    puti(input[0].x)
+    puti(input[1].x)
+
+    exit(0)
+  end
+end
+
+action main()
+  spawn Handler h
+
+  var Data[] arr[2]
+  new Data d1
+  new Data d2
+  d1.x = 3
+  d2.x = 4
+
+  arr[0] = d1
+  arr[1] = d2
+
+  h::handle(arr)
+
+end
