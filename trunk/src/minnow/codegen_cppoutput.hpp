@@ -107,6 +107,27 @@ class CodegenCPPOutput {
             throw CompilerException(msg.str());
         }
     }
+
+    bool isCopyDelete(const TypeInfo &ti) {
+        bool answer = true;
+        if (ti.declType == "void") {
+            answer = false;
+        }
+        else if (ti.declType == "bool") {
+            answer = false;
+        }
+        else if (ti.declType == "int") {
+            answer = false;
+        }
+        else if (ti.declType == "double") {
+            answer = false;
+        }
+        else if (ti.declType == "string") {
+            answer = false;
+        }
+
+        return answer;
+    }
     
     std::string lookupAssocType(const TypeInfo &ti) {
         //std::map<std::string, ActorAST*>::iterator finder = actors.find(ti.declType);
@@ -157,7 +178,18 @@ class CodegenCPPOutput {
             o << "  tmpTU__.UInt32 = " << block << ";" << std::endl;
         }
         else if (ti.get()->typeType == TypeType::Array) {
-            o << "  tmpTU__.VoidPtr = " << block << ";" << std::endl;
+            //o << "  tmpTU__.VoidPtr = " << block << ";" << std::endl;
+            std::string allocType = lookupAssocType(*(ti.get()));
+            allocType = allocType.erase(allocType.size()-1);
+
+            
+            o << "  tmpTU__.VoidPtr = new " << allocType << "();" << std::endl;
+            if (isCopyDelete(*(ti.get()))) {
+                o << "  for (int i__=0; i__ < " << block << "->size(); ++i__) { ((" << lookupAssocType(*(ti.get())) << ")(tmpTU__.VoidPtr))->push_back(new " << ti.get()->declType << "((*" << block << ")[i__])); }" << std::endl;
+            }
+            else {
+                o << "  for (int i__=0; i__ < " << block << "->size(); ++i__) { ((" << lookupAssocType(*(ti.get())) << ")(tmpTU__.VoidPtr))->push_back((*" << block << ")[i__]); }" << std::endl;
+            }
         }   
         else if (ti.get()->declType == "int") {
             o << "  tmpTU__.UInt32 = " << block << ";" << std::endl;

@@ -1291,7 +1291,16 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(FunctionAST *ast, DeclS
             int unwindAmount = currentScopeCount.back();
             for (int i = 0; i < unwindAmount; ++i) {
                 VariableInfo *vi = scopeStack.back();
-                if ((vi->needsCopyDelete)&&(!checkIfActor(vi->type.declType))) {
+                if (vi->type.typeType == TypeType::Array) {
+                    gc.get()->output << "if (" << vi->name << " != NULL) {" << std::endl;
+                    if (isCopyDelete(vi->type)) {
+                        gc.get()->output << "  for (int i__=0; i__ < " << vi->name << "->size(); ++i__) { if (" << vi->name << "[i__] != NULL) { delete " << vi->name << "[i__];} }" << std::endl;
+                    }
+                    gc.get()->output << "  " << vi->name << "->clear();" << std::endl;
+                    gc.get()->output << "  delete(" << vi->name << ");" << std::endl;
+                    gc.get()->output << "}" << std::endl;                        
+                }
+                else if ((vi->needsCopyDelete)&&(!checkIfActor(vi->type.declType))) {
                     gc.get()->output << "if (" << vi->name << " != NULL) {" << std::endl;
                     gc.get()->output << "  delete(" << vi->name << ");" << std::endl;
                     gc.get()->output << "}" << std::endl;
