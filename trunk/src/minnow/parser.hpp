@@ -22,7 +22,7 @@ class ScopeType {
 
 class ExpressionType {
   public:
-    enum Type { Number, Boolean, Variable, ArrayIndexed, Binary, Quote, Call, End, VarDecl, ArrayDecl, If, While, Pointcut, Lambda };
+    enum Type { Number, Boolean, Variable, ArrayIndexed, Binary, Quote, Call, End, VarDecl, ArrayDecl, If, While, Pointcut, Lambda, Recv, Msg };
 };
 
 class ExpressionAST {
@@ -236,6 +236,30 @@ class PrototypeAST {
     TypeInfo type;
     bool isExtern;
     std::vector<VariableInfo*> args;
+};
+
+class DataMsgExprAST : public ExpressionAST {
+  public:
+    PrototypeAST *pattern;
+    std::vector<ExpressionAST*> body;
+    FilePos pos;
+
+    explicit DataMsgExprAST() {}
+
+    virtual ExpressionType::Type type() { return ExpressionType::Msg; }
+
+    virtual std::string resultType() { return ""; }; //FIXME
+};
+
+class DataRecvExprAST : public ExpressionAST {
+  public:
+    std::vector<DataMsgExprAST*> msgs;
+
+    explicit DataRecvExprAST() {}
+
+    virtual ExpressionType::Type type() { return ExpressionType::Recv; }
+
+    virtual std::string resultType() { return ""; }; //FIXME
 };
 
 class FunctionAST : public CodeHolder {

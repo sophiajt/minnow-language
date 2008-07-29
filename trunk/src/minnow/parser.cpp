@@ -32,7 +32,7 @@ int getPrecedence(const std::string &op) {
     else if ( op == "=") {
         binPrec = EQUATE_PREC;
     }
-    else if ( (op == "<<") || (op == "::") ) {
+    else if ( (op == "!") || (op == "::") ) {
         binPrec = MSG_PREC;
     }
     else if ( op == ".") {
@@ -319,7 +319,7 @@ ExpressionAST *parseWhileBlock(std::vector<Token*>::iterator &iter, std::vector<
     }
 
     if (iter == end) {
-        throw CompilerException("Expected 'end' to end if block", *(--iter));
+        throw CompilerException("Expected 'end' to end while block", *(--iter));
     }
     else {
         ++iter;
@@ -395,111 +395,6 @@ ExpressionAST *parseVarDecl(std::vector<Token*>::iterator &iter, std::vector<Tok
 
     return returnVal;
  }
-
-ExpressionAST *parsePrimary(std::vector<Token*>::iterator &iter, std::vector<Token*>::iterator &end) {
-    ExpressionAST *returnVal = NULL;
-    ExpressionAST *index = NULL;
-    double val;
-    bool boolval;
-
-    std::string name, type;
-
-    switch ((*iter)->tokenType) {
-        case (TokenType::Num) :
-            val = atof((*iter)->data.c_str());
-            returnVal = new NumberExprAST(val);
-            returnVal->pos = (*iter)->pos;
-            ++iter;
-            break;
-        case (TokenType::String) :
-            returnVal = new QuoteExprAST((*iter)->data);
-            returnVal->pos = (*iter)->pos;
-            ++iter;
-            break;
-        case (TokenType::Id) :
-            if ((*iter)->data == "end") {
-                returnVal = new EndExprAST();
-                returnVal->pos = (*iter)->pos;
-            }
-            else if ((*iter)->data == "var") {
-                returnVal = parseVarDecl(iter, end);
-            }
-            else if ((*iter)->data == "spawn") {
-                returnVal = parseVarDecl(iter, end);
-            }
-            else if ((*iter)->data == "new") {
-                returnVal = parseVarDecl(iter, end);
-            }
-            else if ((*iter)->data == "if") {
-                returnVal = parseIfBlock(iter, end);
-            }
-            else if ((*iter)->data == "while") {
-                returnVal = parseWhileBlock(iter, end);
-            }
-            else {
-                name = (*iter)->data;
-                ++iter;
-
-                if (iter == end) {
-                    returnVal = new VariableExprAST(name);
-                    returnVal->pos = (*iter)->pos;
-                }
-                else {
-                    if ((*iter)->data == "(") {
-                        --iter;
-                        returnVal = parseFunCall(iter, end);
-                    }
-                    else if ((*iter)->data == "[") {
-                        index = parseArrayIndex(iter, end);
-                        returnVal = new ArrayIndexedExprAST(name, index);
-                        returnVal->pos = (*iter)->pos;
-                    }
-                    else {
-                        returnVal = new VariableExprAST(name);
-                        returnVal->pos = (*iter)->pos;
-                    }
-                }
-            }
-            break;
-        case (TokenType::EOL) :
-            ++iter;
-            break;
-        case (TokenType::Symbol) :
-            if ((*iter)->data == "(") {
-                returnVal = parseParens(iter, end);
-            }
-            else if ((*iter)->data == "@") {
-                returnVal = parsePointcut(iter, end);
-            }
-            else {
-                std::cout << "Element: " << (*iter)->data << std::endl;
-                throw CompilerException("Unknown symbol", *iter);
-            }
-            break;
-        case (TokenType::Bool) :
-            
-            if ((*iter)->data == "true") {
-                boolval = true;
-            }
-            else if ((*iter)->data == "false") {
-                boolval = false;
-            }
-            else {
-                throw CompilerException("Unknown boolean value", *iter);
-            }
-            returnVal = new BooleanExprAST(boolval);
-            returnVal->pos = (*iter)->pos;
-            ++iter;
-            
-            break;
-        default:
-            std::ostringstream msg;
-            msg << "Unknown token type:" << (*iter)->tokenType;
-            throw CompilerException(msg.str(), *iter);
-    }
-
-    return returnVal;
-}
 
 PrototypeAST *parsePrototype(std::vector<Token*>::iterator &iter, std::vector<Token*>::iterator &end, CodeHolder *holder) {
     PrototypeAST *proto = NULL;
@@ -594,11 +489,13 @@ PrototypeAST *parsePrototype(std::vector<Token*>::iterator &iter, std::vector<To
                 }
 
                 //FIXME: How much is CodeHolder used?
-                if (holder->vars.find(name) == holder->vars.end()) {
-                    holder->vars[name] = vi;
-                }
-                else {
-                    throw CompilerException("Duplicated variable name in function", *iter);
+                if (holder != NULL) {
+                    if (holder->vars.find(name) == holder->vars.end()) {
+                        holder->vars[name] = vi;
+                    }
+                    else {
+                        throw CompilerException("Duplicated variable name in function", *iter);
+                    }
                 }
                 //proto->argNames.push_back(name);
                 //proto->argTypes.push_back(type);
@@ -620,6 +517,169 @@ PrototypeAST *parsePrototype(std::vector<Token*>::iterator &iter, std::vector<To
 
     return proto;
 }
+
+DataMsgExprAST *parseDataMsgBlock(std::vector<Token*>::iterator &iter, std::vector<Token*>::iterator &end) {
+    DataMsgExprAST *returnVal = NULL;
+    CodeHolder *ch = new CodeHolder();
+    PrototypeAST *proto = parsePrototype(iter, end, ch);
+    if (proto != NULL) {
+        returnVal = new DataMsgExprAST();
+        returnVal->pattern = proto;
+        
+        while ((iter != end) && ((*iter)->data != "end")) {
+            ExpressionAST *ast = parseExpression(iter, end);
+            returnVal->body.push_back(ast);
+        }
+
+        if (iter == end) {
+            throw CompilerException("Expected 'end' to end msg block", *(--iter));
+        }
+        else {
+            ++iter;
+        }
+
+    }
+    delete ch;
+    return returnVal;
+}
+
+ExpressionAST *parseDataRecvBlock(std::vector<Token*>::iterator &iter, std::vector<Token*>::iterator &end) {
+    DataRecvExprAST *returnVal = new DataRecvExprAST();
+    returnVal->pos = (*iter)->pos;
+    
+    ++iter;
+    if (iter == end) {
+        throw CompilerException("Expected 'receive' block", *(--iter));
+    }
+
+    while ((iter != end) && ((*iter)->data != "end")) {
+        DataMsgExprAST *dmeast = parseDataMsgBlock(iter, end);
+        if (dmeast == NULL) {
+            throw CompilerException("Can not complete receive block", (*iter)->pos);
+        }
+        else {
+            returnVal->msgs.push_back(dmeast);
+        }
+    }
+
+    if (iter == end) {
+        throw CompilerException("Expected 'end' to end receive block", *(--iter));
+    }
+    else {
+        ++iter;
+    }
+
+    return returnVal;
+}
+
+ExpressionAST *parsePrimary(std::vector<Token*>::iterator &iter, std::vector<Token*>::iterator &end) {
+    ExpressionAST *returnVal = NULL;
+    ExpressionAST *index = NULL;
+    double val;
+    bool boolval;
+
+    std::string name, type;
+
+    switch ((*iter)->tokenType) {
+        case (TokenType::Num) :
+            val = atof((*iter)->data.c_str());
+            returnVal = new NumberExprAST(val);
+            returnVal->pos = (*iter)->pos;
+            ++iter;
+            break;
+        case (TokenType::String) :
+            returnVal = new QuoteExprAST((*iter)->data);
+            returnVal->pos = (*iter)->pos;
+            ++iter;
+            break;
+        case (TokenType::Id) :
+            if ((*iter)->data == "end") {
+                returnVal = new EndExprAST();
+                returnVal->pos = (*iter)->pos;
+            }
+            else if ((*iter)->data == "var") {
+                returnVal = parseVarDecl(iter, end);
+            }
+            else if ((*iter)->data == "spawn") {
+                returnVal = parseVarDecl(iter, end);
+            }
+            else if ((*iter)->data == "new") {
+                returnVal = parseVarDecl(iter, end);
+            }
+            else if ((*iter)->data == "if") {
+                returnVal = parseIfBlock(iter, end);
+            }
+            else if ((*iter)->data == "while") {
+                returnVal = parseWhileBlock(iter, end);
+            }
+            else if ((*iter)->data == "receive") {
+                returnVal = parseDataRecvBlock(iter, end);
+            }
+            else {
+                name = (*iter)->data;
+                ++iter;
+
+                if (iter == end) {
+                    returnVal = new VariableExprAST(name);
+                    returnVal->pos = (*iter)->pos;
+                }
+                else {
+                    if ((*iter)->data == "(") {
+                        --iter;
+                        returnVal = parseFunCall(iter, end);
+                    }
+                    else if ((*iter)->data == "[") {
+                        index = parseArrayIndex(iter, end);
+                        returnVal = new ArrayIndexedExprAST(name, index);
+                        returnVal->pos = (*iter)->pos;
+                    }
+                    else {
+                        returnVal = new VariableExprAST(name);
+                        returnVal->pos = (*iter)->pos;
+                    }
+                }
+            }
+            break;
+        case (TokenType::EOL) :
+            ++iter;
+            break;
+        case (TokenType::Symbol) :
+            if ((*iter)->data == "(") {
+                returnVal = parseParens(iter, end);
+            }
+            else if ((*iter)->data == "@") {
+                returnVal = parsePointcut(iter, end);
+            }
+            else {
+                std::cout << "Element: " << (*iter)->data << std::endl;
+                throw CompilerException("Unknown symbol", *iter);
+            }
+            break;
+        case (TokenType::Bool) :
+            
+            if ((*iter)->data == "true") {
+                boolval = true;
+            }
+            else if ((*iter)->data == "false") {
+                boolval = false;
+            }
+            else {
+                throw CompilerException("Unknown boolean value", *iter);
+            }
+            returnVal = new BooleanExprAST(boolval);
+            returnVal->pos = (*iter)->pos;
+            ++iter;
+            
+            break;
+        default:
+            std::ostringstream msg;
+            msg << "Unknown token type:" << (*iter)->tokenType;
+            throw CompilerException(msg.str(), *iter);
+    }
+
+    return returnVal;
+}
+
 
 ActionAST *parseAction(std::vector<Token*>::iterator &iter, std::vector<Token*>::iterator &end) {
     ActionAST *returnVal = NULL;
