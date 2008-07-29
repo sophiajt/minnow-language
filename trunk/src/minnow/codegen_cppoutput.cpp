@@ -865,8 +865,9 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
         }
         else {
             VariableExprAST *lhs_ast = dynamic_cast<VariableExprAST*>(ast->LHS);
+            //ArrayIndexedExprAST *lhs_aieast = dynamic_cast<ArrayIndexedExprAST*>(ast->LHS);
             if (lhs_ast == NULL) {
-                throw CompilerException("Left hand side is not a variable", ast->pos);
+                throw CompilerException("Left hand side is not a variable (this is a limitation of the current system)", ast->pos);
             }
             boost::shared_ptr<TypeInfo> lhs_type = resolveType(ast->LHS);
             //std::cout << "Accessing type: " << lhs_type.get()->declType << std::endl;

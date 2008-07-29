@@ -13,12 +13,6 @@
 #define MULT_DIV_PREC 30
 #define POWER_PREC 40
 
-/*
-  This file has a decent amount of code inspired by Chris Lattner's Kaleidoscope LLVM example.  Some cool tricks.  Not sure
-  how it will evolve over time, but definitely want to thank Chris for such clear examples.
-
-  http://www.llvm.org/docs/tutorial/index.html
-*/
 int getPrecedence(const std::string &op) {
     int binPrec = -1;
     if (( op == "<") || ( op == ">") || (op == ">=") || (op == "<=") ||
@@ -142,6 +136,7 @@ ExpressionAST *parseBinaryOp(std::vector<Token*>::iterator &iter, std::vector<To
     ExpressionAST *expr) {
 
     //This uses Chris Lattner's cool precedence parsing trick
+    //For more information see his kaleidoscope tutorial on the llvm website
     int binPrec;
     //let's see if what we're sitting on is a math symbol
     while (iter != end) {

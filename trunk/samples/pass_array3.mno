@@ -4,9 +4,10 @@ end
 
 actor Handler
   action handle(Data[] input)
-
-    puti(input[0].x)
-    puti(input[1].x)
+    var Data d1 = input[0]
+    var Data d2 = input[1]
+    puti(d1.x)
+    puti(d2.x)
 
     exit(0)
   end
