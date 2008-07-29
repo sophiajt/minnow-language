@@ -651,7 +651,7 @@ ExpressionAST *parsePrimary(std::vector<Token*>::iterator &iter, std::vector<Tok
                 returnVal = parsePointcut(iter, end);
             }
             else {
-                std::cout << "Element: " << (*iter)->data << std::endl;
+                //std::cout << "Element: " << (*iter)->data << std::endl;
                 throw CompilerException("Unknown symbol", *iter);
             }
             break;
