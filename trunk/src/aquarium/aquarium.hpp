@@ -19,7 +19,7 @@
 #define threadId_t uint32_t
 
 const int RECEIVER_CACHE_SIZE=3;
-const int TIMESLICE_QUANTUM=2000;
+const unsigned int TIMESLICE_QUANTUM=2000;
 
 class ThreadType { public: enum Type { THREAD, MAILMAN, KERNEL}; };
 class ActorState { public: enum State { ACTIVE, WAITING_FOR_ACTION, WAITING_FOR_DATA, DELETED, MOVED }; };
@@ -46,7 +46,7 @@ union TypeUnion {
     bool Bool;
     void(*Function)(Actor *);
     void *VoidPtr;
-};  
+};
 
 /**
    Message container.  For messages with longer number of arguments, create a vector and use VoidPtr in TypeUnion.
@@ -65,16 +65,16 @@ struct Message {
 */
 class MailChannel {
     std::vector<Message> *msgChannelIncoming, *msgChannel1, *msgChannel2;
-    volatile int currentChannel; 
+    volatile int currentChannel;
     boost::mutex mailLock;
     volatile bool isEmpty;
 
-    
+
     void DebugMessage(const Message &message) {
         std::cout << "  Message: " << message.messageType << " rec:" << message.recipient << " taskId:";
         std::cout << message.dataTaskTypeId << " nArgs:" << message.numArgs << " arg0:" << message.arg[0].UInt32 << " " << message.arg[1].UInt32 << " " << message.arg[2].UInt32 << std::endl;
     }
-    
+
   public:
     void sendMessage(const Message &message) {
         boost::mutex::scoped_lock lock(mailLock);
@@ -84,7 +84,7 @@ class MailChannel {
 
     std::vector<Message> *recvMessages() {
         boost::mutex::scoped_lock lock(mailLock);
-                
+
         if (currentChannel == 1) {
             msgChannelIncoming = msgChannel2;
             currentChannel = 2;
@@ -107,7 +107,7 @@ class MailChannel {
     MailChannel() {
         msgChannel1 = new std::vector<Message>();
         msgChannel2 = new std::vector<Message>();
-        
+
         msgChannelIncoming = msgChannel1;
         currentChannel = 1;
         isEmpty = true;
@@ -139,7 +139,7 @@ struct Actor {
 
     struct ActorWrapper receiverCache[RECEIVER_CACHE_SIZE];
     int nextCacheIndex;
-        
+
     uint32_t runQueueRevId;
 
     //incoming DATA_MESSAGE messages have a queue and handlers for each enumerated type.  In the action, a switch statement allows for continuations
@@ -149,12 +149,12 @@ struct Actor {
 
     //For CPS
     bool isResuming;
-    
+
     std::vector<Message> actionMessages;
-    
+
     std::vector<TypeUnion> heapStack;
 
-    Actor() : runQueueRevId(0), isResuming(false) {} 
+    Actor() : runQueueRevId(0), isResuming(false) {}
 };
 
 
@@ -170,8 +170,8 @@ class Thread {
     bool sendStatus;
 
     int32_t numberActiveActors;
-    int32_t previousActiveActors;    
-    
+    int32_t previousActiveActors;
+
   public:
     ThreadType::Type threadType;
     std::vector<Actor*> runningActors;
@@ -193,13 +193,13 @@ class Thread {
 
     //For more efficient run queue handling, this prevents actors from rescheduling themselves in loop scenerios
     uint32_t runQueueRevId;
-    
+
     //For scheduling tasks, we need to know how much time is remaining
     int timeSliceEndTime;
     Actor *hotActor;
 
     Thread(threadId_t id, actorId_t nextActor) {
-        threadType = ThreadType::THREAD;        
+        threadType = ThreadType::THREAD;
         isRunning = true;
         sendStatus = true;
         nextActorId = nextActor;
@@ -228,7 +228,7 @@ class Thread {
     void RemoveActor(Actor *actor);
     void RemoveActors(std::vector<Actor*> *actors);
     void RemoveActor(Actor *actor, bool sendDeleteMsg);
-    
+
     void DeleteActor(Actor *actor);
     void SendStatus();
     void MoveHeaviestActor(threadId_t threadId, uint32_t amount);
