@@ -69,6 +69,7 @@ std::vector<Token *> tokenize(std::string sourceText, std::string filename) {
                 id += *strIter;
                 INC_LOC;
             }
+            //FIXME: why is 'def' more special than other keywords not handled like this?
             if (id == "def") {
                 tok = new Token(TokenType::Def, id, filename, lineNumber, colStart, colNumber);
             }
