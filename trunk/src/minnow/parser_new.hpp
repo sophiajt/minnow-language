@@ -1,8 +1,6 @@
 #ifndef PARSER_NEW_HPP_
 #define PARSER_NEW_HPP_
 
-#include <boost/shared_ptr.hpp>
-
 #include "lexer.hpp"
 
 class ScopeType {
@@ -57,7 +55,7 @@ class NodeType {
 public:
     enum Type { Number, Boolean, Variable, ArrayIndexed, Binary, Quote, Call,
     	End, VarDecl, ArrayDecl, If, While, Pointcut, Advice, Aspect, Lambda,
-    	Recv, Msg, Block, Prototype, Function, Action, Struct, Actor, Namespace,
+    	Recv, Msg, Block, Prototype, Function, Action, Class, Actor, Namespace,
     	FileStart, FileEnd, App };
 };
 
@@ -264,11 +262,11 @@ public:
     virtual NodeType::Type type() { return NodeType::Action; }
 };
 
-class StructAST : public ASTNode {
+class ClassAST : public ASTNode {
   public:
     std::string name;
 
-    virtual NodeType::Type type() { return NodeType::Struct; }
+    virtual NodeType::Type type() { return NodeType::Class; }
 };
 
 class ActorAST : public ASTNode {
