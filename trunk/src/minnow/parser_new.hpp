@@ -90,7 +90,7 @@ public:
     }
 };
 
-class BlockExprAST : public ASTNode{
+class BlockAST : public ASTNode{
 public:
 	//container for other nodes (keeps groups clean)
 
@@ -181,7 +181,7 @@ public:
 
 class BinaryExprAST : public ASTNode {
 public:
-    std::string op, binaryType;
+    std::string op; //, binaryType;
 
     explicit BinaryExprAST(const std::string bOp, ASTNode* lhs, ASTNode* rhs)
         : op(bOp) { children.push_back(lhs); children.push_back(rhs); }
@@ -252,13 +252,13 @@ public:
 
 class FunctionAST : public ASTNode {
 public:
-	//prototype is first child
+    //prototype is first child, block is second
     virtual NodeType::Type type() { return NodeType::Function; }
 };
 
 class ActionAST : public ASTNode {
 public:
-	//prototype is first child
+	//prototype is first child, block is second
     virtual NodeType::Type type() { return NodeType::Action; }
 };
 
@@ -281,5 +281,45 @@ class ActorAST : public ASTNode {
 class AppAST : public ASTNode {
     virtual NodeType::Type type() { return NodeType::App; }
 };
+
+TypeInfo parse_typesig(std::vector<Token*>::iterator &iter,
+		std::vector<Token*>::iterator &end);
+
+VarDeclExprAST* parse_variable_decl(std::vector<Token*>::iterator &iter,
+		std::vector<Token*>::iterator &end);
+
+ASTNode *parse_parens(std::vector<Token*>::iterator &iter,
+		std::vector<Token*>::iterator &end);
+
+ASTNode *parse_array_index(std::vector<Token*>::iterator &iter,
+		std::vector<Token*>::iterator &end);
+
+ASTNode *parse_primary(std::vector<Token*>::iterator &iter,
+		std::vector<Token*>::iterator &end);
+
+ASTNode *parse_binary_op(std::vector<Token*>::iterator &iter,
+		std::vector<Token*>::iterator &end, int currPrec, ASTNode *expr);
+
+ASTNode *parse_expression(std::vector<Token*>::iterator &iter,
+		std::vector<Token*>::iterator &end);
+
+PrototypeAST* parse_prototype(std::vector<Token*>::iterator &iter,
+		std::vector<Token*>::iterator &end);
+
+FunctionAST* parse_function(std::vector<Token*>::iterator &iter,
+		std::vector<Token*>::iterator &end);
+
+ActionAST* parse_action(std::vector<Token*>::iterator &iter,
+		std::vector<Token*>::iterator &end);
+
+ClassAST* parse_class(std::vector<Token*>::iterator &iter,
+		std::vector<Token*>::iterator &end);
+
+ActorAST* parse_actor(std::vector<Token*>::iterator &iter,
+		std::vector<Token*>::iterator &end);
+
+ASTNode* parse(std::vector<Token*>::iterator &iter,
+		std::vector<Token*>::iterator &end);
+
 
 #endif /* PARSER_NEW_HPP_ */
