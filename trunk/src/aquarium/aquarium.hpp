@@ -69,11 +69,12 @@ class MailChannel {
     boost::mutex mailLock;
     volatile bool isEmpty;
 
-
+    /*
     void DebugMessage(const Message &message) {
         std::cout << "  Message: " << message.messageType << " rec:" << message.recipient << " taskId:";
         std::cout << message.dataTaskTypeId << " nArgs:" << message.numArgs << " arg0:" << message.arg[0].UInt32 << " " << message.arg[1].UInt32 << " " << message.arg[2].UInt32 << std::endl;
     }
+    */
 
   public:
     void sendMessage(const Message &message) {

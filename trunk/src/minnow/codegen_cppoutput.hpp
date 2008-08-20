@@ -8,7 +8,7 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "parser_new.hpp"
+#include "parser.hpp"
 
 class DeclStage { public: enum Stage {FORWARD, DECL, IMPL}; };
 

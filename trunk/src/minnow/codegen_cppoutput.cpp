@@ -84,7 +84,7 @@ boost::shared_ptr<TypeInfo> CodegenCPPOutput::resolveType(ASTNode *ast) {
         case (NodeType::Quote) :
             qeast = dynamic_cast<QuoteExprAST*>(ast);
             if (qeast == NULL) {
-                printf("FIXME: Variable compiler exception\n");
+                printf("FIXME: Quote compiler exception\n");
             }
             ti.get()->declType = "quote";
             ti.get()->containerType = ContainerType::Scalar;

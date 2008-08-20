@@ -70,6 +70,7 @@ void Thread::SendMessage(const Message &message)
                 foundActor->actionMessages.push_back(message);
             }
         }
+        /*
         else if ((foundActor->actorState == ActorState::WAITING_FOR_DATA) && (message.messageType == MessageType::DATA_MESSAGE)) {
             __gnu_cxx::hash_map<int, int>::iterator findHandler = foundActor->dataHandlers.find(message.dataTaskTypeId);
 
@@ -96,7 +97,7 @@ void Thread::SendMessage(const Message &message)
             }
 
         }
-
+        */
         else {
             localMail.push_back(message);
             //foundActor->actionMessages.push_back(message);
@@ -164,7 +165,7 @@ void Thread::ReceiveMessages() {
                 outgoingChannel->sendMessage(message);
             }
         }
-
+        /*
         else if (message.messageType == MessageType::DATA_MESSAGE) {
             __gnu_cxx::hash_map<actorId_t, Actor*>::iterator finder = actorIds.find(message.recipient);
             if (finder != actorIds.end()) {
@@ -212,7 +213,7 @@ void Thread::ReceiveMessages() {
                 outgoingChannel->sendMessage(message);
             }
         }
-
+        */
         else {
             //The only type of mail that should get into localMail are mail messages themselves.  Messages request
             //a service are handled by the maintenance actor
@@ -658,7 +659,7 @@ void Thread::MailCheck() {
                     threadId_t threadId = message.arg[0].UInt32;
                     int32_t activeActors = message.arg[1].Int32;
 
-                    //std::cout << "Status: " << threadId << ": " << activeActors << std::endl;
+                    std::cout << "Status: " << threadId << ": " << activeActors << std::endl;
                     (*(scheduleWeights))[threadId] = activeActors;
                     TaskRebalance();
                 }
@@ -825,7 +826,6 @@ void Thread::SchedulerLoop() {
                                     ++slicePos;
                                     Message message = thisActor->actionMessages[slicePos];
                                     thisActor->task = message.task;
-                                    //BOOST_ASSERT(message.numArgs <= 4);
 
                                     if (message.numArgs > 4) {
                                         vtu = (std::vector<TypeUnion> *)(message.arg[0].VoidPtr);
@@ -839,11 +839,7 @@ void Thread::SchedulerLoop() {
                                             thisActor->heapStack.push_back(message.arg[i]);
                                         }
                                     }
-                                    /*
-                                    for (int i=0; i < message.numArgs; ++i) {
-                                        thisActor->heapStack.push_back(message.arg[i]);
-                                    }
-                                    */
+                                    
                                     thisActor->actorState = ActorState::ACTIVE;
 
                                     if (this->timeSliceEndTime == 0) {
@@ -858,7 +854,6 @@ void Thread::SchedulerLoop() {
                                 deletedActors.push_back(thisActor);
                                 break;
                         }
-
                         if ((thisActor->actorState != ActorState::ACTIVE) && (this->hotActor != NULL)) {
                             if (slicePos >= 0) {
                                 thisActor->actionMessages.erase(thisActor->actionMessages.begin(), thisActor->actionMessages.begin() + slicePos  + 1);
@@ -867,7 +862,6 @@ void Thread::SchedulerLoop() {
                             thisActor = this->hotActor;
                             slicePos = -1;
                         }
-
                     }
 
 
@@ -924,10 +918,11 @@ void Thread::SchedulerLoop() {
                             }
 
                         }
-
-                        if (thisActor->actorState == ActorState::DELETED) {
-                            deletedActors.push_back(thisActor);
-                        }
+                        
+                        //if (thisActor->actorState == ActorState::DELETED) {
+                        //    deletedActors.push_back(thisActor);
+                        //}
+                        
                     }
                     */
 

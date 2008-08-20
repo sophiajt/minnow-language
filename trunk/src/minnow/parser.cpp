@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "lexer.hpp"
-#include "parser_new.hpp"
+#include "parser.hpp"
 
 const int EQUATE_PREC = 2;
 const int MSG_PREC = 4;
