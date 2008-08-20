@@ -21,7 +21,7 @@ std::vector<Token *> tokenize(std::string sourceText, std::string filename) {
     std::string::iterator strIter = sourceText.begin(), strEnd = sourceText.end();
     std::vector<Token*> tokens;
     int lineNumber = 1;
-    int colNumber = 0;
+    int colNumber = 1;
     Token *tok;
     bool extendLine = false;
 
@@ -41,7 +41,7 @@ std::vector<Token *> tokenize(std::string sourceText, std::string filename) {
                 extendLine = false;
 
                 ++lineNumber;
-                colNumber = 0;
+                colNumber = 1;
                 ++strIter;
             }
             else if (*strIter == '\n') {
@@ -54,7 +54,7 @@ std::vector<Token *> tokenize(std::string sourceText, std::string filename) {
                 extendLine = false;
 
                 ++lineNumber;
-                colNumber = 0;
+                colNumber = 1;
                 ++strIter;
             }
             else {
@@ -88,7 +88,7 @@ std::vector<Token *> tokenize(std::string sourceText, std::string filename) {
             while ((isdigit(*strIter) || (*strIter == '.')) && (strIter != strEnd)) {
                 if (*strIter == '.') {
                     if (hasDot)
-                        throw CompilerException("Too many decimal places in number", lineNumber, colStart, colNumber);
+                        throw CompilerException("Too many decimal places in number", lineNumber, colStart, colNumber, filename);
                     else
                         hasDot = true;
                 }
@@ -181,7 +181,7 @@ std::vector<Token *> tokenize(std::string sourceText, std::string filename) {
                     INC_LOC;
                 }
                 if (strIter == strEnd) {
-                    throw CompilerException("Unclosed comment", lineNumber, colStart, colStart);
+                    throw CompilerException("Unclosed comment", lineNumber, colStart, colStart, filename);
                 }
                 else {
                     //if we're okay, skip over the end of the comment
@@ -201,7 +201,7 @@ std::vector<Token *> tokenize(std::string sourceText, std::string filename) {
             }
         }
         else {
-            throw CompilerException("Unknown character", lineNumber, colNumber, colNumber);
+            throw CompilerException("Unknown character", lineNumber, colNumber, colNumber, filename);
         }
     }
 

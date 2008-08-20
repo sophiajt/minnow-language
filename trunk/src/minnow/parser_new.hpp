@@ -318,7 +318,7 @@ ClassAST* parse_class(std::vector<Token*>::iterator &iter,
 ActorAST* parse_actor(std::vector<Token*>::iterator &iter,
 		std::vector<Token*>::iterator &end);
 
-ASTNode* parse(std::vector<Token*>::iterator &iter,
+AppAST* parse(std::vector<Token*>::iterator &iter,
 		std::vector<Token*>::iterator &end);
 
 

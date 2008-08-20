@@ -6,7 +6,7 @@
 
 #include <boost/program_options.hpp>
 
-#include "parser.hpp"
+#include "parser_new.hpp"
 #include "codegen_cppoutput.hpp"
 
 namespace po = boost::program_options;
@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
     headerBlock << "extern void exit(int i)" << std::endl;
     std::vector<Token*> toksPrelude = tokenize(headerBlock.str(), "standard include");
     allToks.insert(allToks.end(), toksPrelude.begin(), toksPrelude.end());
-                
+
     if (vm.count("help")) {
         std::cout << "Usage: minnow <options> <input files>" << std::endl;
         std::cout << visible_opts << std::endl;
@@ -106,13 +106,14 @@ int main(int argc, char *argv[]) {
         std::cout << visible_opts << std::endl;
         return 0;
     }
-    
+
     std::vector<Token*>::iterator beginToks = allToks.begin(), endToks = allToks.end();
 
     try {
         CodegenCPPOutput cppoutput;
 
-        AppAST *ast = parseApp(beginToks, endToks);
+        //AppAST *ast = parseApp(beginToks, endToks);
+        AppAST *ast = parse(beginToks, endToks);
         //std::cout << "Parsed successfully" << std::endl;
 
         std::string output = cppoutput.translate(ast);
@@ -129,13 +130,14 @@ int main(int argc, char *argv[]) {
             //exe_cmdline << "g++ -O3 -o " << outexe_name << " tmpXXXXX.cpp -Isrc/aquarium -L. -laquarium -lboost_thread";
 
             //OS X + MacPorts
-            exe_cmdline << "g++ -O3 -o " << outexe_name << " tmpXXXXX.cpp -Isrc/aquarium -L. -laquarium -I/opt/local/include/boost-1_35 -L/opt/local/lib -lboost_thread-mt -lboost_program_options-mt";
+            //exe_cmdline << "g++ -O3 -o " << outexe_name << " tmpXXXXX.cpp -Isrc/aquarium -L. -laquarium -I/opt/local/include/boost-1_35 -L/opt/local/lib -lboost_thread-mt -lboost_program_options-mt";
 
             //MinGW+Boost setup
             //exe_cmdline << "g++ -O3 -o " << outexe_name << " tmpXXXXX.cpp -Isrc/aquarium -L. -laquarium -I/mingw/include -L/mingw/lib -lboost_thread -lboost_program_options";
+            exe_cmdline << "g++ -ggdb -O3 -o " << outexe_name << " tmpXXXXX.cpp -I../../aquarium -L. -laquarium -I/mingw/include -L/mingw/lib -lboost_thread -lboost_program_options";
 
             if (system(exe_cmdline.str().c_str()) == 0) {
-                remove("tmpXXXXX.cpp");
+                //remove("tmpXXXXX.cpp");
             }
             else {
                 std::cout << "Used cmdline: " << exe_cmdline.str() << std::endl;

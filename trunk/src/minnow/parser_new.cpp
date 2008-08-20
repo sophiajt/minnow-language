@@ -71,12 +71,31 @@ VarDeclExprAST* parse_variable_decl(std::vector<Token*>::iterator &iter,
 
 	vi->type = parse_typesig(iter, end);
 	if ((*iter)->tokenType != TokenType::Id) {
-		throw CompilerException("Invalid variable declaration", *(iter));
+	    std::ostringstream msg;
+	    msg << "Invalid variable declaration for '" << (*iter)->data << "'";
+	    throw CompilerException(msg.str(), *iter);
+		//throw CompilerException("Invalid variable declaration", *(iter));
 	}
 	vi->name = (*iter)->data;
+
 	returnVal = new VarDeclExprAST(vi, isSpawn, isAlloc);
 	returnVal->filepos = (*iter)->pos;
 	++iter;
+
+	if (iter != end) {
+	    if ((*iter)->data == "[") {
+	        ++iter;
+	        if (iter == end) {
+	            throw CompilerException("Incomplete default size", *(--iter));
+	        }
+	        vi->size = parse_expression(iter, end);
+	        vi->type.containerType = ContainerType::Array;
+	        if ((*iter)->data != "]") {
+	            throw CompilerException("Incomplete default size", *(--iter));
+	        }
+	        ++iter;
+	    }
+	}
 
 	return returnVal;
 }
@@ -187,7 +206,7 @@ ASTNode *parse_fun_call(std::vector<Token*>::iterator &iter,
         ASTNode *LHS;
         if ((beast != NULL) && (beast->op == ",")) {
             while ((beast != NULL) && (beast->op == ",")) {
-                unwinder.push_back(beast->children[0]);
+                unwinder.push_back(beast->children[1]);
                 LHS = beast->children[0];
                 beast = dynamic_cast<BinaryExprAST*>(LHS);
             }
@@ -448,6 +467,11 @@ ASTNode *parse_expression(std::vector<Token*>::iterator &iter, std::vector<Token
     else {
         return NULL;
     }
+
+    while (((*iter)->tokenType == TokenType::EOL) && (iter != end))  {
+        //skip EOL chars
+        ++iter;
+    }
 }
 
 PrototypeAST* parse_prototype(std::vector<Token*>::iterator &iter,
@@ -458,23 +482,25 @@ PrototypeAST* parse_prototype(std::vector<Token*>::iterator &iter,
 	//parse the return type
 	returnVal->returnType = parse_typesig(iter, end);
 
-    if ((*iter)->data != "(") {
+    if ((*iter)->data == "(") {
+        returnVal->name = returnVal->returnType.declType;
+        returnVal->returnType.declType = "void";
+    }
+    else {
         returnVal->name = (*iter)->data;
         ++iter;
         if (iter == end) {
             throw CompilerException("Expected prototype definition", *(--iter));
         }
     }
-    else {
-    	returnVal->name = returnVal->returnType.declType;
-    	returnVal->returnType.declType = "void";
-    }
 
-    if ((*iter)->data != "(") {
+    if ((*iter)->data == "(") {
+        ++iter;
+    }
+    else {
     	throw CompilerException("Incomplete function definition", *iter);
     }
 
-    ++iter;
     if (iter == end) {
     	throw CompilerException("Incomplete function definition", *iter);
     }
@@ -484,6 +510,11 @@ PrototypeAST* parse_prototype(std::vector<Token*>::iterator &iter,
     	if ((iter != end) && ((*iter)->data == ",")) {
     		++iter;
     	}
+    }
+
+    if (iter != end) {
+        //skip the trailing ')'
+        ++iter;
     }
 	return returnVal;
 }
@@ -504,6 +535,7 @@ FunctionAST* parse_function(std::vector<Token*>::iterator &iter,
             }
             proto->isExtern = true;
             returnVal->children.push_back(proto);
+            returnVal->children.push_back(new BlockAST()); //add the code empty code block for consistency
         }
     }
     else if ((iter != end) && ((*iter)->data == "def")) {
@@ -575,7 +607,6 @@ ActionAST* parse_action(std::vector<Token*>::iterator &iter,
                 ast = parse_expression(iter, end);
             }
             returnVal->children.push_back(bodyBlock);
-
         }
     }
 
@@ -592,6 +623,7 @@ ClassAST* parse_class(std::vector<Token*>::iterator &iter,
         if (iter != end) {
             returnVal = new ClassAST();
             returnVal->name = (*iter)->data;
+            returnVal->filepos = (*iter)->pos;
 
             ++iter;
             while ((iter != end) && ((*iter)->data != "end")) {
@@ -601,7 +633,7 @@ ClassAST* parse_class(std::vector<Token*>::iterator &iter,
                         returnVal->children.push_back(fun);
                     }
                 }
-                else {
+                else if ((*iter)->tokenType == TokenType::Id) {
                 	VarDeclExprAST *varDecl = parse_variable_decl(iter, end);
                     if (varDecl != NULL) {
                         //FIXME: Check for duplicate definitions
@@ -611,10 +643,19 @@ ClassAST* parse_class(std::vector<Token*>::iterator &iter,
                     	throw CompilerException("Unknown element in class", *(--iter));
                     }
                 }
+                else {
+                    //FIXME: Not sure if this is correct
+                    if (iter != end) {
+                        ++iter;
+                    }
+                }
             }
 
             if (iter == end) {
                 throw CompilerException("Expected 'end' at end of class", *(--iter));
+            }
+            else {
+                ++iter;
             }
         }
     }
@@ -637,6 +678,7 @@ ActorAST* parse_actor(std::vector<Token*>::iterator &iter,
         ++iter;
         if (iter != end) {
             returnVal = new ActorAST(isIsolated);
+            returnVal->filepos = (*iter)->pos;
             returnVal->name = (*iter)->data;
 
             ++iter;
@@ -653,8 +695,10 @@ ActorAST* parse_actor(std::vector<Token*>::iterator &iter,
                         returnVal->children.push_back(act);
                     }
                 }
-                else {
+                else if ((*iter)->tokenType == TokenType::Id){
+                    //std::cout << "Var decl enter" << std::endl;
                 	VarDeclExprAST *varDecl = parse_variable_decl(iter, end);
+                    //std::cout << "Var decl leave" << std::endl;
                     if (varDecl != NULL) {
                         //FIXME: Check for duplicate definitions
                     	returnVal->children.push_back(varDecl);
@@ -663,10 +707,19 @@ ActorAST* parse_actor(std::vector<Token*>::iterator &iter,
                     	throw CompilerException("Unknown element in class", *(--iter));
                     }
                 }
+                else {
+                    //FIXME: Not sure if this is correct
+                    if (iter != end) {
+                        ++iter;
+                    }
+                }
             }
 
             if (iter == end) {
                 throw CompilerException("Expected 'end' at end of class", *(--iter));
+            }
+            else {
+                ++iter; //skip over "end"
             }
         }
     }
@@ -674,33 +727,48 @@ ActorAST* parse_actor(std::vector<Token*>::iterator &iter,
 	return returnVal;
 }
 
-ASTNode* parse(std::vector<Token*>::iterator &iter,
+AppAST* parse(std::vector<Token*>::iterator &iter,
 		std::vector<Token*>::iterator &end) {
 
-	ASTNode *returnVal, *child;
+	AppAST *returnVal;
+	ASTNode *child;
 
 	returnVal = new AppAST();
+	returnVal->filepos = (*iter)->pos;
 
 	while (iter != end) {
 		child = parse_function(iter, end);
 		if (child != NULL) {
+            //std::cout << "Pushing function" << std::endl;
 			returnVal->children.push_back(child);
 			continue;
 		}
 		child = parse_class(iter, end);
 		if (child != NULL) {
+            //std::cout << "Pushing class" << std::endl;
 			returnVal->children.push_back(child);
 			continue;
 		}
 		child = parse_actor(iter, end);
 		if (child != NULL) {
+            //std::cout << "Pushing actor" << std::endl;
 			returnVal->children.push_back(child);
 			continue;
 		}
 		child = parse_action(iter, end);
 		if (child != NULL) {
+		    //std::cout << "Pushing action" << std::endl;
 			returnVal->children.push_back(child);
 			continue;
+		}
+
+		if ((*iter)->tokenType == TokenType::EOL) {
+		    ++iter;
+		}
+		else {
+            std::ostringstream msg;
+            msg << "Unknown element '" << (*iter)->data << "' of type " << (*iter)->tokenType;
+            throw CompilerException(msg.str(), *iter);
 		}
 	}
 

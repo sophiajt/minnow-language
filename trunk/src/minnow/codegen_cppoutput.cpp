@@ -1,10 +1,11 @@
 #include "codegen_cppoutput.hpp"
 
 #include <boost/shared_ptr.hpp>
+#include <iostream>
 #include <string>
 
 //catch all that will dispatch out to others
-boost::shared_ptr<TypeInfo> CodegenCPPOutput::resolveType(ExpressionAST *ast) {
+boost::shared_ptr<TypeInfo> CodegenCPPOutput::resolveType(ASTNode *ast) {
     boost::shared_ptr<TypeInfo> ti= boost::shared_ptr<TypeInfo>(new TypeInfo);
     TypeInfo typeInfo;
 
@@ -25,23 +26,23 @@ boost::shared_ptr<TypeInfo> CodegenCPPOutput::resolveType(ExpressionAST *ast) {
     }
     //Number, Variable, ArrayIndexed, Binary, Quote, Call, DefFun, End, VarDecl, ArrayDecl, If, While
     switch (ast->type()) {
-        case (ExpressionType::Number) :
+        case (NodeType::Number) :
             neast = dynamic_cast<NumberExprAST*>(ast);
             if (neast == NULL) {
                 printf("FIXME: Number compiler exception\n");
             }
             ti.get()->declType = "int";
-            ti.get()->typeType = TypeType::Scalar;
+            ti.get()->containerType = ContainerType::Scalar;
             break;
-        case (ExpressionType::Boolean) :
+        case (NodeType::Boolean) :
             boeast = dynamic_cast<BooleanExprAST*>(ast);
             if (boeast == NULL) {
                 printf("FIXME: Number compiler exception\n");
             }
             ti.get()->declType = "bool";
-            ti.get()->typeType = TypeType::Scalar;
+            ti.get()->containerType = ContainerType::Scalar;
             break;
-        case (ExpressionType::Variable) :
+        case (NodeType::Variable) :
             veast = dynamic_cast<VariableExprAST*>(ast);
             if (veast == NULL) {
                 printf("FIXME: Variable compiler exception\n");
@@ -49,15 +50,15 @@ boost::shared_ptr<TypeInfo> CodegenCPPOutput::resolveType(ExpressionAST *ast) {
             vi = findVarInScope(veast->name);
             if (vi != NULL) {
                 ti.get()->declType = vi->type.declType;
-                ti.get()->typeType = vi->type.typeType;
+                ti.get()->containerType = vi->type.containerType;
             }
             else {
                 std::ostringstream msg;
                 msg << "Can not find variable '" << veast->name << "'";
-                throw CompilerException(msg.str(), ast->pos);
+                throw CompilerException(msg.str(), ast->filepos);
             }
             break;
-        case (ExpressionType::ArrayIndexed) :
+        case (NodeType::ArrayIndexed) :
             aieast = dynamic_cast<ArrayIndexedExprAST*>(ast);
             if (aieast == NULL) {
                 printf("FIXME: Array indexed compiler exception\n");
@@ -65,41 +66,41 @@ boost::shared_ptr<TypeInfo> CodegenCPPOutput::resolveType(ExpressionAST *ast) {
             vi = findVarInScope(aieast->name);
             if (vi != NULL) {
                 ti.get()->declType = vi->type.declType;
-                ti.get()->typeType = vi->type.typeType;
+                ti.get()->containerType = vi->type.containerType;
             }
             else {
                 std::ostringstream msg;
                 msg << "Can not find variable '" << aieast->name << "'";
-                throw CompilerException(msg.str(), ast->pos);
+                throw CompilerException(msg.str(), ast->filepos);
             }
             break;
-        case (ExpressionType::Binary) :
+        case (NodeType::Binary) :
             beast = dynamic_cast<BinaryExprAST*>(ast);
             if (beast == NULL) {
                 printf("FIXME: Variable compiler exception\n");
             }
-            ti = resolveType(beast->LHS);
+            ti = resolveType(beast->children[0]);
             break;
-        case (ExpressionType::Quote) :
+        case (NodeType::Quote) :
             qeast = dynamic_cast<QuoteExprAST*>(ast);
             if (qeast == NULL) {
                 printf("FIXME: Variable compiler exception\n");
             }
             ti.get()->declType = "quote";
-            ti.get()->typeType = TypeType::Scalar;
+            ti.get()->containerType = ContainerType::Scalar;
             break;
-        case (ExpressionType::Call) :
+        case (NodeType::Call) :
             ceast = dynamic_cast<CallExprAST*>(ast);
             if (ceast == NULL) {
                 printf("FIXME: Call compiler exception\n");
             }
             typeInfo = lookupReturnTypeInfo(ceast);
             ti.get()->declType = typeInfo.declType;
-            ti.get()->typeType = typeInfo.typeType;
+            ti.get()->containerType = typeInfo.containerType;
             //gc = visit(ceast);
             break;
         default:
-            throw CompilerException("Can't resolve type during lookup", ast->pos);
+            throw CompilerException("Can't resolve type during lookup", ast->filepos);
     }
 
     return ti;
@@ -110,11 +111,11 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::handleCall(CallExprAST *ast, 
     std::vector<boost::shared_ptr<GeneratedCode> > gc_args;
     bool isExtern = checkIfExtern(ast->name);
 
-    for (int i = 0, j = ast->args.size(); i != j; ++i) {
-        gc_args.push_back(visit (ast->args[i]));
+    for (int i = 0, j = ast->children.size(); i != j; ++i) {
+        gc_args.push_back(visit (ast->children[i]));
     }
 
-    for (int i = 0, j = ast->args.size(); i != j; ++i) {
+    for (int i = 0, j = ast->children.size(); i != j; ++i) {
         //if (i != 0)
         //    gc.get()->inits << ", ";
         if (gc_args[i].get()->decls.str() != "") {
@@ -129,13 +130,13 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::handleCall(CallExprAST *ast, 
         //if this is a return call, we need to clear our scope stack up to where we came from
 
         if (gc_args.size() > 1) {
-            throw CompilerException("Too many arguments in return", ast->pos);
+            throw CompilerException("Too many arguments in return", ast->filepos);
         }
 
         int unwindAmount = currentScopeCount.back();
         for (int i = 0; i < unwindAmount; ++i) {
             VariableInfo *vi = scopeStack[scopeStack.size()-1-i];
-            if ((vi->needsCopyDelete)&&(!checkIfActor(vi->type.declType))) {
+            if ((vi->type.requiresCopyDelete())&&(!checkIfActor(vi->type.declType))) {
                 //since it's a return, we don't want to delete what we're returning, so be careful.  This isn't the best way to do this, so I'm open to suggestions.
                 if ((gc_args.size() == 1) && (vi->name != gc_args[0].get()->output.str())) {
                     gc.get()->inits << "if (" << vi->name << " != NULL) {" << std::endl;
@@ -146,7 +147,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::handleCall(CallExprAST *ast, 
         }
 
         gc.get()->output << "return (";
-        for (int i = 0, j = ast->args.size(); i != j; ++i) {
+        for (int i = 0, j = ast->children.size(); i != j; ++i) {
             if (i != 0)
                 gc.get()->output << ", ";
 
@@ -189,7 +190,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::handleCall(CallExprAST *ast, 
         gc.get()->inits << ast->name << "(";
     }
 
-    for (int i = 0, j = ast->args.size(); i != j; ++i) {
+    for (int i = 0, j = ast->children.size(); i != j; ++i) {
         if (i != 0)
             gc.get()->inits << ", ";
 
@@ -199,7 +200,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::handleCall(CallExprAST *ast, 
     }
 
     if (!isExtern) {
-        if (ast->args.size() > 0) {
+        if (ast->children.size() > 0) {
             gc.get()->inits << ", ";
         }
         gc.get()->inits << "actor__";
@@ -223,7 +224,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::handleCall(CallExprAST *ast, 
 }
 
 //catch all that will dispatch out to others
-boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ExpressionAST *ast) {
+boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ASTNode *ast) {
     boost::shared_ptr<GeneratedCode> gc;
 
     NumberExprAST *neast;
@@ -232,91 +233,89 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ExpressionAST *ast) {
     VariableExprAST *veast;
     VarDeclExprAST *vdeast;
     ArrayIndexedExprAST *aieast;
-    ArrayDeclExprAST *adeast;
+    //ArrayDeclExprAST *adeast;
     EndExprAST *eeast;
     IfExprAST *ieast;
     WhileExprAST *weast;
     BinaryExprAST *beast;
     CallExprAST *ceast;
+    ActionAST *actast;
+    FunctionAST *funast;
+    ActorAST *actorast;
+    ClassAST *classast;
+    AppAST *appast;
 
     if (ast == NULL) {
         //NOP
         gc = boost::shared_ptr<GeneratedCode>(new GeneratedCode);
         return gc;
     }
-    //Number, Variable, ArrayIndexed, Binary, Quote, Call, DefFun, End, VarDecl, ArrayDecl, If, While
+    //Number, Variable, ArrayIndexed, Binary, Quote, Call, DefFun, End, VarDecl, If, While
     switch (ast->type()) {
-        case (ExpressionType::Number) :
+        case (NodeType::Number) :
             neast = dynamic_cast<NumberExprAST*>(ast);
             if (neast == NULL) {
                 printf("FIXME: Number compiler exception\n");
             }
             gc = visit(neast);
             break;
-        case (ExpressionType::Boolean) :
+        case (NodeType::Boolean) :
             boeast = dynamic_cast<BooleanExprAST*>(ast);
             if (boeast == NULL) {
                 printf("FIXME: Number compiler exception\n");
             }
             gc = visit(boeast);
             break;
-        case (ExpressionType::Variable) :
+        case (NodeType::Variable) :
             veast = dynamic_cast<VariableExprAST*>(ast);
             if (veast == NULL) {
                 printf("FIXME: Variable compiler exception\n");
             }
             gc = visit(veast);
             break;
-        case (ExpressionType::ArrayIndexed) :
+        case (NodeType::ArrayIndexed) :
             aieast = dynamic_cast<ArrayIndexedExprAST*>(ast);
             if (aieast == NULL) {
                 printf("FIXME: Array indexed compiler exception\n");
             }
             gc = visit(aieast);
             break;
-        case (ExpressionType::Binary) :
+        case (NodeType::Binary) :
             beast = dynamic_cast<BinaryExprAST*>(ast);
             if (beast == NULL) {
                 printf("FIXME: Variable compiler exception\n");
             }
             gc = visit(beast);
             break;
-        case (ExpressionType::Quote) :
+        case (NodeType::Quote) :
             qeast = dynamic_cast<QuoteExprAST*>(ast);
             if (qeast == NULL) {
                 printf("FIXME: Variable compiler exception\n");
             }
             gc = visit(qeast);
             break;
-        case (ExpressionType::Call) :
+        case (NodeType::Call) :
             ceast = dynamic_cast<CallExprAST*>(ast);
             if (ceast == NULL) {
                 printf("FIXME: Call compiler exception\n");
             }
             gc = visit(ceast);
             break;
-        case (ExpressionType::End) :
+        case (NodeType::End) :
             eeast = dynamic_cast<EndExprAST*>(ast);
             if (eeast == NULL) {
                 printf("FIXME: End compiler exception\n");
             }
             gc = visit(eeast);
             break;
-        case (ExpressionType::VarDecl) :
+        case (NodeType::VarDecl) :
             vdeast = dynamic_cast<VarDeclExprAST*>(ast);
             if (vdeast == NULL) {
                 printf("FIXME: VarDecl compiler exception\n");
             }
             gc = visit(vdeast);
             break;
-        case (ExpressionType::ArrayDecl) :
-            adeast = dynamic_cast<ArrayDeclExprAST*>(ast);
-            if (adeast == NULL) {
-                printf("FIXME: ArrayDecl compiler exception\n");
-            }
-            gc = visit(adeast);
-            break;
-        case (ExpressionType::If) :
+        case (NodeType::If) :
             ieast = dynamic_cast<IfExprAST*>(ast);
             if (ieast == NULL) {
                 printf("FIXME: If compiler exception\n");
@@ -324,13 +323,50 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ExpressionAST *ast) {
 
             gc = visit(ieast);
             break;
-        case (ExpressionType::While) :
+        case (NodeType::While) :
             weast = dynamic_cast<WhileExprAST*>(ast);
             if (weast == NULL) {
                 printf("FIXME: While compiler exception\n");
             }
             gc = visit(weast);
             break;
+        case (NodeType::Action) :
+            actast = dynamic_cast<ActionAST*>(ast);
+            if (actast == NULL) {
+                printf("FIXME: action compiler exception\n");
+            }
+            gc = visit(actast);
+            break;
+        case (NodeType::Function) :
+            funast = dynamic_cast<FunctionAST*>(ast);
+            if (funast == NULL) {
+                printf("FIXME: function compiler exception\n");
+            }
+            gc = visit(funast);
+            break;
+        case (NodeType::Actor) :
+            actorast = dynamic_cast<ActorAST*>(ast);
+            if (actorast == NULL) {
+                printf("FIXME: actor compiler exception\n");
+            }
+            gc = visit(actorast);
+            break;
+        case (NodeType::Class) :
+            classast = dynamic_cast<ClassAST*>(ast);
+            if (classast == NULL) {
+                printf("FIXME: class compiler exception\n");
+            }
+            gc = visit(classast);
+            break;
+        case (NodeType::App) :
+            appast = dynamic_cast<AppAST*>(ast);
+            if (appast == NULL) {
+                printf("FIXME: app compiler exception\n");
+            }
+            gc = visit(appast);
+            break;
+        default :
+            throw CompilerException("Unknown element", ast->filepos);
     }
 
     return gc;
@@ -372,7 +408,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(VariableExprAST *ast) {
             int unwindAmount = currentScopeCount.back();
             for (int i = 0; i < unwindAmount; ++i) {
                 VariableInfo *vi = scopeStack[scopeStack.size()-1-i];
-                if ((vi->needsCopyDelete)&&(!checkIfActor(vi->type.declType))) {
+                if ((vi->type.requiresCopyDelete())&&(!checkIfActor(vi->type.declType))) {
                     gc.get()->output << "if (" << vi->name << " != NULL) {" << std::endl;
                     gc.get()->output << "  delete(" << vi->name << ");" << std::endl;
                     gc.get()->output << "}" << std::endl;
@@ -399,7 +435,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(VariableExprAST *ast) {
     if (vi == NULL) {
         std::ostringstream oss;
         oss << "Unknown variable '" << ast->name << "'";
-        throw CompilerException(oss.str(), ast->pos);
+        throw CompilerException(oss.str(), ast->filepos);
     }
 
     if (vi->scopeType == ScopeType::Actor) {
@@ -419,40 +455,132 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(VariableExprAST *ast) {
 boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(VarDeclExprAST *ast) {
     boost::shared_ptr<GeneratedCode> gc(new GeneratedCode);
 
-    VariableInfo *vi = new VariableInfo(ast->name, ast->declType, TypeType::Scalar, ScopeType::CodeBlock);
+    VariableInfo *vi = ast->vi; //new VariableInfo(ast->name, ast->declType, ContainerType::Scalar, ScopeType::CodeBlock);
 
-    std::map<std::string, ActorAST*>::iterator finder = actors.find(ast->declType);
+    if (vi->type.containerType == ContainerType::Scalar) {
+        std::map<std::string, ActorAST*>::iterator finder = actors.find(vi->type.declType);
 
-    if (finder != actors.end()) {
-        if (ast->isSpawn) {
-            std::string actorTemp = nextTemp();
-            gc.get()->decls << "actorId_t " << ast->name << ";" << std::endl;
-            gc.get()->inits << ast->declType << " *" << actorTemp << ";" << std::endl;
-            gc.get()->output << "{ " << actorTemp << " = new " << ast->declType << "();" << std::endl;
-            if (finder->second->isIsolated) {
-                gc.get()->output << "  actor__->parentThread->ScheduleNewIsolatedActor(" << actorTemp << ");" << std::endl;
+        if (finder != actors.end()) {
+            if (ast->isSpawn) {
+                std::string actorTemp = nextTemp();
+                gc.get()->decls << "actorId_t " << vi->name << ";" << std::endl;
+                gc.get()->inits << vi->type.declType << " *" << actorTemp << ";" << std::endl;
+                gc.get()->output << "{ " << actorTemp << " = new " << vi->type.declType << "();" << std::endl;
+                if (finder->second->isIsolated) {
+                    gc.get()->output << "  actor__->parentThread->ScheduleNewIsolatedActor(" << actorTemp << ");" << std::endl;
+                }
+                else {
+                    gc.get()->output << "  actor__->parentThread->ScheduleNewActor(" << actorTemp << ");" << std::endl;
+                }
+                gc.get()->output << "  " << vi->name << " = " << actorTemp << "->actorId; }" << std::endl;
             }
             else {
-                gc.get()->output << "  actor__->parentThread->ScheduleNewActor(" << actorTemp << ");" << std::endl;
+                gc.get()->decls << "actorId_t " << vi->name << ";" << std::endl;
             }
-            gc.get()->output << "  " << ast->name << " = " << actorTemp << "->actorId; }" << std::endl;
         }
         else {
-            gc.get()->decls << "actorId_t " << ast->name << ";" << std::endl;
+            gc.get()->decls << lookupAssocType(vi->type) << " " << vi->name << ";" << std::endl;
+            if (ast->isAlloc) {
+                //TRIM
+                std::string allocType = lookupAssocType(vi->type);
+                allocType = allocType.erase(allocType.size()-1);
+
+                gc.get()->output << vi->name << " = new " << allocType << "();" << std::endl;
+            }
+            gc.get()->output << vi->name;
         }
     }
-    else {
-        gc.get()->decls << lookupAssocType(vi->type) << " " << ast->name << ";" << std::endl;
-        if (ast->isAlloc) {
-            //TRIM
+    else if (vi->type.containerType == ContainerType::Array) {
+        std::map<std::string, ActorAST*>::iterator finder = actors.find(vi->type.declType);
+
+        if (finder != actors.end()) {
+            if (ast->isSpawn) {
+                std::string tmpName = nextTemp();
+                gc.get()->decls << "int " << tmpName << ";" << std::endl;
+
+                std::string actorTemp = nextTemp();
+                std::string loopTemp = nextTemp();
+                gc.get()->decls << vi->type.declType << " *" << actorTemp << ";" << std::endl;
+
+                gc.get()->decls << "std::vector<actorId_t> *" << vi->name << ";" << std::endl;
+
+                gc.get()->output << tmpName << " = ";
+
+                if (vi->size != NULL) {
+                    boost::shared_ptr<GeneratedCode> gc_temp = visit (vi->size);
+                    if (gc_temp.get()->decls.str() != "") {
+                        gc.get()->decls << gc_temp.get()->decls.str();
+                    }
+                    if (gc_temp.get()->inits.str() != "") {
+                        gc.get()->output << gc_temp.get()->inits.str();
+                    }
+                    if (gc_temp.get()->output.str() != "") {
+                        gc.get()->output << gc_temp.get()->output.str();
+                    }
+                }
+                else {
+                    gc.get()->output << "0";
+                }
+                gc.get()->output << ";" << std::endl;
+                gc.get()->output << vi->name << " = new std::vector<actorId_t>(" << tmpName << ");" << std::endl;
+
+                gc.get()->output << "for (int " << loopTemp << "=0; " << loopTemp << " < " << tmpName << "; ++" << loopTemp << ") {" << std::endl;
+                gc.get()->output << "  " << actorTemp << " = new " << vi->type.declType << "();" << std::endl;
+                if (finder->second->isIsolated) {
+                    gc.get()->output << "  actor__->parentThread->ScheduleNewIsolatedActor(" << actorTemp << ");" << std::endl;
+                }
+                else {
+                    gc.get()->output << "  actor__->parentThread->ScheduleNewActor(" << actorTemp << ");" << std::endl;
+                }
+                gc.get()->output << "  (*" << vi->name << ")[" << loopTemp << "] = " << actorTemp << "->actorId;" << std::endl;
+                gc.get()->output << "}" << std::endl;
+            }
+            else {
+                gc.get()->decls << "std::vector<actorId_t> *" << vi->name << ";" << std::endl;
+                gc.get()->output << vi->name << " = new std::vector<actorId_t>(";
+                if (vi->size != NULL) {
+                    boost::shared_ptr<GeneratedCode> gc_temp = visit (vi->size);
+                    if (gc_temp.get()->decls.str() != "") {
+                        gc.get()->decls << gc_temp.get()->decls.str();
+                    }
+                    if (gc_temp.get()->inits.str() != "") {
+                        gc.get()->output << gc_temp.get()->inits.str();
+                    }
+                    if (gc_temp.get()->output.str() != "") {
+                        gc.get()->output << gc_temp.get()->output.str();
+                    }
+                }
+                else {
+                    gc.get()->output << "0";
+                }
+                gc.get()->output << ");" << std::endl;
+            }
+        }
+        else {
+            gc.get()->decls << lookupAssocType(vi->type) << " " << vi->name << ";" << std::endl;
             std::string allocType = lookupAssocType(vi->type);
-            allocType = allocType.erase(allocType.size()-1);
+            allocType = allocType.erase(allocType.size()-1); //TRIM off the trailing '*'
+            gc.get()->output << vi->name << " = new " << allocType << "(";
+            if (vi->size != NULL) {
+                boost::shared_ptr<GeneratedCode> gc_temp = visit (vi->size);
+                if (gc_temp.get()->decls.str() != "") {
+                    gc.get()->decls << gc_temp.get()->decls.str();
+                }
+                if (gc_temp.get()->inits.str() != "") {
+                    gc.get()->output << gc_temp.get()->inits.str();
+                }
+                if (gc_temp.get()->output.str() != "") {
+                    gc.get()->output << gc_temp.get()->output.str();
+                }
+            }
+            else {
+                gc.get()->output << "0";
+            }
+            gc.get()->output << ")";
 
-            gc.get()->output << ast->name << " = new " << allocType << "();" << std::endl;
+            //FIXME?  Would you ever follow an array decl with an assignment?  If so, we should probably check for that
         }
-        gc.get()->output << ast->name;
     }
-
     ++(currentScopeCount.back());
     scopeStack.push_back(vi);
 
@@ -464,13 +592,13 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ArrayIndexedExprAST *as
     VariableInfo *vi = findVarInScope(ast->name);
     if (vi == NULL) {
         std::ostringstream oss;
-        oss << "Unknown variable '" << ast->name << "'";
-        throw CompilerException(oss.str(), ast->pos);
+        oss << "Unknown array variable '" << ast->name << "'";
+        throw CompilerException(oss.str(), ast->filepos);
     }
-    else if (vi->type.typeType != TypeType::Array) {
+    else if (vi->type.containerType != ContainerType::Array) {
         std::ostringstream oss;
         oss << "Variable '" << ast->name << "' is not of an array type";
-        throw CompilerException(oss.str(), ast->pos);
+        throw CompilerException(oss.str(), ast->filepos);
     }
     if (vi->scopeType == ScopeType::Actor) {
         gc.get()->output << "(*(actor__->" << ast->name << "))";
@@ -479,7 +607,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ArrayIndexedExprAST *as
         gc.get()->output << "(*" << ast->name << ")";
     }
     gc.get()->output << "[";
-    boost::shared_ptr<GeneratedCode> gc_temp = visit (ast->index);
+    boost::shared_ptr<GeneratedCode> gc_temp = visit (ast->children[0]);
     if (gc_temp.get()->decls.str() != "") {
         gc.get()->decls << gc_temp.get()->decls.str();
     }
@@ -493,6 +621,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ArrayIndexedExprAST *as
 
     return gc;
 }
+/*
 boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ArrayDeclExprAST *ast) {
     boost::shared_ptr<GeneratedCode> gc(new GeneratedCode);
 
@@ -592,7 +721,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ArrayDeclExprAST *ast) 
     }
     return gc;
 }
-
+*/
 boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(EndExprAST *ast) {
     //do nothing
     boost::shared_ptr<GeneratedCode> gc(new GeneratedCode);
@@ -608,7 +737,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(IfExprAST *ast) {
 
     gc.get()->decls << "bool " << condTemp << ";" << std::endl;
 
-    gc_cond = visit (ast->Cond);
+    gc_cond = visit (ast->children[0]);
     if (gc_cond.get()->decls.str() != "") {
         gc.get()->decls << gc_cond.get()->decls.str();
     }
@@ -622,7 +751,8 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(IfExprAST *ast) {
 
     gc.get()->output << "if (" << condTemp << ") {" << std::endl;
 
-    for (std::vector<ExpressionAST*>::iterator iter = ast->Then.begin(), end = ast->Then.end(); iter != end; ++iter) {
+    for (std::vector<ASTNode*>::iterator iter = ast->children[1]->children.begin(),
+            end = ast->children[1]->children.end(); iter != end; ++iter) {
 
         boost::shared_ptr<GeneratedCode> gc_temp = visit (*iter);
         if (gc_temp.get()->decls.str() != "") {
@@ -637,9 +767,11 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(IfExprAST *ast) {
         gc.get()->output << ";" << std::endl;
     }
     gc.get()->output << "}";
-    if (ast->Else.size() > 0) {
+    if (ast->children[2]->children.size() > 0) {
         gc.get()->output << "else {" << std::endl;
-        for (std::vector<ExpressionAST*>::iterator iter = ast->Else.begin(), end = ast->Else.end(); iter != end; ++iter) {
+        for (std::vector<ASTNode*>::iterator iter = ast->children[2]->children.begin(),
+                end = ast->children[2]->children.end(); iter != end; ++iter) {
+
             boost::shared_ptr<GeneratedCode> gc_temp = visit (*iter);
             if (gc_temp.get()->decls.str() != "") {
                 gc.get()->decls << gc_temp.get()->decls.str();
@@ -669,7 +801,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(WhileExprAST *ast) {
     ++currentContId;
     gc.get()->output << (outputResumeBlock());
 
-    gc_cond = visit (ast->Cond);
+    gc_cond = visit (ast->children[0]);
     if (gc_cond.get()->decls.str() != "") {
         gc.get()->decls << gc_cond.get()->decls.str();
     }
@@ -681,7 +813,8 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(WhileExprAST *ast) {
     }
     gc.get()->output << "while (" << condTemp << ") {" << std::endl;
     gc.get()->output << (outputPauseBlock(true));
-    for (std::vector<ExpressionAST*>::iterator iter = ast->Loop.begin(), end = ast->Loop.end(); iter != end; ++iter) {
+    for (std::vector<ASTNode*>::iterator iter = ast->children[1]->children.begin(),
+            end = ast->children[1]->children.end(); iter != end; ++iter) {
         gc_temp = visit (*iter);
         if (gc_temp.get()->decls.str() != "") {
             gc.get()->decls << gc_temp.get()->decls.str();
@@ -695,7 +828,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(WhileExprAST *ast) {
 
         gc.get()->output << ";" << std::endl;
     }
-    gc_cond = visit (ast->Cond);
+    gc_cond = visit (ast->children[0]);
     if (gc_cond.get()->decls.str() != "") {
         gc.get()->decls << gc_cond.get()->decls.str();
     }
@@ -720,10 +853,12 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
     boost::shared_ptr<GeneratedCode> gc(new GeneratedCode);
     boost::shared_ptr<GeneratedCode> gc_temp;
 
+    //std::cout << "Binary: " << ast->op << std::endl;
+
     if (ast->op == "::") {
-        CallExprAST *ceast = dynamic_cast<CallExprAST*>(ast->RHS);
-        VariableExprAST *veast = dynamic_cast<VariableExprAST*>(ast->LHS);
-        ArrayIndexedExprAST *aieast = dynamic_cast<ArrayIndexedExprAST*>(ast->LHS);
+        CallExprAST *ceast = dynamic_cast<CallExprAST*>(ast->children[1]);
+        VariableExprAST *veast = dynamic_cast<VariableExprAST*>(ast->children[0]);
+        ArrayIndexedExprAST *aieast = dynamic_cast<ArrayIndexedExprAST*>(ast->children[0]);
 
         VariableInfo *vi;
 
@@ -731,20 +866,30 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
             //std::cout << "Can't build message, is type: " << ast->RHS->type() << std::endl;
             //exit(1);
             std::ostringstream msg;
-            msg << "Can't build message, right hand side is type: " << ast->RHS->type();
-            throw CompilerException(msg.str(), ast->pos);
+            msg << "Can't build message, right hand side is type: " << ast->children[1]->type();
+            throw CompilerException(msg.str(), ast->filepos);
         }
 
         if ((veast == NULL) && (aieast == NULL)) {
             std::ostringstream msg;
-            msg << "Can't build message, left hand side is type: " << ast->LHS->type();
-            throw CompilerException(msg.str(), ast->pos);
+            msg << "Can't build message, left hand side is type: " << ast->children[0]->type();
+            throw CompilerException(msg.str(), ast->filepos);
         }
         else if (veast != NULL) {
             vi = findVarInScope(veast->name);
+            if (vi == NULL) {
+                std::ostringstream oss;
+                oss << "Unknown variable for message '" << veast->name << "'";
+                throw CompilerException(oss.str(), veast->filepos);
+            }
         }
         else { //if (aieast != NULL) {
             vi = findVarInScope(aieast->name);
+            if (vi == NULL) {
+                std::ostringstream oss;
+                oss << "Unknown variable for message '" << aieast->name << "'";
+                throw CompilerException(oss.str(), aieast->filepos);
+            }
         }
 
         //int argSize = ceast->args.size();
@@ -755,7 +900,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
         gc.get()->decls << "Actor *" << actorIfLocal << ";" << std::endl;
 
         gc.get()->output << actorIfLocal << " = actor__->parentThread->ActorIfLocal(";
-        gc_temp = visit (ast->LHS);
+        gc_temp = visit (ast->children[0]);
 
         if (gc_temp.get()->decls.str() != "") {
             gc.get()->decls << gc_temp.get()->decls.str();
@@ -772,7 +917,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
         gc.get()->decls << "Message " << msgName << ";" << std::endl;
         gc.get()->output << "  " << msgName << ".recipient = ";
 
-        gc_temp = visit (ast->LHS);
+        gc_temp = visit (ast->children[0]);
         if (gc_temp.get()->decls.str() != "") {
             gc.get()->decls << gc_temp.get()->decls.str();
         }
@@ -784,19 +929,19 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
         }
 
         gc.get()->output << ";" << std::endl;
-        gc.get()->output << "  " << msgName << ".numArgs = " << ceast->args.size() << ";" << std::endl;
+        gc.get()->output << "  " << msgName << ".numArgs = " << ceast->children.size() << ";" << std::endl;
         gc.get()->output << "  " << msgName << ".messageType = MessageType::ACTION_MESSAGE;" << std::endl;
         gc.get()->output << "  " << msgName << ".task = &" << vi->type.declType << "__" << ceast->name << "_action;" << std::endl;
 
         //std::cout << "arg size: " << ceast->args.size() << std::endl;
-        if (ceast->args.size() > 4 ) {
+        if (ceast->children.size() > 4 ) {
             msgArray = nextTemp();
             gc.get()->decls << "std::vector<TypeUnion> *" << msgArray << " = new std::vector<TypeUnion>();" << std::endl;
         }
-        for (unsigned int i = 0; i < ceast->args.size(); ++i) {
-            boost::shared_ptr<TypeInfo> ti = resolveType(ceast->args[i]);
+        for (unsigned int i = 0; i < ceast->children.size(); ++i) {
+            boost::shared_ptr<TypeInfo> ti = resolveType(ceast->children[i]);
 
-            boost::shared_ptr<GeneratedCode> gc_temp = visit (ceast->args[i]);
+            boost::shared_ptr<GeneratedCode> gc_temp = visit (ceast->children[i]);
             if (gc_temp.get()->decls.str() != "") {
                 gc.get()->decls << gc_temp.get()->decls.str();
             }
@@ -806,7 +951,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
             if (gc_temp.get()->output.str() != "") {
                 //gc.get()->output << gc_temp.get()->output.str();
                 gc.get()->output << "  " << lookupPushForTypeAndBlock(ti, gc_temp.get()->output.str());
-                if (ceast->args.size() > 4 ) {
+                if (ceast->children.size() > 4 ) {
                     gc.get()->output << "  " << msgArray << "->push_back(tmpTU__);" << std::endl;
                 }
                 else {
@@ -817,7 +962,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
             //gc.get()->output << lookupPushForVar(ceast->args[i]);
             //gc.get()->output << ";" << std::endl;
         }
-        if (ceast->args.size() > 4 ) {
+        if (ceast->children.size() > 4 ) {
             gc.get()->output << "  " << msgName << ".arg[0].VoidPtr = " << msgArray << ";" << std::endl;
         }
 
@@ -825,11 +970,11 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
         gc.get()->output << "}" << std::endl;
         gc.get()->output << "else {" << std::endl;
 
-        for (unsigned int i = 0; i < ceast->args.size(); ++i) {
-            boost::shared_ptr<TypeInfo> ti = resolveType(ceast->args[i]);
+        for (unsigned int i = 0; i < ceast->children.size(); ++i) {
+            boost::shared_ptr<TypeInfo> ti = resolveType(ceast->children[i]);
             //gc.get()->output << "tmpTU__.UInt32 = ";
 
-            boost::shared_ptr<GeneratedCode> gc_temp = visit (ceast->args[i]);
+            boost::shared_ptr<GeneratedCode> gc_temp = visit (ceast->children[i]);
             if (gc_temp.get()->decls.str() != "") {
                 gc.get()->decls << gc_temp.get()->decls.str();
             }
@@ -857,32 +1002,54 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
         gc.get()->output << "}" << std::endl;
     }
     else if (ast->op == ".") {
-        VariableExprAST *veast = dynamic_cast<VariableExprAST*>(ast->RHS);
-        CallExprAST *ceast = dynamic_cast<CallExprAST*>(ast->RHS);
+        VariableExprAST *veast = dynamic_cast<VariableExprAST*>(ast->children[1]);
+        CallExprAST *ceast = dynamic_cast<CallExprAST*>(ast->children[1]);
         if ((veast == NULL) && (ceast == NULL)) {
-            std::cout << "Can't use '.' in this context, is type: " << ast->RHS->type() << std::endl;
+            std::cout << "Can't use '.' in this context, is type: " << ast->children[1]->type() << std::endl;
             exit(1);
         }
         else {
-            VariableExprAST *lhs_ast = dynamic_cast<VariableExprAST*>(ast->LHS);
+            VariableExprAST *lhs_ast = dynamic_cast<VariableExprAST*>(ast->children[0]);
             //ArrayIndexedExprAST *lhs_aieast = dynamic_cast<ArrayIndexedExprAST*>(ast->LHS);
             if (lhs_ast == NULL) {
-                throw CompilerException("Left hand side is not a variable (this is a limitation of the current system)", ast->pos);
+                throw CompilerException("Left hand side is not a variable (this is a limitation of the current system)", ast->filepos);
             }
-            boost::shared_ptr<TypeInfo> lhs_type = resolveType(ast->LHS);
+            boost::shared_ptr<TypeInfo> lhs_type = resolveType(ast->children[0]);
             //std::cout << "Accessing type: " << lhs_type.get()->declType << std::endl;
 
             if (veast != NULL) {
-                StructAST* s = this->structs[lhs_type.get()->declType];
+                ClassAST* s = this->classes[lhs_type.get()->declType];
                 //check to see if the struct has an attribute member named this
+                //TODO: Fix re-enable this
+
+                bool foundVar = false;
+                for (std::vector<ASTNode*>::iterator iter = s->children.begin(),
+                        end = s->children.end(); iter != end; ++iter) {
+
+                    VarDeclExprAST *vdeast = dynamic_cast<VarDeclExprAST*>(*iter);
+                    if (vdeast != NULL) {
+                        if (vdeast->vi->name == veast->name) {
+                            gc.get()->output << lhs_ast->name << "->" << veast->name;
+                            foundVar = true;
+                            break;
+                        }
+                    }
+                }
+                if (foundVar == false) {
+                    std::ostringstream msg;
+                    msg << "Can't find '" << veast->name << "' inside of '" << lhs_ast->name << "'";
+                    throw CompilerException(msg.str(), ast->filepos);
+                }
+                /*
                 if (s->vars.find(veast->name) != s->vars.end()) {
                     gc.get()->output << lhs_ast->name << "->" << veast->name;
                 }
                 else {
                     std::ostringstream msg;
                     msg << "Can't find '" << veast->name << "' inside of '" << lhs_ast->name << "'";
-                    throw CompilerException(msg.str(), ast->pos);
+                    throw CompilerException(msg.str(), ast->filepos);
                 }
+                */
             }
             if (ceast != NULL) {
                 gc_temp = handleCall(ceast, lhs_type.get()->declType, lhs_ast->name);
@@ -899,7 +1066,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
         }
     }
     else {
-        gc_temp = visit (ast->LHS);
+        gc_temp = visit (ast->children[0]);
         if (gc_temp.get()->decls.str() != "") {
             gc.get()->decls << gc_temp.get()->decls.str();
         }
@@ -910,7 +1077,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
             gc.get()->output << gc_temp.get()->output.str();
         }
         gc.get()->output << ast->op;
-        gc_temp = visit (ast->RHS);
+        gc_temp = visit (ast->children[1]);
         if (gc_temp.get()->decls.str() != "") {
             gc.get()->decls << gc_temp.get()->decls.str();
         }
@@ -929,11 +1096,169 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(CallExprAST *ast) {
 }
 
 
-boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(StructAST *ast, DeclStage::Stage stage) {
-    boost::shared_ptr<GeneratedCode> gc(new GeneratedCode);
+boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ClassAST *ast, DeclStage::Stage stage) {
+    boost::shared_ptr<GeneratedCode> gc(new GeneratedCode), gc_temp(new GeneratedCode);
 
+    FunctionAST *funast;
+    VarDeclExprAST *varDecl;
+
+    //DeclStage::Stage stage;
     if (stage == DeclStage::FORWARD) {
-        this->structs[ast->name] = ast;
+        this->classes[ast->name] = ast;
+        gc.get()->output << "class " << ast->name << ";" << std::endl;
+    }
+    if (stage == DeclStage::IMPL) {
+        std::map<std::string, ActorAST*>::iterator finder;
+
+        currentScopeCount.push_back(0);
+        scopeContainerId = currentScopeCount.size(); //remember where we started
+        gc.get()->output << "class " << ast->name << " {" << std::endl << "public: " << std::endl;
+        currentFunGroup = funStack.size();
+
+        //then push a variable that will be how we message ourselves
+        std::string name("this");
+        VariableInfo *vi = new VariableInfo(name, ast->name, ContainerType::Scalar, ScopeType::Struct);
+        ++(currentScopeCount.back());
+        scopeStack.push_back(vi);
+
+        for (std::vector<ASTNode*>::iterator iter = ast->children.begin(), end = ast->children.end(); iter != end; ++iter) {
+            switch ((*iter)->type()) {
+                case (NodeType::Function) :
+                    funStack.push_back(dynamic_cast<PrototypeAST*>((*iter)->children[0]));
+                break;
+                case (NodeType::VarDecl) :
+                    varDecl = dynamic_cast<VarDeclExprAST*>(*iter);
+
+                    varDecl->vi->scopeType = ScopeType::Struct;
+
+                    ++(currentScopeCount.back());
+                    scopeStack.push_back(varDecl->vi);
+                break;
+                default:
+                    throw CompilerException("Unknown feature insde of class", (*iter)->filepos);
+                    break;
+            }
+        }
+
+        for (std::vector<ASTNode*>::iterator iter = ast->children.begin(), end = ast->children.end(); iter != end; ++iter) {
+            switch ((*iter)->type()) {
+                case (NodeType::Function) :
+                    funast = dynamic_cast<FunctionAST*>(*iter);
+                    gc_temp = visit(funast, stage);
+                    break;
+                case (NodeType::VarDecl) :
+                    varDecl = dynamic_cast<VarDeclExprAST*>(*iter);
+
+                    finder = actors.find(varDecl->vi->type.declType);
+
+                    if (finder != actors.end()) {
+                        if (varDecl->vi->type.containerType == ContainerType::Scalar) {
+                            gc.get()->output << "actorId_t " << varDecl->vi->name << ";" << std::endl;
+                        }
+                        else if (varDecl->vi->type.containerType == ContainerType::Array) {
+                            gc.get()->output << "actorId_t " << varDecl->vi->name << "[";
+
+                            boost::shared_ptr<GeneratedCode> gc_temp = visit (varDecl->vi->size);
+                            if (gc_temp.get()->decls.str() != "") {
+                                gc.get()->output << gc_temp.get()->decls.str();
+                            }
+                            if (gc_temp.get()->inits.str() != "") {
+                                gc.get()->output << gc_temp.get()->inits.str();
+                            }
+                            if (gc_temp.get()->output.str() != "") {
+                                gc.get()->output << gc_temp.get()->output.str();
+                            }
+
+                            gc.get()->output << "];" << std::endl;
+                        }
+
+                    }
+                    else {
+                        if (varDecl->vi->type.containerType == ContainerType::Scalar) {
+                            gc.get()->output << lookupAssocType(varDecl->vi->type) << " " << varDecl->vi->name << ";" << std::endl;
+                        }
+                        else if (varDecl->vi->type.containerType == ContainerType::Array) {
+                            gc.get()->output << lookupAssocType(varDecl->vi->type) << " " << varDecl->vi->name << "[";
+                            boost::shared_ptr<GeneratedCode> gc_temp = visit (varDecl->vi->size);
+
+                            if (gc_temp.get()->decls.str() != "") {
+                                gc.get()->output << gc_temp.get()->decls.str();
+                            }
+                            if (gc_temp.get()->inits.str() != "") {
+                                gc.get()->output << gc_temp.get()->inits.str();
+                            }
+                            if (gc_temp.get()->output.str() != "") {
+                                gc.get()->output << gc_temp.get()->output.str();
+                            }
+
+                            gc.get()->output << "];" << std::endl;
+                        }
+
+                    }
+                    break;
+                default:
+                    throw CompilerException("Unknown feature insde of class", (*iter)->filepos);
+                    break;
+            }
+            if (gc_temp.get()->decls.str() != "") {
+                gc.get()->output << gc_temp.get()->decls.str();
+            }
+            if (gc_temp.get()->inits.str() != "") {
+                gc.get()->output << gc_temp.get()->inits.str();
+            }
+            if (gc_temp.get()->output.str() != "") {
+                gc.get()->output << gc_temp.get()->output.str();
+            }
+        }
+
+        gc.get()->output << ast->name << "() { }" << std::endl;
+
+        //TODO: I'm not sure if I need a traditional copy constructor, or this pointer style
+        //gc.get()->output << ast->name << "(const " << ast->name << "& p) {" << std::endl;
+        gc.get()->output << ast->name << "(" << ast->name << "* p__) {" << std::endl;
+
+        for (std::vector<ASTNode*>::iterator iter = ast->children.begin(), end = ast->children.end(); iter != end; ++iter) {
+            VarDeclExprAST *vdeast = dynamic_cast<VarDeclExprAST*>(*iter);
+            if (vdeast != NULL) {
+                if (vdeast->vi->type.requiresCopyDelete()) {
+                    gc.get()->output << "if (" << vdeast->vi->name
+                        << " != NULL) { delete " << vdeast->vi->name << "; };" << std::endl;
+                    gc.get()->output << vdeast->vi->name << " = new "
+                        << lookupAssocType(vdeast->vi->type) << "(p__->" << vdeast->vi->name << ");" << std::endl;
+                }
+                else {
+                    gc.get()->output << vdeast->vi->name << " = " << "p__->" << vdeast->vi->name << ";" << std::endl;
+                }
+            }
+        }
+        /*
+        for (std::map<std::string, VariableInfo*>::iterator iter = ast->vars.begin(), end = ast->vars.end(); iter != end; ++iter) {
+            if ((iter->second)->needsCopyDelete) {
+                gc.get()->output << "if (" << (iter->second)->name << " != NULL) { delete " << (iter->second)->name << "; };" << std::endl;
+                gc.get()->output << (iter->second)->name << " = new " << lookupAssocType((iter->second)->type) << "(p__->" << (iter->second)->name << ");" << std::endl;
+            }
+            else {
+                gc.get()->output << (iter->second)->name << " = " << "p__->" << (iter->second)->name << ";" << std::endl;
+            }
+        }
+        */
+        gc.get()->output << "}" << std::endl;
+        gc.get()->output << "};" << std::endl;
+
+        int unwindAmount = currentScopeCount.back();
+        for (int i = 0; i < unwindAmount; ++i) {
+            scopeStack.pop_back();
+        }
+        currentScopeCount.pop_back();
+
+        //Get us back to seeing only the functions we could see before we entered the actor
+        while (funStack.size() != currentFunGroup) {
+            funStack.pop_back();
+        }
+    }
+    /*
+    if (stage == DeclStage::FORWARD) {
+        this->classes[ast->name] = ast;
         gc.get()->output << "struct " << ast->name << ";" << std::endl;
     }
     else if (stage == DeclStage::IMPL) {
@@ -1032,12 +1357,146 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(StructAST *ast, DeclSta
             funStack.pop_back();
         }
     }
-
+*/
     return gc;
 }
-boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ActorAST *ast, DeclStage::Stage stage) {
-    boost::shared_ptr<GeneratedCode> gc(new GeneratedCode);
 
+boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ActorAST *ast, DeclStage::Stage stage) {
+    boost::shared_ptr<GeneratedCode> gc(new GeneratedCode), gc_temp(new GeneratedCode);
+
+    ActionAST *actast;
+    FunctionAST *funast;
+    VarDeclExprAST *varDecl;
+
+    //DeclStage::Stage stage;
+    if (stage == DeclStage::DECL) {
+        currentScopeCount.push_back(0);
+        scopeContainerId = currentScopeCount.size(); //remember where we started
+        gc.get()->output << "class " << ast->name << " : public Actor {" << std::endl << "public: " << std::endl;
+        currentFunGroup = funStack.size();
+
+        //then push a variable that will be how we message ourselves
+        std::string name("this");
+        VariableInfo *vi = new VariableInfo(name, ast->name, ContainerType::Scalar, ScopeType::Actor);
+        ++(currentScopeCount.back());
+        scopeStack.push_back(vi);
+
+        actors[ast->name] = ast;
+    }
+    for (std::vector<ASTNode*>::iterator iter = ast->children.begin(), end = ast->children.end(); iter != end; ++iter) {
+        switch ((*iter)->type()) {
+            case (NodeType::Function) :
+                if (stage == DeclStage::DECL) {
+                    funStack.push_back(dynamic_cast<PrototypeAST*>((*iter)->children[0]));
+                }
+                funast = dynamic_cast<FunctionAST*>(*iter);
+                gc_temp = visit(funast, stage);
+                break;
+            case (NodeType::VarDecl) :
+                varDecl = dynamic_cast<VarDeclExprAST*>(*iter);
+                if (stage == DeclStage::DECL) {
+                    varDecl->vi->scopeType = ScopeType::Actor;
+
+                    ++(currentScopeCount.back());
+                    scopeStack.push_back(varDecl->vi);
+                    std::map<std::string, ActorAST*>::iterator finder = actors.find(varDecl->vi->type.declType);
+
+                    if (finder != actors.end()) {
+                        if (varDecl->vi->type.containerType == ContainerType::Scalar) {
+                            gc.get()->output << "actorId_t " << varDecl->vi->name << ";" << std::endl;
+                        }
+                        else if (varDecl->vi->type.containerType == ContainerType::Array) {
+                            gc.get()->output << "actorId_t " << varDecl->vi->name << "[";
+
+                            boost::shared_ptr<GeneratedCode> gc_temp = visit (varDecl->vi->size);
+                            if (gc_temp.get()->decls.str() != "") {
+                                gc.get()->output << gc_temp.get()->decls.str();
+                            }
+                            if (gc_temp.get()->inits.str() != "") {
+                                gc.get()->output << gc_temp.get()->inits.str();
+                            }
+                            if (gc_temp.get()->output.str() != "") {
+                                gc.get()->output << gc_temp.get()->output.str();
+                            }
+
+                            gc.get()->output << "];" << std::endl;
+                        }
+
+                    }
+                    else {
+                        if (varDecl->vi->type.containerType == ContainerType::Scalar) {
+                            gc.get()->output << lookupAssocType(varDecl->vi->type) << " " << varDecl->vi->name << ";" << std::endl;
+                        }
+                        else if (varDecl->vi->type.containerType == ContainerType::Array) {
+                            gc.get()->output << lookupAssocType(varDecl->vi->type) << " " << varDecl->vi->name << "[";
+                            boost::shared_ptr<GeneratedCode> gc_temp = visit (varDecl->vi->size);
+
+                            if (gc_temp.get()->decls.str() != "") {
+                                gc.get()->output << gc_temp.get()->decls.str();
+                            }
+                            if (gc_temp.get()->inits.str() != "") {
+                                gc.get()->output << gc_temp.get()->inits.str();
+                            }
+                            if (gc_temp.get()->output.str() != "") {
+                                gc.get()->output << gc_temp.get()->output.str();
+                            }
+
+                            gc.get()->output << "];" << std::endl;
+                        }
+
+                    }
+
+                }
+                break;
+        }
+        if (gc_temp.get()->decls.str() != "") {
+            gc.get()->output << gc_temp.get()->decls.str();
+        }
+        if (gc_temp.get()->inits.str() != "") {
+            gc.get()->output << gc_temp.get()->inits.str();
+        }
+        if (gc_temp.get()->output.str() != "") {
+            gc.get()->output << gc_temp.get()->output.str();
+        }
+
+    }
+    if (stage == DeclStage::DECL) {
+        gc.get()->output << "};" << std::endl;
+    }
+
+    for (std::vector<ASTNode*>::iterator iter = ast->children.begin(), end = ast->children.end(); iter != end; ++iter) {
+        switch ((*iter)->type()) {
+            case (NodeType::Action) :
+                actast = dynamic_cast<ActionAST*>(*iter);
+                gc_temp = visit(actast, ast->name, stage);
+
+                if (gc_temp.get()->decls.str() != "") {
+                    gc.get()->output << gc_temp.get()->decls.str();
+                }
+                if (gc_temp.get()->inits.str() != "") {
+                    gc.get()->output << gc_temp.get()->inits.str();
+                }
+                if (gc_temp.get()->output.str() != "") {
+                    gc.get()->output << gc_temp.get()->output.str();
+                }
+                break;
+        }
+    }
+
+    if (stage == DeclStage::IMPL) {
+        int unwindAmount = currentScopeCount.back();
+        for (int i = 0; i < unwindAmount; ++i) {
+            scopeStack.pop_back();
+        }
+        currentScopeCount.pop_back();
+
+        //Get us back to seeing only the functions we could see before we entered the actor
+        while (funStack.size() != currentFunGroup) {
+            funStack.pop_back();
+        }
+    }
+
+    /*
     if (stage == DeclStage::FORWARD) {
         this->actors[ast->name] = ast;
         gc.get()->output << "class " << ast->name << ";" << std::endl;
@@ -1174,6 +1633,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ActorAST *ast, DeclStag
             funStack.pop_back();
         }
     }
+*/
 
     return gc;
 }
@@ -1182,26 +1642,21 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(PrototypeAST *ast, Decl
 
     bool isExtern = checkIfExtern(ast->name);
 
-    gc.get()->output << lookupAssocType(ast->type) << " " << ast->name << "(";
-    for (int i = 0, j = ast->args.size(); i != j; ++i) {
-        //VariableInfo *vi = new VariableInfo(ast->argNames[i], ast->argTypes[i], TypeType::Scalar, ScopeType::CodeBlock);
+    gc.get()->output << lookupAssocType(ast->returnType) << " " << ast->name << "(";
+    for (int i = 0, j = ast->children.size(); i != j; ++i) {
+        VarDeclExprAST *varDecl = dynamic_cast<VarDeclExprAST*>(ast->children[i]);
         if (stage == DeclStage::IMPL) {
             ++(currentScopeCount.back());
-            scopeStack.push_back(ast->args[i]);
+            scopeStack.push_back(varDecl->vi);
         }
         if (i != 0) {
             gc.get()->output << ", ";
         }
 
-        gc.get()->output << lookupAssocType(ast->args[i]->type) << " " << ast->args[i]->name;
-        /*
-        if (stage != DeclStage::IMPL) {
-            delete vi;
-        }
-        */
+        gc.get()->output << lookupAssocType(varDecl->vi->type) << " " << varDecl->vi->name;
     }
     if (!isExtern) {
-        if (ast->args.size() > 0) {
+        if (ast->children.size() > 0) {
             gc.get()->output << ", ";
         }
         gc.get()->output << "Actor *actor__";
@@ -1213,12 +1668,14 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(PrototypeAST *ast, Decl
 boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(FunctionAST *ast, DeclStage::Stage stage) {
     boost::shared_ptr<GeneratedCode> gc(new GeneratedCode);
 
+    PrototypeAST *proto = dynamic_cast<PrototypeAST*>(ast->children[0]);
+
     if (stage == DeclStage::FORWARD) {
-        if (ast->body.size() == 0) {
+        if (ast->children[1]->children.size() == 0) {
             gc.get()->output << "extern ";
             //this->externFns.push_back(ast->proto->name);
         }
-        boost::shared_ptr<GeneratedCode> gc_temp = visit (ast->proto, stage);
+        boost::shared_ptr<GeneratedCode> gc_temp = visit (proto, stage);
         if (gc_temp.get()->decls.str() != "") {
             gc.get()->decls << gc_temp.get()->decls.str();
         }
@@ -1232,7 +1689,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(FunctionAST *ast, DeclS
         gc.get()->output << ";" << std::endl;
     }
     else if (stage == DeclStage::IMPL) {
-        if (ast->body.size() == 0) {
+        if (ast->children[1]->children.size() == 0) {
             boost::shared_ptr<GeneratedCode> gc_temp(new GeneratedCode);
             return gc_temp;
         }
@@ -1240,7 +1697,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(FunctionAST *ast, DeclS
             scopeContainerId = currentScopeCount.size(); //remember where we started
             currentScopeCount.push_back(0);
 
-            boost::shared_ptr<GeneratedCode> gc_temp = visit (ast->proto, stage);
+            boost::shared_ptr<GeneratedCode> gc_temp = visit (proto, stage);
             if (gc_temp.get()->decls.str() != "") {
                 gc.get()->decls << gc_temp.get()->decls.str();
             }
@@ -1251,7 +1708,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(FunctionAST *ast, DeclS
                 gc.get()->decls << gc_temp.get()->output.str();
             }
 
-            setupDontCare(ast->proto->type);
+            setupDontCare(proto->returnType);
 
             currentContId = 0;
 
@@ -1275,7 +1732,8 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(FunctionAST *ast, DeclS
 
             ++currentContId;
 
-            for (std::vector<ExpressionAST*>::iterator iter = ast->body.begin(), end = ast->body.end(); iter != end; ++iter) {
+            for (std::vector<ASTNode*>::iterator iter = ast->children[1]->children.begin(),
+                    end = ast->children[1]->children.end(); iter != end; ++iter) {
                 boost::shared_ptr<GeneratedCode> gc_temp = visit (*iter);
                 if (gc_temp.get()->decls.str() != "") {
                     gc.get()->decls << gc_temp.get()->decls.str();
@@ -1295,7 +1753,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(FunctionAST *ast, DeclS
             int unwindAmount = currentScopeCount.back();
             for (int i = 0; i < unwindAmount; ++i) {
                 VariableInfo *vi = scopeStack.back();
-                if (vi->type.typeType == TypeType::Array) {
+                if (vi->type.containerType == ContainerType::Array) {
                     gc.get()->output << "if (" << vi->name << " != NULL) {" << std::endl;
                     if (isCopyDelete(vi->type)) {
                         gc.get()->output << "  for (int i__=0; i__ < " << vi->name << "->size(); ++i__) { if (" << vi->name << "[i__] != NULL) { delete " << vi->name << "[i__];} }" << std::endl;
@@ -1304,7 +1762,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(FunctionAST *ast, DeclS
                     gc.get()->output << "  delete(" << vi->name << ");" << std::endl;
                     gc.get()->output << "}" << std::endl;
                 }
-                else if ((vi->needsCopyDelete)&&(!checkIfActor(vi->type.declType))) {
+                else if ((vi->type.requiresCopyDelete())&&(!checkIfActor(vi->type.declType))) {
                     gc.get()->output << "if (" << vi->name << " != NULL) {" << std::endl;
                     gc.get()->output << "  delete(" << vi->name << ");" << std::endl;
                     gc.get()->output << "}" << std::endl;
@@ -1324,11 +1782,13 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ActionAST *ast, std::st
     boost::shared_ptr<GeneratedCode> gc(new GeneratedCode);
     inAction = true;
 
+    PrototypeAST *proto = dynamic_cast<PrototypeAST*>(ast->children[0]);
+
     if (stage == DeclStage::DECL) {
-        gc.get()->output << "void " << actorName << "__" << ast->proto->name << "_action(Actor *a__);" << std::endl;
+        gc.get()->output << "void " << actorName << "__" << proto->name << "_action(Actor *a__);" << std::endl;
     }
     else if (stage == DeclStage::IMPL) {
-        gc.get()->decls << "void " << actorName << "__" << ast->proto->name << "_action(Actor *a__) ";
+        gc.get()->decls << "void " << actorName << "__" << proto->name << "_action(Actor *a__) ";
 
         scopeContainerId = currentScopeCount.size(); //remember where we started
         currentScopeCount.push_back(0);
@@ -1353,6 +1813,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ActionAST *ast, std::st
         gc.get()->output << "}" << std::endl;
         gc.get()->output << "else {" << std::endl;
 
+        /*
         for (std::map<std::string, VariableInfo*>::reverse_iterator iter = ast->vars.rbegin(), end = ast->vars.rend(); iter != end; ++iter) {
             if (iter->second->scopeType == ScopeType::Prototype) {
                 gc.get()->decls << lookupAssocType(iter->second->type) << " " << iter->second->name << ";" << std::endl;
@@ -1362,13 +1823,23 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ActionAST *ast, std::st
                 scopeStack.push_back(iter->second);
             }
         }
+        */
+        for (std::vector<ASTNode*>::reverse_iterator iter = ast->children[0]->children.rbegin(), end = ast->children[0]->children.rend(); iter != end; ++iter) {
+            VarDeclExprAST *varDecl = dynamic_cast<VarDeclExprAST*>(*iter);
+            gc.get()->decls << lookupAssocType(varDecl->vi->type) << " " << varDecl->vi->name << ";" << std::endl;
+            gc.get()->output << lookupPopForVar(varDecl->vi) << ";" << std::endl;
+
+            ++(currentScopeCount.back());
+            scopeStack.push_back(varDecl->vi);
+        }
         gc.get()->output << "}" << std::endl;
 
         gc.get()->output << "switch(contId__) {" <<std::endl;
         gc.get()->output << "case(" << currentContId << "):" << std::endl;
         ++currentContId;
 
-        for (std::vector<ExpressionAST*>::iterator iter = ast->body.begin(), end = ast->body.end(); iter != end; ++iter) {
+        for (std::vector<ASTNode*>::iterator iter = ast->children[1]->children.begin(),
+                end = ast->children[1]->children.end(); iter != end; ++iter) {
             boost::shared_ptr<GeneratedCode> gc_temp = visit (*iter);
             if (gc_temp.get()->decls.str() != "") {
                 gc.get()->decls << gc_temp.get()->decls.str();
@@ -1391,7 +1862,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ActionAST *ast, std::st
         int unwindAmount = currentScopeCount.back();
         for (int i = 0; i < unwindAmount; ++i) {
             VariableInfo *vi = scopeStack.back();
-            if ((vi->needsCopyDelete)&&(!checkIfActor(vi->type.declType))) {
+            if ((vi->type.requiresCopyDelete())&&(!checkIfActor(vi->type.declType))) {
                 gc.get()->output << "if (" << vi->name << " != NULL) {" << std::endl;
                 gc.get()->output << "  delete(" << vi->name << ");" << std::endl;
                 gc.get()->output << "}" << std::endl;
@@ -1409,6 +1880,13 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ActionAST *ast, std::st
 boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(AppAST *ast) {
     boost::shared_ptr<GeneratedCode> gc(new GeneratedCode), gc_temp(new GeneratedCode);
 
+    ActionAST *actast;
+    FunctionAST *funast;
+    ActorAST *actorast;
+    ClassAST *classast;
+
+    ActionAST *mainAction = NULL;
+
     gc.get()->decls << "//automatically generated by Minnow->C++ codegen (0.1)" << std::endl;
     gc.get()->decls << "#include \"aquarium.hpp\"" << std::endl;
 
@@ -1416,19 +1894,57 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(AppAST *ast) {
     gc.get()->decls << "inline void puti(int i){std::cout << i << std::endl; }" << std::endl;
     gc.get()->decls << "inline void putstring(std::string s){std::cout << s << std::endl; }" << std::endl;
 
+    DeclStage::Stage stage;
+    for (int i = 0; i < 3; ++i) {
+        switch(i) {
+            case (0) : stage = DeclStage::FORWARD; break;
+            case (1) : stage = DeclStage::DECL; break;
+            case (2) : stage = DeclStage::IMPL; break;
+        }
+        for (std::vector<ASTNode*>::iterator iter = ast->children.begin(), end = ast->children.end(); iter != end; ++iter) {
+            //std::cout << "CHILD: " << (*iter)->nodeType << " at " << (*iter)->filepos.lineNumber << " " << (*iter)->filepos.colStart << std::endl;
+            switch ((*iter)->type()) {
+                case (NodeType::Action) :
+                    actast = dynamic_cast<ActionAST*>(*iter);
+                    if (stage == DeclStage::FORWARD) {
+                        if (dynamic_cast<PrototypeAST*>(actast->children[0])->name != "main") {
+                            throw CompilerException("Only the 'main' action is allowed at the top level");
+                        }
+                        else {
+                            mainAction = actast;
+                        }
+                    }
+                    gc_temp = visit(actast, "Actor", stage);
+                    break;
+                case (NodeType::Function) :
+                    if (stage == DeclStage::FORWARD) {
+                        funStack.push_back(dynamic_cast<PrototypeAST*>((*iter)->children[0]));
+                    }
+                    funast = dynamic_cast<FunctionAST*>(*iter);
+                    gc_temp = visit(funast, stage);
+                    break;
+                case (NodeType::Actor) :
+                    actorast = dynamic_cast<ActorAST*>(*iter);
+                    gc_temp = visit(actorast, stage);
+                    break;
+                case (NodeType::Class) :
+                    classast = dynamic_cast<ClassAST*>(*iter);
+                    gc_temp = visit(classast, stage);
+                    break;
+            }
+            if (gc_temp.get()->decls.str() != "") {
+                gc.get()->output << gc_temp.get()->decls.str();
+            }
+            if (gc_temp.get()->inits.str() != "") {
+                gc.get()->output << gc_temp.get()->inits.str();
+            }
+            if (gc_temp.get()->output.str() != "") {
+                gc.get()->output << gc_temp.get()->output.str();
+            }
 
+        }
+    }
     /*
-    gc.get()->decls << "extern void exit(int i);" << std::endl;
-    gc.get()->decls << "extern int puts(char *s);" << std::endl;
-
-    externFns.push_back("convertToInt");
-    externFns.push_back("puti");
-    externFns.push_back("exit");
-    externFns.push_back("puts");
-    externFns.push_back("putstring");
-    externFns.push_back("return");
-    */
-
     for (std::vector<StructAST*>::iterator iter = ast->structs.begin(), end = ast->structs.end(); iter != end; ++iter) {
         gc_temp = visit(*iter, DeclStage::FORWARD);
         if (gc_temp.get()->decls.str() != "") {
@@ -1588,26 +2104,31 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(AppAST *ast) {
             gc.get()->output << gc_temp.get()->output.str();
         }
     }
+*/
 
     gc.get()->output << "int main(int argc, char *argv[]){" << std::endl;
-    if ((ast->actions.size() != 1)||(ast->actions[0]->proto->name != "main")) {
+
+    if (mainAction == NULL) {
         throw CompilerException("Can not find 'main' action");
     }
-
-    else if (ast->actions[0]->proto->args.size() > 0) {
-        gc.get()->output << "VM_Main(argc, argv, Actor__main_action, true);" << std::endl;
-    }
     else {
-        gc.get()->output << "VM_Main(argc, argv, Actor__main_action, false);" << std::endl;
+        PrototypeAST* mainProto = dynamic_cast<PrototypeAST*>(mainAction->children[0]);
+
+        if (mainProto->children.size() > 0) {
+            gc.get()->output << "VM_Main(argc, argv, Actor__main_action, true);" << std::endl;
+        }
+        else {
+            gc.get()->output << "VM_Main(argc, argv, Actor__main_action, false);" << std::endl;
+        }
     }
+
 
     gc.get()->output << "return(0);" << std::endl;
     gc.get()->output << "};" << std::endl;
-
     return gc;
 }
 
-std::string CodegenCPPOutput::translate(AppAST *ast) {
+std::string CodegenCPPOutput::translate(ASTNode *ast) {
     boost::shared_ptr<GeneratedCode> gc(new GeneratedCode);
 
     gc = visit(ast);
