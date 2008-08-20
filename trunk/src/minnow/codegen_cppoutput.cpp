@@ -621,107 +621,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ArrayIndexedExprAST *as
 
     return gc;
 }
-/*
-boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ArrayDeclExprAST *ast) {
-    boost::shared_ptr<GeneratedCode> gc(new GeneratedCode);
 
-    VariableInfo *vi = new VariableInfo(ast->name, ast->declType, TypeType::Array, ast->size, ScopeType::CodeBlock);
-
-    ++(currentScopeCount.back());
-    scopeStack.push_back(vi);
-
-    std::map<std::string, ActorAST*>::iterator finder = actors.find(ast->declType);
-
-    if (finder != actors.end()) {
-        if (ast->isSpawn) {
-            std::string tmpName = nextTemp();
-            gc.get()->decls << "int " << tmpName << ";" << std::endl;
-
-            std::string actorTemp = nextTemp();
-            std::string loopTemp = nextTemp();
-            gc.get()->decls << ast->declType << " *" << actorTemp << ";" << std::endl;
-
-            gc.get()->decls << "std::vector<actorId_t> *" << ast->name << ";" << std::endl;
-
-            gc.get()->output << tmpName << " = ";
-
-            if (ast->size != NULL) {
-                boost::shared_ptr<GeneratedCode> gc_temp = visit (ast->size);
-                if (gc_temp.get()->decls.str() != "") {
-                    gc.get()->decls << gc_temp.get()->decls.str();
-                }
-                if (gc_temp.get()->inits.str() != "") {
-                    gc.get()->output << gc_temp.get()->inits.str();
-                }
-                if (gc_temp.get()->output.str() != "") {
-                    gc.get()->output << gc_temp.get()->output.str();
-                }
-            }
-            else {
-                gc.get()->output << "0";
-            }
-            gc.get()->output << ";" << std::endl;
-            gc.get()->output << ast->name << " = new std::vector<actorId_t>(" << tmpName << ");" << std::endl;
-
-            gc.get()->output << "for (int " << loopTemp << "=0; " << loopTemp << " < " << tmpName << "; ++" << loopTemp << ") {" << std::endl;
-            gc.get()->output << "  " << actorTemp << " = new " << ast->declType << "();" << std::endl;
-            if (finder->second->isIsolated) {
-                gc.get()->output << "  actor__->parentThread->ScheduleNewIsolatedActor(" << actorTemp << ");" << std::endl;
-            }
-            else {
-                gc.get()->output << "  actor__->parentThread->ScheduleNewActor(" << actorTemp << ");" << std::endl;
-            }
-            gc.get()->output << "  (*" << ast->name << ")[" << loopTemp << "] = " << actorTemp << "->actorId;" << std::endl;
-            gc.get()->output << "}" << std::endl;
-        }
-        else {
-            gc.get()->decls << "std::vector<actorId_t> *" << ast->name << ";" << std::endl;
-            gc.get()->output << ast->name << " = new std::vector<actorId_t>(";
-            if (ast->size != NULL) {
-                boost::shared_ptr<GeneratedCode> gc_temp = visit (ast->size);
-                if (gc_temp.get()->decls.str() != "") {
-                    gc.get()->decls << gc_temp.get()->decls.str();
-                }
-                if (gc_temp.get()->inits.str() != "") {
-                    gc.get()->output << gc_temp.get()->inits.str();
-                }
-                if (gc_temp.get()->output.str() != "") {
-                    gc.get()->output << gc_temp.get()->output.str();
-                }
-            }
-            else {
-                gc.get()->output << "0";
-            }
-            gc.get()->output << ");" << std::endl;
-        }
-    }
-    else {
-        gc.get()->decls << lookupAssocType(vi->type) << " " << ast->name << ";" << std::endl;
-        std::string allocType = lookupAssocType(vi->type);
-        allocType = allocType.erase(allocType.size()-1); //TRIM off the trailing '*'
-        gc.get()->output << ast->name << " = new " << allocType << "(";
-        if (ast->size != NULL) {
-            boost::shared_ptr<GeneratedCode> gc_temp = visit (ast->size);
-            if (gc_temp.get()->decls.str() != "") {
-                gc.get()->decls << gc_temp.get()->decls.str();
-            }
-            if (gc_temp.get()->inits.str() != "") {
-                gc.get()->output << gc_temp.get()->inits.str();
-            }
-            if (gc_temp.get()->output.str() != "") {
-                gc.get()->output << gc_temp.get()->output.str();
-            }
-        }
-        else {
-            gc.get()->output << "0";
-        }
-        gc.get()->output << ")";
-
-        //FIXME?  Would you ever follow an array decl with an assignment?  If so, we should probably check for that
-    }
-    return gc;
-}
-*/
 boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(EndExprAST *ast) {
     //do nothing
     boost::shared_ptr<GeneratedCode> gc(new GeneratedCode);
@@ -839,12 +739,6 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(WhileExprAST *ast) {
         gc.get()->output << condTemp << " = " << gc_cond.get()->output.str() << ";" << std::endl;
     }
 
-    /*
-    if (gc_cond.get()->output.str() != "") {
-        gc.get()->output << condTemp << " = " << gc_cond.get()->output.str() << ";" << std::endl;
-    }
-    */
-
     gc.get()->output << "}";
 
     return gc;
@@ -852,8 +746,6 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(WhileExprAST *ast) {
 boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
     boost::shared_ptr<GeneratedCode> gc(new GeneratedCode);
     boost::shared_ptr<GeneratedCode> gc_temp;
-
-    //std::cout << "Binary: " << ast->op << std::endl;
 
     if (ast->op == "::") {
         CallExprAST *ceast = dynamic_cast<CallExprAST*>(ast->children[1]);
@@ -863,8 +755,6 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
         VariableInfo *vi;
 
         if (ceast == NULL) {
-            //std::cout << "Can't build message, is type: " << ast->RHS->type() << std::endl;
-            //exit(1);
             std::ostringstream msg;
             msg << "Can't build message, right hand side is type: " << ast->children[1]->type();
             throw CompilerException(msg.str(), ast->filepos);
@@ -958,9 +848,6 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
                     gc.get()->output << "  " << msgName << ".arg[" << i << "] = tmpTU__;" << std::endl;
                 }
             }
-
-            //gc.get()->output << lookupPushForVar(ceast->args[i]);
-            //gc.get()->output << ";" << std::endl;
         }
         if (ceast->children.size() > 4 ) {
             gc.get()->output << "  " << msgName << ".arg[0].VoidPtr = " << msgArray << ";" << std::endl;
@@ -1020,7 +907,6 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
             if (veast != NULL) {
                 ClassAST* s = this->classes[lhs_type.get()->declType];
                 //check to see if the struct has an attribute member named this
-                //TODO: Fix re-enable this
 
                 bool foundVar = false;
                 for (std::vector<ASTNode*>::iterator iter = s->children.begin(),
@@ -1040,16 +926,6 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
                     msg << "Can't find '" << veast->name << "' inside of '" << lhs_ast->name << "'";
                     throw CompilerException(msg.str(), ast->filepos);
                 }
-                /*
-                if (s->vars.find(veast->name) != s->vars.end()) {
-                    gc.get()->output << lhs_ast->name << "->" << veast->name;
-                }
-                else {
-                    std::ostringstream msg;
-                    msg << "Can't find '" << veast->name << "' inside of '" << lhs_ast->name << "'";
-                    throw CompilerException(msg.str(), ast->filepos);
-                }
-                */
             }
             if (ceast != NULL) {
                 gc_temp = handleCall(ceast, lhs_type.get()->declType, lhs_ast->name);
@@ -1231,17 +1107,6 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ClassAST *ast, DeclStag
                 }
             }
         }
-        /*
-        for (std::map<std::string, VariableInfo*>::iterator iter = ast->vars.begin(), end = ast->vars.end(); iter != end; ++iter) {
-            if ((iter->second)->needsCopyDelete) {
-                gc.get()->output << "if (" << (iter->second)->name << " != NULL) { delete " << (iter->second)->name << "; };" << std::endl;
-                gc.get()->output << (iter->second)->name << " = new " << lookupAssocType((iter->second)->type) << "(p__->" << (iter->second)->name << ");" << std::endl;
-            }
-            else {
-                gc.get()->output << (iter->second)->name << " = " << "p__->" << (iter->second)->name << ";" << std::endl;
-            }
-        }
-        */
         gc.get()->output << "}" << std::endl;
         gc.get()->output << "};" << std::endl;
 
@@ -1256,108 +1121,6 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ClassAST *ast, DeclStag
             funStack.pop_back();
         }
     }
-    /*
-    if (stage == DeclStage::FORWARD) {
-        this->classes[ast->name] = ast;
-        gc.get()->output << "struct " << ast->name << ";" << std::endl;
-    }
-    else if (stage == DeclStage::IMPL) {
-        currentFunGroup = funStack.size();
-        for (std::vector<FunctionAST*>::iterator iter = ast->funs.begin(), end = ast->funs.end(); iter != end; ++iter) {
-            funStack.push_back((*iter)->proto);
-        }
-
-        currentScopeCount.push_back(0);
-        scopeContainerId = currentScopeCount.size(); //remember where we started
-        gc.get()->output << "struct " << ast->name << "{" << std::endl;
-        for (std::map<std::string, VariableInfo*>::iterator iter = ast->vars.begin(), end = ast->vars.end(); iter != end; ++iter) {
-            ++(currentScopeCount.back());
-            scopeStack.push_back(iter->second);
-            std::map<std::string, ActorAST*>::iterator finder = actors.find(iter->second->type.declType);
-
-            if (finder != actors.end()) {
-                if (iter->second->type.typeType == TypeType::Scalar) {
-                    gc.get()->output << "actorId_t " << iter->first << ";" << std::endl;
-                }
-                else if (iter->second->type.typeType == TypeType::Array) {
-                    gc.get()->output << "actorId_t " << iter->first << "[";
-                    boost::shared_ptr<GeneratedCode> gc_temp = visit (iter->second->size);
-                    if (gc_temp.get()->decls.str() != "") {
-                        gc.get()->output << gc_temp.get()->decls.str();
-                    }
-                    if (gc_temp.get()->inits.str() != "") {
-                        gc.get()->output << gc_temp.get()->inits.str();
-                    }
-                    if (gc_temp.get()->output.str() != "") {
-                        gc.get()->output << gc_temp.get()->output.str();
-                    }
-
-                    gc.get()->output << "];" << std::endl;
-                }
-            }
-            else {
-                if (iter->second->type.typeType == TypeType::Scalar) {
-                    gc.get()->output << lookupAssocType(iter->second->type) << " " << iter->first << ";" << std::endl;
-                }
-                else if (iter->second->type.typeType == TypeType::Array) {
-                    gc.get()->output << lookupAssocType(iter->second->type) << " " << iter->first << "[";
-                    boost::shared_ptr<GeneratedCode> gc_temp = visit (iter->second->size);
-                    if (gc_temp.get()->decls.str() != "") {
-                        gc.get()->output << gc_temp.get()->decls.str();
-                    }
-                    if (gc_temp.get()->inits.str() != "") {
-                        gc.get()->output << gc_temp.get()->inits.str();
-                    }
-                    if (gc_temp.get()->output.str() != "") {
-                        gc.get()->output << gc_temp.get()->output.str();
-                    }
-
-                    gc.get()->output << "];" << std::endl;
-                }
-            }
-        }
-        for (std::vector<FunctionAST*>::iterator iter = ast->funs.begin(), end = ast->funs.end(); iter != end; ++iter) {
-            boost::shared_ptr<GeneratedCode> gc_temp = visit (*iter, stage);
-            if (gc_temp.get()->decls.str() != "") {
-                gc.get()->output << gc_temp.get()->decls.str();
-            }
-            if (gc_temp.get()->inits.str() != "") {
-                gc.get()->output << gc_temp.get()->inits.str();
-            }
-            if (gc_temp.get()->output.str() != "") {
-                gc.get()->output << gc_temp.get()->output.str();
-            }
-
-        }
-
-        gc.get()->output << ast->name << "() { }" << std::endl;
-
-        //TODO: I'm not sure if I need a traditional copy constructor, or this pointer style
-        //gc.get()->output << ast->name << "(const " << ast->name << "& p) {" << std::endl;
-        gc.get()->output << ast->name << "(" << ast->name << "* p__) {" << std::endl;
-        for (std::map<std::string, VariableInfo*>::iterator iter = ast->vars.begin(), end = ast->vars.end(); iter != end; ++iter) {
-            if ((iter->second)->needsCopyDelete) {
-                gc.get()->output << "if (" << (iter->second)->name << " != NULL) { delete " << (iter->second)->name << "; };" << std::endl;
-                gc.get()->output << (iter->second)->name << " = new " << lookupAssocType((iter->second)->type) << "(p__->" << (iter->second)->name << ");" << std::endl;
-            }
-            else {
-                gc.get()->output << (iter->second)->name << " = " << "p__->" << (iter->second)->name << ";" << std::endl;
-            }
-        }
-        gc.get()->output << "}" << std::endl;
-        gc.get()->output << "};" << std::endl;
-        int unwindAmount = currentScopeCount.back();
-        for (int i = 0; i < unwindAmount; ++i) {
-            scopeStack.pop_back();
-        }
-        currentScopeCount.pop_back();
-
-        //Get us back to seeing only the functions we could see before we entered the actor
-        while (funStack.size() != currentFunGroup) {
-            funStack.pop_back();
-        }
-    }
-*/
     return gc;
 }
 
@@ -1448,6 +1211,12 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ActorAST *ast, DeclStag
 
                 }
                 break;
+            case (NodeType::Action) :
+                //handled later
+                break;
+            default:
+                throw CompilerException("Unhandled element in actor definition", (*iter)->filepos);
+                break;
         }
         if (gc_temp.get()->decls.str() != "") {
             gc.get()->output << gc_temp.get()->decls.str();
@@ -1480,6 +1249,15 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ActorAST *ast, DeclStag
                     gc.get()->output << gc_temp.get()->output.str();
                 }
                 break;
+            case (NodeType::Function) :
+                //handled earlier
+                break;
+            case (NodeType::VarDecl) :
+                //handled earlier
+                break;
+            default:
+                throw CompilerException("Unhandled element in actor definition", (*iter)->filepos);
+                break;
         }
     }
 
@@ -1495,145 +1273,6 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ActorAST *ast, DeclStag
             funStack.pop_back();
         }
     }
-
-    /*
-    if (stage == DeclStage::FORWARD) {
-        this->actors[ast->name] = ast;
-        gc.get()->output << "class " << ast->name << ";" << std::endl;
-
-    }
-    else if (stage == DeclStage::DECL) {
-        currentScopeCount.push_back(0);
-        scopeContainerId = currentScopeCount.size(); //remember where we started
-
-        gc.get()->output << "class " << ast->name << " : public Actor {" << std::endl << "public: " << std::endl;
-
-        //then push a variable that will be how we message ourselves
-        std::string name("this");
-        VariableInfo *vi = new VariableInfo(name, ast->name, TypeType::Scalar, ScopeType::Actor);
-        ++(currentScopeCount.back());
-        scopeStack.push_back(vi);
-
-        for (std::map<std::string, VariableInfo*>::iterator iter = ast->vars.begin(), end = ast->vars.end(); iter != end; ++iter) {
-            ++(currentScopeCount.back());
-            scopeStack.push_back(iter->second);
-            std::map<std::string, ActorAST*>::iterator finder = actors.find(iter->second->type.declType);
-
-            if (finder != actors.end()) {
-                if (iter->second->type.typeType == TypeType::Scalar) {
-                    gc.get()->output << "actorId_t " << iter->first << ";" << std::endl;
-                }
-                else if (iter->second->type.typeType == TypeType::Array) {
-                    gc.get()->output << "actorId_t " << iter->first << "[";
-
-                    boost::shared_ptr<GeneratedCode> gc_temp = visit (iter->second->size);
-                    if (gc_temp.get()->decls.str() != "") {
-                        gc.get()->output << gc_temp.get()->decls.str();
-                    }
-                    if (gc_temp.get()->inits.str() != "") {
-                        gc.get()->output << gc_temp.get()->inits.str();
-                    }
-                    if (gc_temp.get()->output.str() != "") {
-                        gc.get()->output << gc_temp.get()->output.str();
-                    }
-
-                    gc.get()->output << "];" << std::endl;
-                }
-            }
-            else {
-                if (iter->second->type.typeType == TypeType::Scalar) {
-                    gc.get()->output << lookupAssocType(iter->second->type) << " " << iter->first << ";" << std::endl;
-                }
-                else if (iter->second->type.typeType == TypeType::Array) {
-                    gc.get()->output << lookupAssocType(iter->second->type) << " " << iter->first << "[";
-                    boost::shared_ptr<GeneratedCode> gc_temp = visit (iter->second->size);
-
-                    if (gc_temp.get()->decls.str() != "") {
-                        gc.get()->output << gc_temp.get()->decls.str();
-                    }
-                    if (gc_temp.get()->inits.str() != "") {
-                        gc.get()->output << gc_temp.get()->inits.str();
-                    }
-                    if (gc_temp.get()->output.str() != "") {
-                        gc.get()->output << gc_temp.get()->output.str();
-                    }
-
-                    gc.get()->output << "];" << std::endl;
-                }
-            }
-        }
-        for (std::vector<FunctionAST*>::iterator iter = ast->funs.begin(), end = ast->funs.end(); iter != end; ++iter) {
-            boost::shared_ptr<GeneratedCode> gc_temp = visit (*iter, stage);
-            if (gc_temp.get()->decls.str() != "") {
-                gc.get()->output << gc_temp.get()->decls.str();
-            }
-            if (gc_temp.get()->inits.str() != "") {
-                gc.get()->output << gc_temp.get()->inits.str();
-            }
-            if (gc_temp.get()->output.str() != "") {
-                gc.get()->output << gc_temp.get()->output.str();
-            }
-
-        }
-        gc.get()->output << "};" << std::endl;
-        for (std::vector<ActionAST*>::iterator iter = ast->actions.begin(), end = ast->actions.end(); iter != end; ++iter) {
-            boost::shared_ptr<GeneratedCode> gc_temp = visit (*iter, ast->name, stage);
-            if (gc_temp.get()->decls.str() != "") {
-                gc.get()->output << gc_temp.get()->decls.str();
-            }
-            if (gc_temp.get()->inits.str() != "") {
-                gc.get()->output << gc_temp.get()->inits.str();
-            }
-            if (gc_temp.get()->output.str() != "") {
-                gc.get()->output << gc_temp.get()->output.str();
-            }
-
-        }
-    }
-    else if (stage == DeclStage::IMPL) {
-        currentFunGroup = funStack.size();
-        for (std::vector<FunctionAST*>::iterator iter = ast->funs.begin(), end = ast->funs.end(); iter != end; ++iter) {
-            funStack.push_back((*iter)->proto);
-        }
-
-        for (std::vector<FunctionAST*>::iterator iter = ast->funs.begin(), end = ast->funs.end(); iter != end; ++iter) {
-            boost::shared_ptr<GeneratedCode> gc_temp = visit (*iter, stage);
-            if (gc_temp.get()->decls.str() != "") {
-                gc.get()->output << gc_temp.get()->decls.str();
-            }
-            if (gc_temp.get()->inits.str() != "") {
-                gc.get()->output << gc_temp.get()->inits.str();
-            }
-            if (gc_temp.get()->output.str() != "") {
-                gc.get()->output << gc_temp.get()->output.str();
-            }
-        }
-        for (std::vector<ActionAST*>::iterator iter = ast->actions.begin(), end = ast->actions.end(); iter != end; ++iter) {
-            boost::shared_ptr<GeneratedCode> gc_temp = visit (*iter, ast->name, stage);
-            if (gc_temp.get()->decls.str() != "") {
-                gc.get()->output << gc_temp.get()->decls.str();
-            }
-            if (gc_temp.get()->inits.str() != "") {
-                gc.get()->output << gc_temp.get()->inits.str();
-            }
-            if (gc_temp.get()->output.str() != "") {
-                gc.get()->output << gc_temp.get()->output.str();
-            }
-
-        }
-
-        int unwindAmount = currentScopeCount.back();
-        for (int i = 0; i < unwindAmount; ++i) {
-            scopeStack.pop_back();
-        }
-        currentScopeCount.pop_back();
-
-        //Get us back to seeing only the functions we could see before we entered the actor
-        while (funStack.size() != currentFunGroup) {
-            funStack.pop_back();
-        }
-    }
-*/
 
     return gc;
 }
@@ -1813,17 +1452,6 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(ActionAST *ast, std::st
         gc.get()->output << "}" << std::endl;
         gc.get()->output << "else {" << std::endl;
 
-        /*
-        for (std::map<std::string, VariableInfo*>::reverse_iterator iter = ast->vars.rbegin(), end = ast->vars.rend(); iter != end; ++iter) {
-            if (iter->second->scopeType == ScopeType::Prototype) {
-                gc.get()->decls << lookupAssocType(iter->second->type) << " " << iter->second->name << ";" << std::endl;
-                gc.get()->output << lookupPopForVar(iter->second) << ";" << std::endl;
-
-                ++(currentScopeCount.back());
-                scopeStack.push_back(iter->second);
-            }
-        }
-        */
         for (std::vector<ASTNode*>::reverse_iterator iter = ast->children[0]->children.rbegin(), end = ast->children[0]->children.rend(); iter != end; ++iter) {
             VarDeclExprAST *varDecl = dynamic_cast<VarDeclExprAST*>(*iter);
             gc.get()->decls << lookupAssocType(varDecl->vi->type) << " " << varDecl->vi->name << ";" << std::endl;
@@ -1931,6 +1559,9 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(AppAST *ast) {
                     classast = dynamic_cast<ClassAST*>(*iter);
                     gc_temp = visit(classast, stage);
                     break;
+                default:
+                    throw CompilerException("Unhandled element in application", (*iter)->filepos);
+                    break;
             }
             if (gc_temp.get()->decls.str() != "") {
                 gc.get()->output << gc_temp.get()->decls.str();
@@ -1944,167 +1575,6 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(AppAST *ast) {
 
         }
     }
-    /*
-    for (std::vector<StructAST*>::iterator iter = ast->structs.begin(), end = ast->structs.end(); iter != end; ++iter) {
-        gc_temp = visit(*iter, DeclStage::FORWARD);
-        if (gc_temp.get()->decls.str() != "") {
-            gc.get()->output << gc_temp.get()->decls.str();
-        }
-        if (gc_temp.get()->inits.str() != "") {
-            gc.get()->output << gc_temp.get()->inits.str();
-        }
-        if (gc_temp.get()->output.str() != "") {
-            gc.get()->output << gc_temp.get()->output.str();
-        }
-    }
-
-    for (std::vector<ActorAST*>::iterator iter = ast->actors.begin(), end = ast->actors.end(); iter != end; ++iter) {
-        gc_temp = visit(*iter, DeclStage::FORWARD);
-        if (gc_temp.get()->decls.str() != "") {
-            gc.get()->output << gc_temp.get()->decls.str();
-        }
-        if (gc_temp.get()->inits.str() != "") {
-            gc.get()->output << gc_temp.get()->inits.str();
-        }
-        if (gc_temp.get()->output.str() != "") {
-            gc.get()->output << gc_temp.get()->output.str();
-        }
-    }
-
-    for (std::vector<FunctionAST*>::iterator iter = ast->functions.begin(), end = ast->functions.end(); iter != end; ++iter) {
-        funStack.push_back((*iter)->proto);
-
-        gc_temp = visit(*iter, DeclStage::FORWARD);
-        if (gc_temp.get()->decls.str() != "") {
-            gc.get()->output << gc_temp.get()->decls.str();
-        }
-        if (gc_temp.get()->inits.str() != "") {
-            gc.get()->output << gc_temp.get()->inits.str();
-        }
-        if (gc_temp.get()->output.str() != "") {
-            gc.get()->output << gc_temp.get()->output.str();
-        }
-
-        //std::cout << "Pushing proto: " << (*iter)->proto->name << std::endl;
-    }
-
-    for (std::vector<ActionAST*>::iterator iter = ast->actions.begin(), end = ast->actions.end(); iter != end; ++iter) {
-        gc_temp = visit(*iter, "Actor", DeclStage::FORWARD);
-        if (gc_temp.get()->decls.str() != "") {
-            gc.get()->output << gc_temp.get()->decls.str();
-        }
-        if (gc_temp.get()->inits.str() != "") {
-            gc.get()->output << gc_temp.get()->inits.str();
-        }
-        if (gc_temp.get()->output.str() != "") {
-            gc.get()->output << gc_temp.get()->output.str();
-        }
-    }
-
-    for (std::vector<StructAST*>::iterator iter = ast->structs.begin(), end = ast->structs.end(); iter != end; ++iter) {
-        gc_temp = visit(*iter, DeclStage::DECL);
-        if (gc_temp.get()->decls.str() != "") {
-            gc.get()->output << gc_temp.get()->decls.str();
-        }
-        if (gc_temp.get()->inits.str() != "") {
-            gc.get()->output << gc_temp.get()->inits.str();
-        }
-        if (gc_temp.get()->output.str() != "") {
-            gc.get()->output << gc_temp.get()->output.str();
-        }
-    }
-
-    for (std::vector<ActorAST*>::iterator iter = ast->actors.begin(), end = ast->actors.end(); iter != end; ++iter) {
-        gc_temp = visit(*iter, DeclStage::DECL);
-        if (gc_temp.get()->decls.str() != "") {
-            gc.get()->output << gc_temp.get()->decls.str();
-        }
-        if (gc_temp.get()->inits.str() != "") {
-            gc.get()->output << gc_temp.get()->inits.str();
-        }
-        if (gc_temp.get()->output.str() != "") {
-            gc.get()->output << gc_temp.get()->output.str();
-        }
-    }
-
-    for (std::vector<FunctionAST*>::iterator iter = ast->functions.begin(), end = ast->functions.end(); iter != end; ++iter) {
-        gc_temp = visit(*iter, DeclStage::DECL);
-        if (gc_temp.get()->decls.str() != "") {
-            gc.get()->output << gc_temp.get()->decls.str();
-        }
-        if (gc_temp.get()->inits.str() != "") {
-            gc.get()->output << gc_temp.get()->inits.str();
-        }
-        if (gc_temp.get()->output.str() != "") {
-            gc.get()->output << gc_temp.get()->output.str();
-        }
-    }
-
-    for (std::vector<ActionAST*>::iterator iter = ast->actions.begin(), end = ast->actions.end(); iter != end; ++iter) {
-        gc_temp = visit(*iter, "Actor", DeclStage::DECL);
-        if (gc_temp.get()->decls.str() != "") {
-            gc.get()->output << gc_temp.get()->decls.str();
-        }
-        if (gc_temp.get()->inits.str() != "") {
-            gc.get()->output << gc_temp.get()->inits.str();
-        }
-        if (gc_temp.get()->output.str() != "") {
-            gc.get()->output << gc_temp.get()->output.str();
-        }
-    }
-
-    for (std::vector<StructAST*>::iterator iter = ast->structs.begin(), end = ast->structs.end(); iter != end; ++iter) {
-        gc_temp = visit(*iter, DeclStage::IMPL);
-        if (gc_temp.get()->decls.str() != "") {
-            gc.get()->output << gc_temp.get()->decls.str();
-        }
-        if (gc_temp.get()->inits.str() != "") {
-            gc.get()->output << gc_temp.get()->inits.str();
-        }
-        if (gc_temp.get()->output.str() != "") {
-            gc.get()->output << gc_temp.get()->output.str();
-        }
-    }
-
-    for (std::vector<ActorAST*>::iterator iter = ast->actors.begin(), end = ast->actors.end(); iter != end; ++iter) {
-        gc_temp = visit(*iter, DeclStage::IMPL);
-        if (gc_temp.get()->decls.str() != "") {
-            gc.get()->output << gc_temp.get()->decls.str();
-        }
-        if (gc_temp.get()->inits.str() != "") {
-            gc.get()->output << gc_temp.get()->inits.str();
-        }
-        if (gc_temp.get()->output.str() != "") {
-            gc.get()->output << gc_temp.get()->output.str();
-        }
-    }
-
-    for (std::vector<FunctionAST*>::iterator iter = ast->functions.begin(), end = ast->functions.end(); iter != end; ++iter) {
-        gc_temp = visit(*iter, DeclStage::IMPL);
-        if (gc_temp.get()->decls.str() != "") {
-            gc.get()->output << gc_temp.get()->decls.str();
-        }
-        if (gc_temp.get()->inits.str() != "") {
-            gc.get()->output << gc_temp.get()->inits.str();
-        }
-        if (gc_temp.get()->output.str() != "") {
-            gc.get()->output << gc_temp.get()->output.str();
-        }
-    }
-
-    for (std::vector<ActionAST*>::iterator iter = ast->actions.begin(), end = ast->actions.end(); iter != end; ++iter) {
-        gc_temp = visit(*iter, "Actor", DeclStage::IMPL);
-        if (gc_temp.get()->decls.str() != "") {
-            gc.get()->output << gc_temp.get()->decls.str();
-        }
-        if (gc_temp.get()->inits.str() != "") {
-            gc.get()->output << gc_temp.get()->inits.str();
-        }
-        if (gc_temp.get()->output.str() != "") {
-            gc.get()->output << gc_temp.get()->output.str();
-        }
-    }
-*/
 
     gc.get()->output << "int main(int argc, char *argv[]){" << std::endl;
 
