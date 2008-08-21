@@ -1,5 +1,5 @@
-#ifndef MINNOW_LEXER_HPP
-#define MINNOW_LEXER_HPP
+#ifndef LEXER_HPP
+#define LEXER_HPP
 
 #include <stdexcept>
 #include <sstream>
@@ -70,4 +70,4 @@ public:
 
 std::vector<Token*> tokenize(std::string sourceText, std::string filename);
 
-#endif //MINNOW_LEXER_HPP
+#endif //LEXER_HPP

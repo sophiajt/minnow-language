@@ -21,6 +21,24 @@ public:
         return NULL;
     }
 
+    TypeInfo lookupReturnTypeInfo(const CallExprAST *ast) {
+        for (std::vector<PrototypeAST*>::reverse_iterator iter = funStack.rbegin(),
+                end = funStack.rend(); iter != end; ++iter) {
+
+            //FIXME: This is insufficient for overloaded functions
+            if ((*iter)->name == ast->name) {
+                //TypeInfo ti((*iter)->type, TypeType::Scalar);
+                return (*iter)->returnType;
+            }
+        }
+
+        std::ostringstream msg;
+        msg << "Can not find function '" << ast->name << "'";
+        std::string outmsg = msg.str();
+        throw CompilerException(outmsg, ast->filepos);
+    }
+
+
     ASTNode *analyseScopeAndTypes(ASTNode* input);
 };
 

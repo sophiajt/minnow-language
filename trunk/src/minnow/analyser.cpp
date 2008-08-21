@@ -93,31 +93,92 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
                 input->programmaticType.containerType = ContainerType::Scalar;
             }
             else if (beast->op == "."){
+                if (input->children[0]->programmaticType.containerType != ContainerType::Scalar) {
+                    throw CompilerException("Attempting to reference a non-scalar type", input->filepos);
+                }
+                std::map<std::string, ClassAST*>::iterator location =
+                    this->classes.find(input->children[0]->programmaticType.declType);
+                if (location == this->classes.end()) {
+                    throw CompilerException("Could not find referenced class", input->filepos);
+                }
+                else {
+                    VariableExprAST *as_var = dynamic_cast<VariableExprAST*>(input->children[1]);
+                    CallExprAST *as_call = dynamic_cast<CallExprAST*>(input->children[1]);
+                    if ((as_var == NULL) && (as_call == NULL)) {
+                        std::ostringstream msg;
+                        msg << "Can't use '.' in this context";
+                        throw CompilerException(msg.str(), input->filepos);
+                    }
+                    bool isFound = false;
+                    for (std::vector<ASTNode*>::iterator citer = location->second->children.begin(),
+                            cend = location->second->children.end(); citer != cend; ++citer) {
 
+                        if (as_var != NULL) {
+                            if ((*citer)->nodeType == NodeType::VarDecl) {
+                                VarDeclExprAST *varDecl = dynamic_cast<VarDeclExprAST*>(*citer);
+                                if (varDecl->vi->name == as_var->name) {
+                                    isFound = true;
+                                    input->programmaticType = varDecl->vi->type;
+                                }
+                            }
+                        }
+                        else if (as_call != NULL) {
+                            if ((*citer)->nodeType == NodeType::Function) {
+                                if ((*citer)->children.size() == 0) {
+                                    std::ostringstream msg;
+                                    msg << "Internal error: function missing prototype";
+                                    throw CompilerException(msg.str(), (*citer)->filepos);
+                                }
+                                PrototypeAST *proto = dynamic_cast<PrototypeAST*>((*citer)->children[0]);
+
+                                //FIXME: this does _not_ allow overloading
+                                if (proto->name == as_call->name) {
+                                    isFound = true;
+                                    input->programmaticType = proto->returnType;
+                                }
+                            }
+
+                        }
+                    }
+                }
+            }
+            else {
+                if (input->children[0]->programmaticType !=
+                    input->children[1]->programmaticType) {
+                    throw CompilerException("Unmatched types", input->filepos);
+                }
+                else {
+                    input->programmaticType = input->children[0]->programmaticType;
+                }
             }
             break;
-            /*
+
         case (NodeType::Quote) :
-            qeast = dynamic_cast<QuoteExprAST*>(ast);
+            qeast = dynamic_cast<QuoteExprAST*>(input);
             if (qeast == NULL) {
                 printf("FIXME: Quote compiler exception\n");
             }
-            ti.get()->declType = "quote";
-            ti.get()->containerType = ContainerType::Scalar;
+            input->programmaticType.declType = "quote";
+            input->programmaticType.containerType = ContainerType::Scalar;
             break;
         case (NodeType::Call) :
-            ceast = dynamic_cast<CallExprAST*>(ast);
+            ceast = dynamic_cast<CallExprAST*>(input);
             if (ceast == NULL) {
                 printf("FIXME: Call compiler exception\n");
             }
-            typeInfo = lookupReturnTypeInfo(ceast);
-            ti.get()->declType = typeInfo.declType;
-            ti.get()->containerType = typeInfo.containerType;
+
+            input->programmaticType = lookupReturnTypeInfo(ceast);
+            //typeInfo = lookupReturnTypeInfo(ceast);
+            //ti.get()->declType = typeInfo.declType;
+            //ti.get()->containerType = typeInfo.containerType;
             //gc = visit(ceast);
             break;
-            */
+
         default:
-            throw CompilerException("Can't resolve type during lookup", input->filepos);
+            for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
+                    cend = input->children.end(); cnode != cend; ++cnode) {
+                analyseScopeAndTypes(*cnode);
+            }
     }
 
     return input;

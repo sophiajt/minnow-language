@@ -1,5 +1,5 @@
-#ifndef PARSER_NEW_HPP_
-#define PARSER_NEW_HPP_
+#ifndef PARSER_HPP
+#define PARSER_HPP
 
 #include "lexer.hpp"
 
@@ -44,6 +44,29 @@ public:
     	declType(decl), containerType(type) {
 
     }
+
+    bool operator!=(TypeInfo const &rhs) {
+        if (this->declType != rhs.declType) {
+            return true;
+        }
+        if (this->containerType != rhs.containerType) {
+            return true;
+        }
+        if (this->containedTypes.size() != rhs.containedTypes.size()) {
+            return true;
+        }
+        for (int i = 0, end = this->containedTypes.size(); i != end; ++i) {
+            if (this->containedTypes[i] != rhs.containedTypes[i]) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool operator==(TypeInfo const &rhs) {
+        return !(*this != rhs);
+    }
+
 
     TypeInfo() {
     	declType = "void";
@@ -322,4 +345,4 @@ AppAST* parse(std::vector<Token*>::iterator &iter,
 		std::vector<Token*>::iterator &end);
 
 
-#endif /* PARSER_NEW_HPP_ */
+#endif /* PARSER_HPP */
