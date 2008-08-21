@@ -8,11 +8,12 @@ class Analyser {
 public:
     std::map<std::string, ActorAST*> actors;
     std::map<std::string, ClassAST*> classes;
-    std::vector<VariableInfo*> scopeStack;
-    std::vector<PrototypeAST*> funStack;
+    std::vector<VariableInfo*> varScopeStack;
+    std::vector<PrototypeAST*> funScopeStack;
 
     VariableInfo* findVarInScope(const std::string &name) {
-        for (std::vector<VariableInfo*>::reverse_iterator iter = scopeStack.rbegin(), end = scopeStack.rend(); iter != end; ++iter) {
+        for (std::vector<VariableInfo*>::reverse_iterator iter = varScopeStack.rbegin(),
+                end = varScopeStack.rend(); iter != end; ++iter) {
             if ((*iter)->name == name) {
                 return *iter;
             }
@@ -22,8 +23,8 @@ public:
     }
 
     TypeInfo lookupReturnTypeInfo(const CallExprAST *ast) {
-        for (std::vector<PrototypeAST*>::reverse_iterator iter = funStack.rbegin(),
-                end = funStack.rend(); iter != end; ++iter) {
+        for (std::vector<PrototypeAST*>::reverse_iterator iter = funScopeStack.rbegin(),
+                end = funScopeStack.rend(); iter != end; ++iter) {
 
             //FIXME: This is insufficient for overloaded functions
             if ((*iter)->name == ast->name) {

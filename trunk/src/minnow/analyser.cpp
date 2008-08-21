@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "analyser.hpp"
 #include "parser.hpp"
 
@@ -11,17 +13,26 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
     ArrayIndexedExprAST *aieast;
     BinaryExprAST *beast;
     CallExprAST *ceast;
+    PrototypeAST *proto;
+    VarDeclExprAST *vdeast;
+
+    std::ostringstream msg;
+
+    unsigned int varScopeDepth, funScopeDepth;
 
     if (input == NULL) {
         //NOP
-        throw CompilerException("Internal error: AST node is NULL.");
+        return NULL;
+    }
+    else {
+        std::cout << "Int: " << input->type() << std::endl;
     }
     //Number, Variable, ArrayIndexed, Binary, Quote, Call, DefFun, End, VarDecl, ArrayDecl, If, While
     switch (input->type()) {
         case (NodeType::Number) :
             neast = dynamic_cast<NumberExprAST*>(input);
             if (neast == NULL) {
-                printf("FIXME: Number compiler exception\n");
+                throw CompilerException("FIXME: Number compiler exception\n");
             }
             //FIXME: Check for dot for floats
             input->programmaticType.declType = "int";
@@ -30,7 +41,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
         case (NodeType::Boolean) :
             boeast = dynamic_cast<BooleanExprAST*>(input);
             if (boeast == NULL) {
-                printf("FIXME: Boolean compiler exception\n");
+                throw CompilerException("FIXME: Boolean compiler exception\n");
             }
             input->programmaticType.declType = "bool";
             input->programmaticType.containerType = ContainerType::Scalar;
@@ -39,7 +50,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
         case (NodeType::Variable) :
             veast = dynamic_cast<VariableExprAST*>(input);
             if (veast == NULL) {
-                printf("FIXME: Variable compiler exception\n");
+                throw CompilerException("FIXME: Variable compiler exception\n");
             }
             vi = findVarInScope(veast->name);
             if (vi != NULL) {
@@ -61,7 +72,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
                 throw CompilerException("Non-integer array index", input->children[0]->filepos);
             }
             if (aieast == NULL) {
-                printf("FIXME: Array indexed compiler exception\n");
+                throw CompilerException("FIXME: Array indexed compiler exception\n");
             }
             vi = findVarInScope(aieast->name);
             if (vi != NULL) {
@@ -79,7 +90,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
         case (NodeType::Binary) :
             beast = dynamic_cast<BinaryExprAST*>(input);
             if (beast == NULL) {
-                printf("FIXME: Binary compiler exception\n");
+                throw CompilerException("FIXME: Binary compiler exception\n");
             }
             if (input->children.size() != 2) {
                 throw CompilerException("Internal Error: incorrect number of binary children",
@@ -156,7 +167,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
         case (NodeType::Quote) :
             qeast = dynamic_cast<QuoteExprAST*>(input);
             if (qeast == NULL) {
-                printf("FIXME: Quote compiler exception\n");
+                throw CompilerException("FIXME: Quote compiler exception\n");
             }
             input->programmaticType.declType = "quote";
             input->programmaticType.containerType = ContainerType::Scalar;
@@ -164,21 +175,53 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
         case (NodeType::Call) :
             ceast = dynamic_cast<CallExprAST*>(input);
             if (ceast == NULL) {
-                printf("FIXME: Call compiler exception\n");
+                throw CompilerException("FIXME: Call compiler exception\n");
             }
 
             input->programmaticType = lookupReturnTypeInfo(ceast);
-            //typeInfo = lookupReturnTypeInfo(ceast);
-            //ti.get()->declType = typeInfo.declType;
-            //ti.get()->containerType = typeInfo.containerType;
-            //gc = visit(ceast);
             break;
-
-        default:
+        case (NodeType::Prototype):
+            proto = dynamic_cast<PrototypeAST*>(input);
+            if (proto == NULL) {
+                throw CompilerException("FIXME: prototype compiler exception");
+            }
+            funScopeStack.push_back(proto);
             for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
                     cend = input->children.end(); cnode != cend; ++cnode) {
                 analyseScopeAndTypes(*cnode);
             }
+            break;
+        case (NodeType::VarDecl):
+            vdeast = dynamic_cast<VarDeclExprAST*>(input);
+            if (vdeast == NULL) {
+                throw CompilerException("FIXME: vardecl compiler exception");
+            }
+            varScopeStack.push_back(vdeast->vi);
+            break;
+        case (NodeType::Function):
+        case (NodeType::Action):
+        case (NodeType::While):
+        case (NodeType::If):
+        case (NodeType::Block):
+        case (NodeType::Actor):
+        case (NodeType::Class):
+        case (NodeType::App):
+            funScopeDepth = funScopeStack.size();
+            varScopeDepth = varScopeStack.size();
+            for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
+                    cend = input->children.end(); cnode != cend; ++cnode) {
+                analyseScopeAndTypes(*cnode);
+            }
+            while (varScopeDepth != varScopeStack.size()) {
+                varScopeStack.pop_back();
+            }
+            while (funScopeDepth != funScopeStack.size()) {
+                funScopeStack.pop_back();
+            }
+            break;
+        default:
+            msg << "Unhandled element during analysis: " << input->type();
+            throw CompilerException(msg.str(), input->filepos);
     }
 
     return input;
