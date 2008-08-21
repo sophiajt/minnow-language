@@ -63,7 +63,7 @@ class ASTNode {
 public:
 	FilePos filepos;
 	NodeType::Type nodeType;
-	TypeInfo resultType;
+	TypeInfo programmaticType;
 	std::vector<ASTNode*> children;
 
 	virtual NodeType::Type type() = 0;
