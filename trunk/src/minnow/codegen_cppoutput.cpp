@@ -5,6 +5,7 @@
 #include <string>
 
 //catch all that will dispatch out to others
+/*
 boost::shared_ptr<TypeInfo> CodegenCPPOutput::resolveType(ASTNode *ast) {
     boost::shared_ptr<TypeInfo> ti= boost::shared_ptr<TypeInfo>(new TypeInfo);
     TypeInfo typeInfo;
@@ -105,6 +106,7 @@ boost::shared_ptr<TypeInfo> CodegenCPPOutput::resolveType(ASTNode *ast) {
 
     return ti;
 }
+*/
 
 boost::shared_ptr<GeneratedCode> CodegenCPPOutput::handleCall(CallExprAST *ast, const std::string &container, const std::string &container_name) {
     boost::shared_ptr<GeneratedCode> gc(new GeneratedCode), gc_temp;
@@ -829,7 +831,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
             gc.get()->decls << "std::vector<TypeUnion> *" << msgArray << " = new std::vector<TypeUnion>();" << std::endl;
         }
         for (unsigned int i = 0; i < ceast->children.size(); ++i) {
-            boost::shared_ptr<TypeInfo> ti = resolveType(ceast->children[i]);
+            //boost::shared_ptr<TypeInfo> ti = resolveType(ceast->children[i]);
 
             boost::shared_ptr<GeneratedCode> gc_temp = visit (ceast->children[i]);
             if (gc_temp.get()->decls.str() != "") {
@@ -840,7 +842,9 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
             }
             if (gc_temp.get()->output.str() != "") {
                 //gc.get()->output << gc_temp.get()->output.str();
-                gc.get()->output << "  " << lookupPushForTypeAndBlock(ti, gc_temp.get()->output.str());
+                gc.get()->output << "  " << lookupPushForTypeAndBlock
+                    (ceast->children[i]->programmaticType, gc_temp.get()->output.str());
+
                 if (ceast->children.size() > 4 ) {
                     gc.get()->output << "  " << msgArray << "->push_back(tmpTU__);" << std::endl;
                 }
@@ -858,7 +862,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
         gc.get()->output << "else {" << std::endl;
 
         for (unsigned int i = 0; i < ceast->children.size(); ++i) {
-            boost::shared_ptr<TypeInfo> ti = resolveType(ceast->children[i]);
+            //boost::shared_ptr<TypeInfo> ti = resolveType(ceast->children[i]);
             //gc.get()->output << "tmpTU__.UInt32 = ";
 
             boost::shared_ptr<GeneratedCode> gc_temp = visit (ceast->children[i]);
@@ -870,7 +874,8 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
             }
             if (gc_temp.get()->output.str() != "") {
                 //gc.get()->output << gc_temp.get()->output.str();
-                gc.get()->output << "  " << lookupPushForTypeAndBlock(ti, gc_temp.get()->output.str());
+                gc.get()->output << "  " << lookupPushForTypeAndBlock
+                    (ceast->children[i]->programmaticType, gc_temp.get()->output.str());
                 //gc.get()->output << "  " << msgName << ".arg[" << i << "] = tmpTU__;" << std::endl;
             }
 
@@ -901,11 +906,11 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
             if (lhs_ast == NULL) {
                 throw CompilerException("Left hand side is not a variable (this is a limitation of the current system)", ast->filepos);
             }
-            boost::shared_ptr<TypeInfo> lhs_type = resolveType(ast->children[0]);
+            //boost::shared_ptr<TypeInfo> lhs_type = resolveType(ast->children[0]);
             //std::cout << "Accessing type: " << lhs_type.get()->declType << std::endl;
 
             if (veast != NULL) {
-                ClassAST* s = this->classes[lhs_type.get()->declType];
+                ClassAST* s = this->classes[ast->children[0]->programmaticType.declType];
                 //check to see if the struct has an attribute member named this
 
                 bool foundVar = false;
@@ -928,7 +933,7 @@ boost::shared_ptr<GeneratedCode> CodegenCPPOutput::visit(BinaryExprAST *ast) {
                 }
             }
             if (ceast != NULL) {
-                gc_temp = handleCall(ceast, lhs_type.get()->declType, lhs_ast->name);
+                gc_temp = handleCall(ceast, ast->children[0]->programmaticType.declType, lhs_ast->name);
                 if (gc_temp.get()->decls.str() != "") {
                     gc.get()->decls << gc_temp.get()->decls.str();
                 }

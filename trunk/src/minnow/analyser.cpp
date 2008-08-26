@@ -119,6 +119,12 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
                 }
                 else {
                     CallExprAST *as_call = dynamic_cast<CallExprAST*>(input->children[1]);
+                    if (as_call != NULL) {
+                        //visit children
+                        for (unsigned int i = 0; i < as_call->children.size(); ++i) {
+                            analyseScopeAndTypes(as_call->children[i]);
+                        }
+                    }
 
                     bool isFound = false;
                     for (std::vector<ASTNode*>::iterator citer = location->second->children.begin(),
@@ -155,6 +161,12 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
                         std::ostringstream msg;
                         msg << "Can't use '.' in this context";
                         throw CompilerException(msg.str(), input->filepos);
+                    }
+                    if (as_call != NULL) {
+                        //visit children
+                        for (unsigned int i = 0; i < as_call->children.size(); ++i) {
+                            analyseScopeAndTypes(as_call->children[i]);
+                        }
                     }
                     bool isFound = false;
                     for (std::vector<ASTNode*>::iterator citer = location->second->children.begin(),
@@ -226,10 +238,12 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
             if (ceast == NULL) {
                 throw CompilerException("FIXME: Call compiler exception\n");
             }
-            //FIXME: Call needs to run analysis on its children
             //FIXME: Need to make sure "return" is in function scope
             if (ceast->name != "return") {
                 input->programmaticType = lookupReturnTypeInfo(ceast);
+            }
+            for (unsigned int i = 0; i < input->children.size(); ++i) {
+                analyseScopeAndTypes(input->children[i]);
             }
             break;
         case (NodeType::Prototype):
