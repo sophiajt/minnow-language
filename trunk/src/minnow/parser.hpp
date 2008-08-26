@@ -83,9 +83,9 @@ public:
 };
 
 class ASTNode {
+    NodeType::Type nodeType;
 public:
 	FilePos filepos;
-	NodeType::Type nodeType;
 	TypeInfo programmaticType;
 	std::vector<ASTNode*> children;
 

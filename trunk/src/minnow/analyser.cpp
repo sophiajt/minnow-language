@@ -125,7 +125,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
                             cend = location->second->children.end(); citer != cend; ++citer) {
 
                         if (as_var != NULL) {
-                            if ((*citer)->nodeType == NodeType::VarDecl) {
+                            if ((*citer)->type() == NodeType::VarDecl) {
                                 VarDeclExprAST *varDecl = dynamic_cast<VarDeclExprAST*>(*citer);
                                 if (varDecl->vi->name == as_var->name) {
                                     isFound = true;
@@ -134,7 +134,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
                             }
                         }
                         else if (as_call != NULL) {
-                            if ((*citer)->nodeType == NodeType::Function) {
+                            if ((*citer)->type() == NodeType::Function) {
                                 if ((*citer)->children.size() == 0) {
                                     std::ostringstream msg;
                                     msg << "Internal error: function missing prototype";
@@ -156,7 +156,9 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
             else {
                 if (input->children[0]->programmaticType !=
                     input->children[1]->programmaticType) {
-                    throw CompilerException("Unmatched types", input->filepos);
+                    msg << "Unmatched types: " << input->children[0]->programmaticType.declType
+                        << " vs " << input->children[1]->programmaticType.declType;
+                    throw CompilerException(msg.str(), input->filepos);
                 }
                 else {
                     input->programmaticType = input->children[0]->programmaticType;
@@ -177,8 +179,10 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
             if (ceast == NULL) {
                 throw CompilerException("FIXME: Call compiler exception\n");
             }
-
-            input->programmaticType = lookupReturnTypeInfo(ceast);
+            //FIXME: Need to make sure "return" is in function scope
+            if (ceast->name != "return") {
+                input->programmaticType = lookupReturnTypeInfo(ceast);
+            }
             break;
         case (NodeType::Prototype):
             proto = dynamic_cast<PrototypeAST*>(input);
@@ -186,6 +190,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
                 throw CompilerException("FIXME: prototype compiler exception");
             }
             funScopeStack.push_back(proto);
+            std::cout << "Pushed: " << proto->name << std::endl;
             for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
                     cend = input->children.end(); cnode != cend; ++cnode) {
                 analyseScopeAndTypes(*cnode);
@@ -197,21 +202,100 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
                 throw CompilerException("FIXME: vardecl compiler exception");
             }
             varScopeStack.push_back(vdeast->vi);
+            input->programmaticType = vdeast->vi->type;
             break;
         case (NodeType::Function):
+            //prototype is captured earlier
+            varScopeDepth = varScopeStack.size();
+            for (unsigned int i = 1; i < input->children.size(); ++i) {
+                analyseScopeAndTypes(input->children[i]);
+            }
+            while (varScopeDepth != varScopeStack.size()) {
+                varScopeStack.pop_back();
+            }
+            break;
         case (NodeType::Action):
+            varScopeDepth = varScopeStack.size();
+            for (unsigned int i = 0; i < input->children.size(); ++i) {
+                analyseScopeAndTypes(input->children[i]);
+            }
+            while (varScopeDepth != varScopeStack.size()) {
+                varScopeStack.pop_back();
+            }
         case (NodeType::While):
-        case (NodeType::If):
-        case (NodeType::Block):
-        case (NodeType::Actor):
-        case (NodeType::Class):
-        case (NodeType::App):
-            funScopeDepth = funScopeStack.size();
             varScopeDepth = varScopeStack.size();
             for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
                     cend = input->children.end(); cnode != cend; ++cnode) {
                 analyseScopeAndTypes(*cnode);
             }
+            while (varScopeDepth != varScopeStack.size()) {
+                varScopeStack.pop_back();
+            }
+            break;
+        case (NodeType::If):
+            varScopeDepth = varScopeStack.size();
+            for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
+                    cend = input->children.end(); cnode != cend; ++cnode) {
+                analyseScopeAndTypes(*cnode);
+            }
+            while (varScopeDepth != varScopeStack.size()) {
+                varScopeStack.pop_back();
+            }
+            break;
+        case (NodeType::Block):
+            varScopeDepth = varScopeStack.size();
+            for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
+                    cend = input->children.end(); cnode != cend; ++cnode) {
+                analyseScopeAndTypes(*cnode);
+            }
+            while (varScopeDepth != varScopeStack.size()) {
+                varScopeStack.pop_back();
+            }
+            break;
+        case (NodeType::Actor):
+            std::cout << "Actor" << std::endl;
+            break;
+        case (NodeType::Class):
+            std::cout << "Class" << std::endl;
+            break;
+        case (NodeType::App):
+            std::cout << "App" << std::endl;
+            funScopeDepth = funScopeStack.size();
+            varScopeDepth = varScopeStack.size();
+            //find prototypes and variables that are in the closed scope, and
+            //do those first.
+            for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
+                    cend = input->children.end(); cnode != cend; ++cnode) {
+                if (*cnode != NULL) {
+                    std::cout << "[" << (*cnode)->type() << "]" << std::endl;
+                    switch ((*cnode)->type()) {
+                        case (NodeType::Function) :
+                            std::cout << "Function uncovered" << std::endl;
+                            analyseScopeAndTypes((*cnode)->children[0]);
+                            break;
+                        case (NodeType::VarDecl) :
+                            std::cout << "Var uncovered" << std::endl;
+                            analyseScopeAndTypes(*cnode);
+                        default :
+                            //do nothing
+                            break;
+                    }
+                }
+            }
+            std::cout << "-->" << std::endl;
+            for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
+                    cend = input->children.end(); cnode != cend; ++cnode) {
+                switch ((*cnode)->type()) {
+                    case (NodeType::VarDecl) :
+                        break;
+                    default :
+                        analyseScopeAndTypes(*cnode);
+                        break;
+                }
+
+                //analyseScopeAndTypes(*cnode);
+            }
+            std::cout << "<--" << std::endl;
             while (varScopeDepth != varScopeStack.size()) {
                 varScopeStack.pop_back();
             }
