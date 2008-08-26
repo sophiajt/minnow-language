@@ -14,7 +14,13 @@ public:
     VariableInfo* findVarInScope(const std::string &name) {
         for (std::vector<VariableInfo*>::reverse_iterator iter = varScopeStack.rbegin(),
                 end = varScopeStack.rend(); iter != end; ++iter) {
+
+
+            if ((*iter) == NULL) {
+                throw CompilerException("Internal Error: variableinfo is null");
+            }
             if ((*iter)->name == name) {
+                std::cout << "returning: " << (*iter)->name << std::endl;
                 return *iter;
             }
         }

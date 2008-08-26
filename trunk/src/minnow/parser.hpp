@@ -34,10 +34,20 @@ public:
         return needsCopyDelete;
     }
 
+    TypeInfo(const TypeInfo &tInfo) {
+        declType = tInfo.declType;
+        containerType = tInfo.containerType;
+        for (int i = 0, end = tInfo.containedTypes.size(); i < end; ++i) {
+            containedTypes.push_back(tInfo.containedTypes[i]);
+        }
+    }
     TypeInfo(const std::string &decl, ContainerType::Type &type,
     		const std::vector<TypeInfo> &contained) :
-    	declType(decl), containerType(type), containedTypes(contained) {
+    	declType(decl), containerType(type) {
 
+        for (int i = 0, end = contained.size(); i < end; ++i) {
+            containedTypes.push_back(contained[i]);
+        }
     }
 
     TypeInfo(const std::string &decl, ContainerType::Type type) :
@@ -99,14 +109,21 @@ public:
     ASTNode *size;
     ScopeType::Type scopeType;
 
-    VariableInfo(std::string &vname, std::string &decl, ContainerType::Type ty,
-    		ScopeType::Type scope) :
+    VariableInfo(const std::string &vname, const std::string &decl,
+            const ContainerType::Type ty, const ScopeType::Type scope) :
         name(vname), type(decl, ty), scopeType(scope)
     { }
-    VariableInfo(std::string &vname, std::string &decl, ContainerType::Type ty,
-    		ASTNode *sizeast, ScopeType::Type scope) :
+    VariableInfo(const std::string &vname, const std::string &decl,
+            const ContainerType::Type ty, ASTNode *sizeast, ScopeType::Type scope) :
         name(vname), type(decl, ty), size(sizeast), scopeType(scope)
 	{ }
+
+    VariableInfo(const VariableInfo &vinfo) {
+        name = vinfo.name;
+        type = vinfo.type;
+        size = vinfo.size;
+        scopeType = vinfo.scopeType;
+    }
 
     VariableInfo() {
     	scopeType = ScopeType::CodeBlock;

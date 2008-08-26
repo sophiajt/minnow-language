@@ -33,6 +33,11 @@ TypeInfo parse_typesig(std::vector<Token*>::iterator &iter,
         }
         ++iter;
         ti.containerType = ContainerType::Array;
+
+        TypeInfo containedType;
+        containedType.declType = ti.declType;
+        containedType.containerType = ContainerType::Scalar;
+        ti.containedTypes.push_back(containedType);
     }
 
     if (iter == end) {
@@ -89,7 +94,14 @@ VarDeclExprAST* parse_variable_decl(std::vector<Token*>::iterator &iter,
 	            throw CompilerException("Incomplete default size", *(--iter));
 	        }
 	        vi->size = parse_expression(iter, end);
+	        /*
 	        vi->type.containerType = ContainerType::Array;
+
+	        TypeInfo containedInfo;
+	        containedInfo.containerType = ContainerType::Scalar;
+	        containedInfo.declType = vi->type.declType;
+	        vi->type.containedTypes.push_back(containedInfo);
+            */
 	        if ((*iter)->data != "]") {
 	            throw CompilerException("Incomplete default size", *(--iter));
 	        }

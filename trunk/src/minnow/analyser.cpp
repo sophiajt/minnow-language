@@ -5,6 +5,7 @@
 
 ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
     VariableInfo *vi;
+    int loopvar;
 
     NumberExprAST *neast;
     BooleanExprAST *boeast;
@@ -15,6 +16,8 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
     CallExprAST *ceast;
     PrototypeAST *proto;
     VarDeclExprAST *vdeast;
+    ActorAST *actorast;
+    ClassAST *classast;
 
     std::ostringstream msg;
 
@@ -22,10 +25,12 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
 
     if (input == NULL) {
         //NOP
+        //throw CompilerException("Null value found");
         return NULL;
     }
     else {
-        std::cout << "Int: " << input->type() << std::endl;
+        std::cout << "Int: " << input->type() << " "
+            << input->filepos.lineNumber << std::endl;
     }
     //Number, Variable, ArrayIndexed, Binary, Quote, Call, DefFun, End, VarDecl, ArrayDecl, If, While
     switch (input->type()) {
@@ -52,6 +57,9 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
             if (veast == NULL) {
                 throw CompilerException("FIXME: Variable compiler exception\n");
             }
+            if ((veast->name == "done") || (veast->name == "return")) {
+                break;
+            }
             vi = findVarInScope(veast->name);
             if (vi != NULL) {
                 input->programmaticType = vi->type;
@@ -63,6 +71,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
             }
             break;
         case (NodeType::ArrayIndexed) :
+            std::cout << "ARRAY_INDEXED begin" << std::endl;
             aieast = dynamic_cast<ArrayIndexedExprAST*>(input);
             if (input->children.size() == 0) {
                 throw CompilerException("Incomplete array index", input->filepos);
@@ -79,13 +88,22 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
                 if (vi->type.containerType != ContainerType::Array) {
                     throw CompilerException("Indexing of non-array variable", input->filepos);
                 }
-                input->programmaticType = vi->type.containedTypes[0];
+                else {
+                    if (vi->type.containedTypes.size() < 1) {
+                        throw CompilerException("Internal error: array representation insufficient");
+                    }
+                    else {
+                        input->programmaticType = vi->type.containedTypes[0];
+                    }
+                }
+
             }
             else {
                 std::ostringstream msg;
                 msg << "Can not find variable '" << aieast->name << "'";
                 throw CompilerException(msg.str(), input->filepos);
             }
+            std::cout << "ARRAY_INDEXED end" << std::endl;
             break;
         case (NodeType::Binary) :
             beast = dynamic_cast<BinaryExprAST*>(input);
@@ -97,9 +115,34 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
                         input->filepos);
             }
             analyseScopeAndTypes(input->children[0]);
-            analyseScopeAndTypes(input->children[1]);
 
             if (beast->op == "::") {
+                std::map<std::string, ActorAST*>::iterator location =
+                    this->actors.find(input->children[0]->programmaticType.declType);
+                if (location == this->actors.end()) {
+                    msg << "Could not find referenced actor: '" <<
+                        input->children[0]->programmaticType.declType << "'";
+                    throw CompilerException(msg.str(), input->children[0]->filepos);
+                }
+                else {
+                    CallExprAST *as_call = dynamic_cast<CallExprAST*>(input->children[1]);
+
+                    bool isFound = false;
+                    for (std::vector<ASTNode*>::iterator citer = location->second->children.begin(),
+                            cend = location->second->children.end(); citer != cend; ++citer) {
+
+                        if ((*citer)->type() == NodeType::Action) {
+                            proto = dynamic_cast<PrototypeAST*>((*citer)->children[0]);
+                            //FIXME: This does -not- allow overloading
+                            if (as_call->name == proto->name) {
+                                isFound = true;
+                            }
+                        }
+                    }
+                    if (!isFound) {
+                        throw CompilerException("Could not find action", input->children[1]->filepos);
+                    }
+                }
                 input->programmaticType.declType = "void";
                 input->programmaticType.containerType = ContainerType::Scalar;
             }
@@ -130,6 +173,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
                                 if (varDecl->vi->name == as_var->name) {
                                     isFound = true;
                                     input->programmaticType = varDecl->vi->type;
+                                    input->children[1]->programmaticType = varDecl->vi->type;
                                 }
                             }
                         }
@@ -146,18 +190,28 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
                                 if (proto->name == as_call->name) {
                                     isFound = true;
                                     input->programmaticType = proto->returnType;
+                                    input->children[1]->programmaticType = proto->returnType;
                                 }
                             }
 
                         }
                     }
+                    if (!isFound) {
+                        throw CompilerException("Could not find referenced item", input->children[1]->filepos);
+                    }
                 }
             }
             else {
+                analyseScopeAndTypes(input->children[1]);
+
                 if (input->children[0]->programmaticType !=
                     input->children[1]->programmaticType) {
                     msg << "Unmatched types: " << input->children[0]->programmaticType.declType
-                        << " vs " << input->children[1]->programmaticType.declType;
+                        << "(" << input->children[0]->programmaticType.containerType << ")"
+                        << "[" << input->children[0]->programmaticType.containedTypes.size() << "]"
+                        << " vs " << input->children[1]->programmaticType.declType
+                        << "(" << input->children[1]->programmaticType.containerType << ")"
+                        << "[" << input->children[1]->programmaticType.containedTypes.size() << "]";
                     throw CompilerException(msg.str(), input->filepos);
                 }
                 else {
@@ -171,7 +225,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
             if (qeast == NULL) {
                 throw CompilerException("FIXME: Quote compiler exception\n");
             }
-            input->programmaticType.declType = "quote";
+            input->programmaticType.declType = "string";
             input->programmaticType.containerType = ContainerType::Scalar;
             break;
         case (NodeType::Call) :
@@ -179,6 +233,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
             if (ceast == NULL) {
                 throw CompilerException("FIXME: Call compiler exception\n");
             }
+            //FIXME: Call needs to run analysis on its children
             //FIXME: Need to make sure "return" is in function scope
             if (ceast->name != "return") {
                 input->programmaticType = lookupReturnTypeInfo(ceast);
@@ -190,6 +245,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
                 throw CompilerException("FIXME: prototype compiler exception");
             }
             funScopeStack.push_back(proto);
+            //FIXME: this polutes the variable stack with things that shouldn't be visible
             std::cout << "Pushed: " << proto->name << std::endl;
             for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
                     cend = input->children.end(); cnode != cend; ++cnode) {
@@ -201,6 +257,8 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
             if (vdeast == NULL) {
                 throw CompilerException("FIXME: vardecl compiler exception");
             }
+
+            std::cout << "Pushing var: " << vdeast->vi->name << std::endl;
             varScopeStack.push_back(vdeast->vi);
             input->programmaticType = vdeast->vi->type;
             break;
@@ -215,13 +273,16 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
             }
             break;
         case (NodeType::Action):
+            std::cout << "ACTION START" << std::endl;
             varScopeDepth = varScopeStack.size();
-            for (unsigned int i = 0; i < input->children.size(); ++i) {
+            for (unsigned int i = 1; i < input->children.size(); ++i) {
                 analyseScopeAndTypes(input->children[i]);
             }
             while (varScopeDepth != varScopeStack.size()) {
                 varScopeStack.pop_back();
             }
+            std::cout << "ACTION STOP" << std::endl;
+            break;
         case (NodeType::While):
             varScopeDepth = varScopeStack.size();
             for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
@@ -253,33 +314,48 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
             }
             break;
         case (NodeType::Actor):
-            std::cout << "Actor" << std::endl;
-            break;
-        case (NodeType::Class):
-            std::cout << "Class" << std::endl;
-            break;
-        case (NodeType::App):
-            std::cout << "App" << std::endl;
+            std::cout << "ACTOR START" << std::endl;
             funScopeDepth = funScopeStack.size();
             varScopeDepth = varScopeStack.size();
+
+            actorast = dynamic_cast<ActorAST*>(input);
+            if (actorast == NULL) {
+                throw CompilerException("Internal error: actor reference is null",
+                        input->filepos);
+            }
+
+            //push variable that will represent "this"
+            vi = new VariableInfo();
+            vi->name = "this";
+            vi->scopeType = ScopeType::Struct;
+            vi->type.declType = actorast->name;
+            vi->type.containerType = ContainerType::Scalar;
+            varScopeStack.push_back(vi);
+
             //find prototypes and variables that are in the closed scope, and
             //do those first.
             for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
                     cend = input->children.end(); cnode != cend; ++cnode) {
-                if (*cnode != NULL) {
-                    std::cout << "[" << (*cnode)->type() << "]" << std::endl;
-                    switch ((*cnode)->type()) {
-                        case (NodeType::Function) :
-                            std::cout << "Function uncovered" << std::endl;
-                            analyseScopeAndTypes((*cnode)->children[0]);
-                            break;
-                        case (NodeType::VarDecl) :
-                            std::cout << "Var uncovered" << std::endl;
-                            analyseScopeAndTypes(*cnode);
-                        default :
-                            //do nothing
-                            break;
-                    }
+
+                if (*cnode == NULL) {
+                    throw CompilerException("Internal error: child is null", input->filepos);
+                }
+                std::cout << "[" << (*cnode)->type() << "]" << std::endl;
+                switch ((*cnode)->type()) {
+                    case (NodeType::Function) :
+                        std::cout << "Function uncovered" << std::endl;
+                        analyseScopeAndTypes((*cnode)->children[0]);
+                        break;
+                    case (NodeType::Action) :
+                        analyseScopeAndTypes((*cnode)->children[0]);
+                        break;
+                    case (NodeType::VarDecl) :
+                        std::cout << "Var uncovered" << std::endl;
+                        analyseScopeAndTypes(*cnode);
+                        break;
+                    default :
+                        //do nothing
+                        break;
                 }
             }
             std::cout << "-->" << std::endl;
@@ -302,10 +378,147 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
             while (funScopeDepth != funScopeStack.size()) {
                 funScopeStack.pop_back();
             }
+            std::cout << "ACTOR STOP" << std::endl;
+            break;
+        case (NodeType::Class):
+            std::cout << "CLASS START" << std::endl;
+            funScopeDepth = funScopeStack.size();
+            varScopeDepth = varScopeStack.size();
+
+            classast = dynamic_cast<ClassAST*>(input);
+            if (classast == NULL) {
+                throw CompilerException("Internal error: class reference is null",
+                        input->filepos);
+            }
+
+            //FIXME: this will leak
+            //push variable that will represent "this"
+            vi = new VariableInfo();
+            vi->name = "this";
+            vi->scopeType = ScopeType::Struct;
+            vi->type.declType = classast->name;
+            vi->type.containerType = ContainerType::Scalar;
+            varScopeStack.push_back(vi);
+
+            //find prototypes and variables that are in the closed scope, and
+            //do those first.
+            for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
+                    cend = input->children.end(); cnode != cend; ++cnode) {
+
+                if (*cnode == NULL) {
+                    throw CompilerException("Internal error: child is null", input->filepos);
+                }
+                std::cout << "[" << (*cnode)->type() << "]" << std::endl;
+                switch ((*cnode)->type()) {
+                    case (NodeType::Function) :
+                        std::cout << "Function uncovered" << std::endl;
+                        analyseScopeAndTypes((*cnode)->children[0]);
+                        break;
+                    case (NodeType::VarDecl) :
+                        std::cout << "Var uncovered" << std::endl;
+                        analyseScopeAndTypes(*cnode);
+                    default :
+                        //do nothing
+                        break;
+                }
+            }
+            std::cout << "-->" << std::endl;
+            for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
+                    cend = input->children.end(); cnode != cend; ++cnode) {
+                switch ((*cnode)->type()) {
+                    case (NodeType::VarDecl) :
+                        break;
+                    default :
+                        analyseScopeAndTypes(*cnode);
+                        break;
+                }
+
+                //analyseScopeAndTypes(*cnode);
+            }
+            std::cout << "<--" << std::endl;
+            while (varScopeDepth != varScopeStack.size()) {
+                varScopeStack.pop_back();
+            }
+            while (funScopeDepth != funScopeStack.size()) {
+                funScopeStack.pop_back();
+            }
+            std::cout << "CLASS STOP" << std::endl;
+            break;
+        case (NodeType::App):
+            std::cout << "APP START" << std::endl;
+            funScopeDepth = funScopeStack.size();
+            varScopeDepth = varScopeStack.size();
+            //find prototypes and variables that are in the closed scope, and
+            //do those first.
+            for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
+                    cend = input->children.end(); cnode != cend; ++cnode) {
+
+                if (*cnode == NULL) {
+                    throw CompilerException("Internal error: child is null", input->filepos);
+                }
+                std::cout << "[" << (*cnode)->type() << "]" << std::endl;
+                switch ((*cnode)->type()) {
+                    case (NodeType::Function) :
+                        std::cout << "Function uncovered" << std::endl;
+                        analyseScopeAndTypes((*cnode)->children[0]);
+                        break;
+                    case (NodeType::Action) :
+                        analyseScopeAndTypes((*cnode)->children[0]);
+                        break;
+                    case (NodeType::Actor) :
+                        actorast = dynamic_cast<ActorAST*>(*cnode);
+                        if (actorast == NULL) {
+                            throw CompilerException("Internal error: actor is null", input->filepos);
+                        }
+                        actors[actorast->name] = actorast;
+                        break;
+                    case (NodeType::Class) :
+                        classast = dynamic_cast<ClassAST*>(*cnode);
+                        if (classast == NULL) {
+                            throw CompilerException("Internal error: class is null", input->filepos);
+                        }
+                        classes[classast->name] = classast;
+                        break;
+                    case (NodeType::VarDecl) :
+                        std::cout << "Var uncovered" << std::endl;
+                        analyseScopeAndTypes(*cnode);
+                        break;
+                    default :
+                        //do nothing
+                        break;
+                }
+            }
+            std::cout << "-->" << std::endl;
+            loopvar = 0;
+            for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
+                    cend = input->children.end(); cnode != cend; ++cnode) {
+
+                std::cout << "loopvar: " << loopvar << std::endl; ++loopvar;
+                switch ((*cnode)->type()) {
+                    case (NodeType::VarDecl) :
+                        break;
+                    default :
+                        std::cout << "->" << std::endl;
+                        analyseScopeAndTypes(*cnode);
+                        std::cout << "<-" << std::endl;
+                        break;
+                }
+
+                //analyseScopeAndTypes(*cnode);
+            }
+            std::cout << "<--" << std::endl;
+            while (varScopeDepth != varScopeStack.size()) {
+                varScopeStack.pop_back();
+            }
+            while (funScopeDepth != funScopeStack.size()) {
+                funScopeStack.pop_back();
+            }
+            std::cout << "APP STOP" << std::endl;
             break;
         default:
             msg << "Unhandled element during analysis: " << input->type();
             throw CompilerException(msg.str(), input->filepos);
+            break;
     }
 
     return input;
