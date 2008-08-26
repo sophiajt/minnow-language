@@ -7,6 +7,7 @@
 #include <boost/program_options.hpp>
 
 #include "parser.hpp"
+#include "analyser.hpp"
 #include "codegen_cppoutput.hpp"
 
 namespace po = boost::program_options;
@@ -111,14 +112,12 @@ int main(int argc, char *argv[]) {
 
     try {
         CodegenCPPOutput cppoutput;
+        Analyser analyser;
 
-        //AppAST *ast = parseApp(beginToks, endToks);
-        AppAST *ast = parse(beginToks, endToks);
-        //std::cout << "Parsed successfully" << std::endl;
-
+        ASTNode *ast = parse(beginToks, endToks);
+        ast = analyser.analyseScopeAndTypes(ast);
         std::string output = cppoutput.translate(ast);
-        //std::cout << "File: " << std::endl;
-        //std::cout << output;
+
         if (outexe_name != "") {
             std::ofstream outfile;
             outfile.open("tmpXXXXX.cpp");

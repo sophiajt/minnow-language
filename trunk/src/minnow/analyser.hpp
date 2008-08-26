@@ -20,7 +20,6 @@ public:
                 throw CompilerException("Internal Error: variableinfo is null");
             }
             if ((*iter)->name == name) {
-                std::cout << "returning: " << (*iter)->name << std::endl;
                 return *iter;
             }
         }
