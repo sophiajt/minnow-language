@@ -839,7 +839,7 @@ void Thread::SchedulerLoop() {
                                             thisActor->heapStack.push_back(message.arg[i]);
                                         }
                                     }
-                                    
+
                                     thisActor->actorState = ActorState::ACTIVE;
 
                                     if (this->timeSliceEndTime == 0) {
@@ -918,11 +918,11 @@ void Thread::SchedulerLoop() {
                             }
 
                         }
-                        
+
                         //if (thisActor->actorState == ActorState::DELETED) {
                         //    deletedActors.push_back(thisActor);
                         //}
-                        
+
                     }
                     */
 

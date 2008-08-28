@@ -14,6 +14,8 @@
 
 #include <time.h>
 
+#include "simplearray.h"
+
 //FIXME: I'm using the union in the code with UInt32, but in 64-bit machines that probably isn't best
 #define actorId_t uint32_t
 #define threadId_t uint32_t
@@ -152,8 +154,9 @@ struct Actor {
     bool isResuming;
 
     std::vector<Message> actionMessages;
-
     std::vector<TypeUnion> heapStack;
+    //SimpleArray actionMessages;
+    //SimpleArray heapStack;
 
     Actor() : runQueueRevId(0), isResuming(false) {}
 };
