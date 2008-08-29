@@ -17,11 +17,13 @@ int main(int argc, char *argv[]) {
     std::string outexe_name = "";
     bool output_debug = false;
     std::vector<Token*> allToks;
+    CodegenCPPOutput cppoutput;
+    Analyser analyser;
 
     po::options_description general_opts("General options");
     general_opts.add_options()
         ("help,h", "help message")
-        //("debugtree,t", "output debug parse tree")
+        ("debugtree,t", "output debug parse tree")
         ("tocppfile,c", po::value<std::string>(), "output to C++ file")
         ("toexe,o", po::value<std::string>(), "(attempt to) compile to an exe")
         ;
@@ -94,7 +96,15 @@ int main(int argc, char *argv[]) {
                 //puts(fBuffer);
 
                 std::vector<Token*> toks = tokenize(sourceCode, *iter);
+                if (output_debug) {
+                    std::vector<Token*>::iterator beginToks = toks.begin(), endToks = toks.end();
+                    ASTNode *astDebug = parse(beginToks, endToks);
+                    std::cout << "Source file: " << *iter << std::endl;
+                    analyser.debugOutputPass(astDebug, 0);
+                }
+
                 allToks.insert(allToks.end(), toks.begin(), toks.end());
+
             }
             else {
                 std::cout << "Can not find file: " << *iter << std::endl;
@@ -111,11 +121,9 @@ int main(int argc, char *argv[]) {
     std::vector<Token*>::iterator beginToks = allToks.begin(), endToks = allToks.end();
 
     try {
-        CodegenCPPOutput cppoutput;
-        Analyser analyser;
 
         ASTNode *ast = parse(beginToks, endToks);
-        ast = analyser.analyseScopeAndTypes(ast);
+        ast = analyser.scopeAndTypesPass(ast);
         std::string output = cppoutput.translate(ast);
 
         if (outexe_name != "") {
@@ -149,7 +157,7 @@ int main(int argc, char *argv[]) {
             outfile.close();
         }
         else {
-            std::cout << output;
+            //std::cout << output;
         }
     }
     catch (CompilerException &ce) {

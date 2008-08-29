@@ -3,7 +3,7 @@
 #include "analyser.hpp"
 #include "parser.hpp"
 
-ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
+ASTNode *Analyser::scopeAndTypesPass(ASTNode* input) {
     VariableInfo *vi;
 
     NumberExprAST *neast;
@@ -70,7 +70,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
             if (input->children.size() == 0) {
                 throw CompilerException("Incomplete array index", input->filepos);
             }
-            analyseScopeAndTypes(input->children[0]);
+            scopeAndTypesPass(input->children[0]);
             if (input->children[0]->programmaticType.declType != "int") {
                 throw CompilerException("Non-integer array index", input->children[0]->filepos);
             }
@@ -107,7 +107,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
                 throw CompilerException("Internal Error: incorrect number of binary children",
                         input->filepos);
             }
-            analyseScopeAndTypes(input->children[0]);
+            scopeAndTypesPass(input->children[0]);
 
             if (beast->op == "::") {
                 std::map<std::string, ActorAST*>::iterator location =
@@ -122,7 +122,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
                     if (as_call != NULL) {
                         //visit children
                         for (unsigned int i = 0; i < as_call->children.size(); ++i) {
-                            analyseScopeAndTypes(as_call->children[i]);
+                            scopeAndTypesPass(as_call->children[i]);
                         }
                     }
 
@@ -165,7 +165,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
                     if (as_call != NULL) {
                         //visit children
                         for (unsigned int i = 0; i < as_call->children.size(); ++i) {
-                            analyseScopeAndTypes(as_call->children[i]);
+                            scopeAndTypesPass(as_call->children[i]);
                         }
                     }
                     bool isFound = false;
@@ -207,7 +207,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
                 }
             }
             else {
-                analyseScopeAndTypes(input->children[1]);
+                scopeAndTypesPass(input->children[1]);
 
                 if (input->children[0]->programmaticType !=
                     input->children[1]->programmaticType) {
@@ -243,7 +243,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
                 input->programmaticType = lookupReturnTypeInfo(ceast);
             }
             for (unsigned int i = 0; i < input->children.size(); ++i) {
-                analyseScopeAndTypes(input->children[i]);
+                scopeAndTypesPass(input->children[i]);
             }
             break;
         case (NodeType::Prototype):
@@ -254,7 +254,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
             //std::cout << "Pushed: " << proto->name << std::endl;
             for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
                     cend = input->children.end(); cnode != cend; ++cnode) {
-                analyseScopeAndTypes(*cnode);
+                scopeAndTypesPass(*cnode);
             }
             break;
         case (NodeType::VarDecl):
@@ -270,7 +270,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
             //prototype is captured earlier
             varScopeDepth = varScopeStack.size();
             for (unsigned int i = 0; i < input->children.size(); ++i) {
-                analyseScopeAndTypes(input->children[i]);
+                scopeAndTypesPass(input->children[i]);
             }
             while (varScopeDepth != varScopeStack.size()) {
                 varScopeStack.pop_back();
@@ -279,7 +279,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
         case (NodeType::Action):
             varScopeDepth = varScopeStack.size();
             for (unsigned int i = 0; i < input->children.size(); ++i) {
-                analyseScopeAndTypes(input->children[i]);
+                scopeAndTypesPass(input->children[i]);
             }
             while (varScopeDepth != varScopeStack.size()) {
                 varScopeStack.pop_back();
@@ -289,7 +289,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
             varScopeDepth = varScopeStack.size();
             for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
                     cend = input->children.end(); cnode != cend; ++cnode) {
-                analyseScopeAndTypes(*cnode);
+                scopeAndTypesPass(*cnode);
             }
             while (varScopeDepth != varScopeStack.size()) {
                 varScopeStack.pop_back();
@@ -299,7 +299,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
             varScopeDepth = varScopeStack.size();
             for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
                     cend = input->children.end(); cnode != cend; ++cnode) {
-                analyseScopeAndTypes(*cnode);
+                scopeAndTypesPass(*cnode);
             }
             while (varScopeDepth != varScopeStack.size()) {
                 varScopeStack.pop_back();
@@ -309,7 +309,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
             varScopeDepth = varScopeStack.size();
             for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
                     cend = input->children.end(); cnode != cend; ++cnode) {
-                analyseScopeAndTypes(*cnode);
+                scopeAndTypesPass(*cnode);
             }
             while (varScopeDepth != varScopeStack.size()) {
                 varScopeStack.pop_back();
@@ -355,7 +355,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
                         //analyseScopeAndTypes((*cnode)->children[0]);
                         break;
                     case (NodeType::VarDecl) :
-                        analyseScopeAndTypes(*cnode);
+                        scopeAndTypesPass(*cnode);
                         break;
                     default :
                         //do nothing
@@ -368,7 +368,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
                     case (NodeType::VarDecl) :
                         break;
                     default :
-                        analyseScopeAndTypes(*cnode);
+                        scopeAndTypesPass(*cnode);
                         break;
                 }
 
@@ -416,7 +416,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
                         //analyseScopeAndTypes((*cnode)->children[0]);
                         break;
                     case (NodeType::VarDecl) :
-                        analyseScopeAndTypes(*cnode);
+                        scopeAndTypesPass(*cnode);
                     default :
                         //do nothing
                         break;
@@ -428,7 +428,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
                     case (NodeType::VarDecl) :
                         break;
                     default :
-                        analyseScopeAndTypes(*cnode);
+                        scopeAndTypesPass(*cnode);
                         break;
                 }
 
@@ -480,7 +480,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
                         classes[classast->name] = classast;
                         break;
                     case (NodeType::VarDecl) :
-                        analyseScopeAndTypes(*cnode);
+                        scopeAndTypesPass(*cnode);
                         break;
                     default :
                         //do nothing
@@ -494,7 +494,7 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
                     case (NodeType::VarDecl) :
                         break;
                     default :
-                        analyseScopeAndTypes(*cnode);
+                        scopeAndTypesPass(*cnode);
                         break;
                 }
 
@@ -514,4 +514,199 @@ ASTNode *Analyser::analyseScopeAndTypes(ASTNode* input) {
     }
 
     return input;
+}
+
+void Analyser::debugOutputPass(ASTNode* input, unsigned int depth) {
+    NumberExprAST *neast;
+    BooleanExprAST *boeast;
+    QuoteExprAST *qeast;
+    VariableExprAST *veast;
+    ArrayIndexedExprAST *aieast;
+    BinaryExprAST *beast;
+    CallExprAST *ceast;
+    PrototypeAST *proto;
+    VarDeclExprAST *vdeast;
+    ActorAST *actorast;
+    ClassAST *classast;
+
+    std::ostringstream msg;
+
+    if (input == NULL) {
+        //NOP
+        return;
+    }
+    switch (input->type()) {
+        case (NodeType::Number) :
+            neast = dynamic_cast<NumberExprAST*>(input);
+            if (neast == NULL) {
+                throw CompilerException("FIXME: Number compiler exception\n");
+            }
+            indentDepth(depth);
+            std::cout << "Num: " << neast->val << std::endl;
+            break;
+        case (NodeType::Boolean) :
+            boeast = dynamic_cast<BooleanExprAST*>(input);
+            if (boeast == NULL) {
+                throw CompilerException("FIXME: Boolean compiler exception\n");
+            }
+            indentDepth(depth);
+            std::cout << "Bool: " << boeast->val << std::endl;
+            break;
+        case (NodeType::Variable) :
+            veast = dynamic_cast<VariableExprAST*>(input);
+            if (veast == NULL) {
+                throw CompilerException("FIXME: Variable compiler exception\n");
+            }
+            indentDepth(depth);
+            std::cout << "Var: " << veast->name << std::endl;
+            break;
+        case (NodeType::ArrayIndexed) :
+            aieast = dynamic_cast<ArrayIndexedExprAST*>(input);
+            if (input->children.size() == 0) {
+                throw CompilerException("Incomplete array index", input->filepos);
+            }
+            indentDepth(depth);
+            std::cout << "Indexed: " << aieast->name << std::endl;
+            debugOutputPass(input->children[0], depth+1);
+            break;
+        case (NodeType::Binary) :
+            beast = dynamic_cast<BinaryExprAST*>(input);
+            if (beast == NULL) {
+                throw CompilerException("FIXME: Binary compiler exception\n");
+            }
+            indentDepth(depth);
+            std::cout << "Binary: " << beast->op << std::endl;
+            debugOutputPass(input->children[0], depth+1);
+            debugOutputPass(input->children[1], depth+1);
+            break;
+
+        case (NodeType::Quote) :
+            qeast = dynamic_cast<QuoteExprAST*>(input);
+            if (qeast == NULL) {
+                throw CompilerException("FIXME: Quote compiler exception\n");
+            }
+            indentDepth(depth);
+            std::cout << "String: " << qeast->val << std::endl;
+            break;
+        case (NodeType::Call) :
+            ceast = dynamic_cast<CallExprAST*>(input);
+            if (ceast == NULL) {
+                throw CompilerException("FIXME: Call compiler exception\n");
+            }
+            indentDepth(depth);
+            std::cout << "Call: " << ceast->name << std::endl;
+            for (unsigned int i = 0; i < input->children.size(); ++i) {
+                debugOutputPass(input->children[i], depth+1);
+            }
+            break;
+        case (NodeType::Prototype):
+            proto = dynamic_cast<PrototypeAST*>(input);
+            if (proto == NULL) {
+                throw CompilerException("FIXME: prototype compiler exception");
+            }
+            indentDepth(depth);
+            std::cout << "Proto: " << proto->name << std::endl;
+            for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
+                    cend = input->children.end(); cnode != cend; ++cnode) {
+                debugOutputPass(*cnode, depth+1);
+            }
+            break;
+        case (NodeType::VarDecl):
+            vdeast = dynamic_cast<VarDeclExprAST*>(input);
+            if (vdeast == NULL) {
+                throw CompilerException("FIXME: vardecl compiler exception");
+            }
+            indentDepth(depth);
+            std::cout << "Decl: " << vdeast->vi->name << std::endl;
+            break;
+        case (NodeType::Function):
+            indentDepth(depth);
+            std::cout << "Function: " << std::endl;
+            for (unsigned int i = 0; i < input->children.size(); ++i) {
+                debugOutputPass(input->children[i], depth+1);
+            }
+            break;
+        case (NodeType::Action):
+            indentDepth(depth);
+            std::cout << "Action: " << std::endl;
+            for (unsigned int i = 0; i < input->children.size(); ++i) {
+                debugOutputPass(input->children[i], depth+1);
+            }
+            break;
+        case (NodeType::While):
+            indentDepth(depth);
+            std::cout << "While: " << std::endl;
+            for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
+                    cend = input->children.end(); cnode != cend; ++cnode) {
+                debugOutputPass(*cnode, depth+1);
+            }
+            break;
+        case (NodeType::If):
+            indentDepth(depth);
+            std::cout << "If: " << std::endl;
+            for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
+                    cend = input->children.end(); cnode != cend; ++cnode) {
+                debugOutputPass(*cnode, depth+1);
+            }
+            break;
+        case (NodeType::Block):
+            indentDepth(depth);
+            std::cout << "Block: " << std::endl;
+            for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
+                    cend = input->children.end(); cnode != cend; ++cnode) {
+                debugOutputPass(*cnode, depth+1);
+            }
+            break;
+        case (NodeType::Actor):
+            actorast = dynamic_cast<ActorAST*>(input);
+            if (actorast == NULL) {
+                throw CompilerException("Internal error: actor reference is null",
+                        input->filepos);
+            }
+            indentDepth(depth);
+            std::cout << "Actor: " << actorast->name << std::endl;
+
+            //find prototypes and variables that are in the closed scope, and
+            //do those first.
+            for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
+                    cend = input->children.end(); cnode != cend; ++cnode) {
+
+                debugOutputPass(*cnode, depth+1);
+            }
+
+            break;
+        case (NodeType::Class):
+            classast = dynamic_cast<ClassAST*>(input);
+            if (classast == NULL) {
+                throw CompilerException("Internal error: class reference is null",
+                        input->filepos);
+            }
+
+            indentDepth(depth);
+            std::cout << "Class: " << classast->name << std::endl;
+
+            //find prototypes and variables that are in the closed scope, and
+            //do those first.
+            for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
+                    cend = input->children.end(); cnode != cend; ++cnode) {
+
+                debugOutputPass(*cnode, depth+1);
+            }
+            break;
+        case (NodeType::App):
+            indentDepth(depth);
+            std::cout << "App: " << std::endl;
+            //find prototypes and variables that are in the closed scope, and
+            //do those first.
+            for (std::vector<ASTNode*>::iterator cnode = input->children.begin(),
+                    cend = input->children.end(); cnode != cend; ++cnode) {
+
+                debugOutputPass(*cnode, depth+1);
+            }
+            break;
+        default:
+            msg << "Unhandled element during analysis: " << input->type();
+            throw CompilerException(msg.str(), input->filepos);
+            break;
+    }
 }

@@ -44,8 +44,12 @@ public:
         throw CompilerException(outmsg, ast->filepos);
     }
 
-
-    ASTNode *analyseScopeAndTypes(ASTNode* input);
+    void indentDepth(unsigned int depth) {
+        for (unsigned int i = 0; i < depth; ++i)
+            std::cout << "  ";
+    }
+    ASTNode *scopeAndTypesPass(ASTNode* input);
+    void debugOutputPass(ASTNode* input, unsigned int depth);
 };
 
 #endif /* ANALYSER_HPP */
