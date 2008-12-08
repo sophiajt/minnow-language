@@ -1055,6 +1055,10 @@ void Analyzer::analyze_implied_this(Program *program, Token *token, Scope *scope
     }
 
     if (token->type == Token_Type::FUN_CALL) {
+        for (unsigned int i = 1; i < token->children.size(); ++i) {
+            analyze_implied_this(program, token->children[i], scope);
+        }
+
         std::string fullname = build_function_name(program, token, scope);
 
         Scope *prev = scope;
@@ -1088,9 +1092,6 @@ void Analyzer::analyze_implied_this(Program *program, Token *token, Scope *scope
         scope = prev;
         //Removed because this does not work with namespaced functions
         //throw Compiler_Exception("Internal error involving implied 'this'", token->start_pos);
-        for (unsigned int i = 1; i < token->children.size(); ++i) {
-            analyze_implied_this(program, token->children[i], scope);
-        }
 
         return;
     }

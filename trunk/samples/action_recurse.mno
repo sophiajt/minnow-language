@@ -3,7 +3,11 @@ actor Bob
   action greet(a : int)
     x : int = 4
     z
-    greet(4)
+    if (a > 0)
+      greet(a-1)
+    else
+      sys.exit()
+    end
   end
 end
 
@@ -13,6 +17,6 @@ end
 
 namespace global
 action main
-  y : Bob
+  y : Bob = spawn Bob()
   y::greet(3)
 end
