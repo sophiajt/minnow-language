@@ -1,0 +1,8 @@
+action main (args : List[string])
+ i:int
+ j:List[int]
+ j = new List[int]
+
+ k:List[int] = new List[int]
+ i = k[0]
+end

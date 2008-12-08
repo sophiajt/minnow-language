@@ -1,0 +1,29 @@
+use usury.salary
+
+actor actraiser
+  z : int
+  action accept(x:int) 
+    print(x)
+    return(x+1)
+  end
+  action accept2(x:int, y:int)
+    print(x)
+    return(x+1)
+  end
+end
+
+feature fred
+  def deafen : int
+    return 0
+  end
+
+  def nullify
+    return
+  end
+end
+
+action main
+  f:fred
+  a:actraiser
+end
+  

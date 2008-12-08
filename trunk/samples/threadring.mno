@@ -1,0 +1,75 @@
+actor Passer
+  m_id : int
+  m_next : Passer
+ 
+  action pass(token : int)
+    if (token == 0)
+      print(m_id)
+      sys.exit(0)
+    else
+      token = token - 1
+      m_next::pass(token)
+    end
+  end
+ 
+  action setIdAndNext(id : int, next : Passer)
+    m_id = id
+    m_next = next
+  end
+end
+ 
+action main(args : List[string])
+  passers : List[Passer] = new List[Passer]
+  passers.push(spawn Passer())
+  i:int = 0
+  while (i < 502)
+    passers.push(spawn Passer())
+    passers[i]::setIdAndNext(i+1, passers[i+1])
+    i = i + 1
+  end
+  passers[502]::setIdAndNext(503, passers[0])
+ 
+  passers[0]::pass(args[0].to_int())
+end
+
+//===
+/*
+Comments:
+  1) I don't like spawn missing
+  2) I also don't want : and :: to be visually confusing
+
+
+actor Passer
+  m_id : int
+  m_next : Passer
+ 
+  action pass(token : int)
+    if (token == 0)
+      print(m_id)
+      sys.exit(0)
+    else
+      token -= 1
+      m_next::pass(token)
+    end
+  end
+ 
+  action setIdAndNext(id : int, next : Passer)
+    m_id = id
+    m_next = next
+  end
+end
+ 
+action main(string[] : arg)
+  passer:Passer[] = spawn Passer[503]()
+
+  i:int = 0
+  while (i < 502)
+    passers[i]::setIdAndNext(i+1, passers[i+1])
+    i += 1
+  end
+  table:object <+ Top(10.0) <+ Legs(3) <+ Price(10.50)
+  passers[502]::setIdAndNext(503, passers[0])
+ 
+  passers[0]::pass(Int.from_string(args[0]))
+end
+*/

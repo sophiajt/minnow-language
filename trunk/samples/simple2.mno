@@ -1,0 +1,7 @@
+def bob(x : Fred) 
+  x.y
+end
+
+feature Fred
+  y : int
+end

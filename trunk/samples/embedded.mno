@@ -1,0 +1,13 @@
+feature feat
+  x : int
+end
+
+def get_feat() : feat
+  y : feat
+  return y
+end
+
+action main
+  get_feat().x
+end 
+  

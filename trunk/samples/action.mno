@@ -1,0 +1,18 @@
+actor Bob
+  z : int
+  action greet(a : int)
+    x : int = 4
+    z
+    greet(4)
+  end
+end
+
+namespace Circle
+feature Bob
+end
+
+namespace global
+action main
+  y : Bob
+  y::greet(3)
+end

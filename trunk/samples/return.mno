@@ -1,0 +1,3 @@
+def bob : int
+  return 3+4
+end

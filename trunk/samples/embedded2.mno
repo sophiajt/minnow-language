@@ -1,0 +1,12 @@
+def get_x() : int
+  return 5
+end
+
+def get_total(x:int, y:int) : int
+  return x+y
+end
+
+action main
+  get_total(get_x(), get_x())
+end 
+  

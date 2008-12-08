@@ -1,0 +1,9 @@
+feature Bob
+  x : Fred
+end
+
+feature Fred
+end
+
+action main
+end

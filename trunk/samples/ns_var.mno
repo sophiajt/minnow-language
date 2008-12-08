@@ -1,0 +1,14 @@
+action main
+  x : math.complex.complex_number
+  x.r = 10
+  x.i = 20
+  x.r
+  x.i
+end
+
+namespace math.complex
+feature complex_number
+  r : int
+  i : int
+end
+

@@ -1,0 +1,5 @@
+action main
+  c : char = 'b'
+  s : string = "Test"
+  s = c + s
+end

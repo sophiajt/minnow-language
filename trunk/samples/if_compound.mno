@@ -1,0 +1,4 @@
+action main
+  if ((true && true) || (false && false))
+  end
+end

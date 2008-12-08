@@ -1,0 +1,13 @@
+namespace Bob
+def bob
+end
+
+namespace Fred.George
+def fg
+end
+
+namespace global
+action main
+  Bob.bob()
+  Fred.George.fg()
+end
