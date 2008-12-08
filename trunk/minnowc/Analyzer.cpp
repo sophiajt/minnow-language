@@ -28,6 +28,7 @@ Scope *Analyzer::find_or_create_namespace(Program *program, Token *ns) {
             Scope *new_scope = new Scope();
             program->global->namespaces[ns->contents] = new_scope;
             new_scope->parent = program->global;
+            new_scope->owner = ns;
             return new_scope;
         }
     }
@@ -43,6 +44,7 @@ Scope *Analyzer::find_or_create_namespace(Program *program, Token *ns) {
             Scope *new_scope = new Scope();
             ret_val->namespaces[ns->children[1]->contents] = new_scope;
             new_scope->parent = ret_val;
+            new_scope->owner = ns;
             return new_scope;
         }
     }
@@ -134,6 +136,7 @@ unsigned int Analyzer::find_type(Program *program, Token *ns, Scope *scope) {
                     container->contained_type_def_num = ns->children[1]->type_def_num;
                     container->token = new Token(Token_Type::EMPTY); //todo: set this to something reasonable
                     container->token->scope = new Scope();
+                    container->token->scope->owner = container->token;
                     program->types.push_back(container);
 
                     unsigned int def_num = program->types.size() - 1;
@@ -487,6 +490,7 @@ void Analyzer::analyze_fun_blocks(Program *program, Token *token, Scope **scope)
             block_dive = true;
             Scope *new_scope = new Scope();
             new_scope->parent = *scope;
+            new_scope->owner = token;
             token->scope = new_scope;
 
             *scope = new_scope;
@@ -556,7 +560,7 @@ void Analyzer::add_implied_constructors(Program *program) {
 
     for (unsigned int i = program->global->local_types["object"] + 1; i < program->types.size(); ++i) {
         Type_Def *td = program->types[i];
-        if ((td->token->type == Token_Type::FEATURE_DEF) || (td->token->type == Token_Type::ACTOR_DEF)) {
+        if ((td->token->type == Token_Type::FEATURE_DEF) || (td->token->type == Token_Type::ACTOR_DEF) || (td->token->type == Token_Type::ISOLATED_ACTOR_DEF)) {
             //Check for any constructor
             bool found_constructor = false;
             for (std::map<std::string, unsigned int>::iterator iter = td->token->scope->local_funs.begin(),
