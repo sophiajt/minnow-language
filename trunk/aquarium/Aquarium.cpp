@@ -80,10 +80,13 @@ BOOL kernel_loop__(Message__ *m) {
                     }
                     if (!found) {
                         Scheduler__ *new_s = create_scheduler__(SCHEDULER_NORMAL__);
+                        new_s->actor_updates = actor__->actor_updates;
 
                         actor__->incoming_channels.push_back(new_s->outgoing_channel);
                         actor__->outgoing_channels.push_back(new_s->incoming_channel);
                         actor__->schedule_weights.push_back(0xFFFFFFFF); //do not weigh isolated thread pool threads
+
+                        new_s->scheduler_id = actor__->incoming_channels.size() - 1;
 
                         actor__->thread_available.push_back(false);
                         actor__->thread_pool_ids.push_back(actor__->incoming_channels.size() - 1);
