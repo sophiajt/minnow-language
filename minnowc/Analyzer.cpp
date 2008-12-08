@@ -744,6 +744,7 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
                     while (scope != NULL) {
                         //Feature referencing
                         if (scope->local_types.find(token->children[1]->contents) != scope->local_types.end()) {
+                            analyze_token_types(program, token->children[0], orig);
                             token->definition_number = -1;
                             token->type_def_num = scope->local_types[token->children[1]->contents];
                             token->type = Token_Type::REFERENCE_FEATURE;
