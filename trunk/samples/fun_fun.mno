@@ -1,7 +1,0 @@
-def what(i : int, j : int) 
-  k:int = i + j
-end
-
-def where
-  what(1, 2)
-end

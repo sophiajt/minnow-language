@@ -1,5 +1,3 @@
-extern def print(x : string)
-
 action main
   print("Hello")
 end

@@ -4,11 +4,11 @@ actor actraiser
   z : int
   action accept(x:int) 
     print(x)
-    return(x+1)
+    return
   end
   action accept2(x:int, y:int)
     print(x)
-    return(x+1)
+    return
   end
 end
 
@@ -23,7 +23,7 @@ feature fred
 end
 
 action main
-  f:fred
-  a:actraiser
+  f:fred = new fred()
+  a:actraiser = spawn actraiser()
 end
   

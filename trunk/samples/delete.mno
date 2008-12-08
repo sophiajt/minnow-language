@@ -3,10 +3,10 @@ end
 
 def main : Bob
   o : object
-  b : Bob = new Bob
+  b : Bob = new Bob()
   
   //o +> b
-  b = new Bob
+  b = new Bob()
   x:Bob = b // o.Bob
   while (true)
     x

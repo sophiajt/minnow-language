@@ -1,5 +1,5 @@
 action main
-  x : var = new Fred.Bob
+  x : var = new Fred.Bob()
   x.y
 end
 

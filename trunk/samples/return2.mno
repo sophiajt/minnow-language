@@ -1,8 +1,0 @@
-feature Bob
-  x : int
-end
-
-def bob : int
-  y : Bob = new Bob
-  return y.x
-end

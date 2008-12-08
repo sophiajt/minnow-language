@@ -17,8 +17,8 @@ actor Fred
 end
 
 action main
-  f : Fred = spawn Fred
-  z : Bob = new Bob
+  f : Fred = spawn Fred()
+  z : Bob = new Bob()
   i : int = -4
   i = -4
 
