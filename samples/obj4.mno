@@ -1,0 +1,43 @@
+actor Sam
+  action skip()
+  end
+end
+
+feature Bob
+  x : int
+  y : Bob
+
+  def method
+  end
+  
+  def method(i : int)
+    this.x = i
+  end
+
+  def method(i : int, j : int)
+  end
+
+  def method(i : int, j : int, k : int)
+  end
+
+  def Bob()
+  end
+
+  def delete
+  end
+
+/*
+  def copy(z : Bob)
+    this.x = z.x
+  end
+*/
+end
+
+action main
+  x : Bob = new Bob()
+  x.method()
+  x.method(1)
+  x.method(1, 2)
+  x.method(1, 2, 3)
+  //x = x.y
+end

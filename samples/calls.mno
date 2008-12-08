@@ -1,0 +1,7 @@
+int[] bob
+bob[3]
+bob()
+bob(3)
+bob(id, id2)
+bob(id, id2, 3, 4)
+bob(id-3*4, 15 / 5 +3)

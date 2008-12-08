@@ -1,0 +1,3 @@
+action main
+  x : bool = y : bool
+end

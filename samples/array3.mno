@@ -1,0 +1,7 @@
+action main (args : List[string])
+ i:int
+ j:List[int]
+ k:List[List[int]]
+
+ j = k[0]
+end

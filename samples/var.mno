@@ -1,0 +1,4 @@
+action main
+  x : var = 5
+  x = 6
+end

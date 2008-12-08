@@ -1,0 +1,5 @@
+action main
+  x : bool = true
+  x = false
+  //x = what
+end
