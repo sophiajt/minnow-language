@@ -1,5 +1,6 @@
 isolated actor Bob
   action greet
+    print("Hello from isolated")
   end
 end
 
