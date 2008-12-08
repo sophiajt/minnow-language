@@ -14,7 +14,7 @@ end
 
 action main
   o : object
-  o <+ (new Feat <+ new Feat)
+  o <+ (new Feat() <+ new Feat())
   inout(o.Feat.Feat.x).x
 end 
   

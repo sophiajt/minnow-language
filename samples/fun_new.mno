@@ -17,3 +17,5 @@ def bob(x:int, y:double) : int
   return 0
 end
 
+action main
+end

@@ -4,6 +4,6 @@ isolated actor Bob
 end
 
 action main
-  x : Bob = spawn Bob
+  x : Bob = spawn Bob()
   x::greet()
 end
