@@ -82,6 +82,7 @@ void Codegen::codegen_default_value(Program *p, unsigned int type_def_num, std::
     }
     else if (td->is_internal) {
         switch (internal_type_map[type_def_num]) {
+            case (Internal_Type::VOID) : break;
             case (Internal_Type::BOOL) : output << "FALSE"; break;
             case (Internal_Type::INT) : output << "0"; break;
             case (Internal_Type::UINT) : output << "0"; break;
@@ -464,6 +465,14 @@ void Codegen::codegen_reference_feature(Program *p, Token *t, std::ostringstream
 }
 
 void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream &output) {
+    /*
+    Scope *scope = fd->token->scope;
+    //has to be one of the two
+    while ((scope != NULL) && (scope->owner->type != Token_Type::FUN_DEF) && (scope->owner->type != Token_Type::ACTION_DEF)) {
+        scope = scope->parent;
+    }
+    Function_Def owner = p->funs[scope->owner->definition_number];
+    */
     ++this->cont_id;
     output << "case(" << this->cont_id << "):" << std::endl;
 
@@ -487,8 +496,17 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
         }
         output << "cont_id__ = " << this->cont_id << ";" << std::endl;
         output << "push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &cont_id__);" << std::endl;
-        output << "((Actor__*)m__->recipient)->actor_state = ACTOR_STATE_ACTIVE__;" << std::endl;
-        output << "return TRUE; } " << std::endl;
+        //if (owner->token->type == Token_Type::ACTION_DEF) {
+            output << "((Actor__*)m__->recipient)->actor_state = ACTOR_STATE_ACTIVE__;" << std::endl;
+            output << "return TRUE; } " << std::endl;
+            /*
+        }
+        else {
+            output << "return ";
+            codegen_default_value(p, owner->return_type_def_num, output);
+            output << "; } " << std::endl;
+        }
+        */
     }
     else {
         output << "if (--timeslice__ == 0) {" << std::endl;
@@ -503,8 +521,15 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
         }
         output << "cont_id__ = " << this->cont_id << ";" << std::endl;
         output << "push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &cont_id__);" << std::endl;
-        output << "((Actor__*)m__->recipient)->actor_state = ACTOR_STATE_ACTIVE__;" << std::endl;
-        output << "return TRUE; } " << std::endl;
+        //if (owner->token->type == Token_Type::ACTION_DEF) {
+            output << "((Actor__*)m__->recipient)->actor_state = ACTOR_STATE_ACTIVE__;" << std::endl;
+            output << "return TRUE; } " << std::endl;
+        /*}
+        else {
+            output << "return ";
+            codegen_default_value(p, owner->return_type_def_num, output);
+            output << "; } " << std::endl;
+        }*/
     }
 
 }
@@ -568,7 +593,7 @@ void Codegen::codegen_token(Program *p, Token *t, std::ostringstream &output) {
     }
 }
 
-void Codegen::codegen_fun_predecl(Program *p, Token *t, std::ostringstream &output) {
+void Codegen::codegen_constructor_internal_predecl(Program *p, Token *t, std::ostringstream &output) {
     for (unsigned int i = 0; i < p->funs.size(); ++i) {
         if (p->funs[i]->is_constructor) {
             //If it's internal, it's an implied constructor and doesn't need an inner call
@@ -582,7 +607,15 @@ void Codegen::codegen_fun_predecl(Program *p, Token *t, std::ostringstream &outp
                 codegen_typesig(p, scope->owner->definition_number, output);
                 output << " ctr__" << i << "(Message__ *m__);" << std::endl;
             }
-            else {
+        }
+    }
+}
+
+void Codegen::codegen_constructor_not_internal_predecl(Program *p, Token *t, std::ostringstream &output) {
+    for (unsigned int i = 0; i < p->funs.size(); ++i) {
+        if (p->funs[i]->is_constructor) {
+            //If it's internal, it's an implied constructor and doesn't need an inner call
+            if (p->funs[i]->is_internal == false) {
                 Function_Def *fd = p->funs[i];
 
                 Scope *scope = p->funs[i]->token->scope;
@@ -610,13 +643,25 @@ void Codegen::codegen_fun_predecl(Program *p, Token *t, std::ostringstream &outp
                 output << ");" << std::endl;
             }
         }
+    }
+}
 
+void Codegen::codegen_action_predecl(Program *p, Token *t, std::ostringstream &output) {
+    for (unsigned int i = 0; i < p->funs.size(); ++i) {
         if ((p->funs[i]->is_internal == false) && (p->funs[i]->external_name == "")) {
             Function_Def *fd = p->funs[i];
             if (fd->token->type == Token_Type::ACTION_DEF) {
                 output << "BOOL fun__" << i << "(Message__ *m__);" << std::endl;
             }
-            else {
+        }
+    }
+}
+
+void Codegen::codegen_fun_predecl(Program *p, Token *t, std::ostringstream &output) {
+    for (unsigned int i = 0; i < p->funs.size(); ++i) {
+        if ((p->funs[i]->is_internal == false) && (p->funs[i]->external_name == "")) {
+            Function_Def *fd = p->funs[i];
+            if (fd->token->type == Token_Type::FUN_DEF) {
                 codegen_typesig(p, fd->return_type_def_num, output);
                 output << " fun__" << i << "(";
 
@@ -634,7 +679,7 @@ void Codegen::codegen_fun_predecl(Program *p, Token *t, std::ostringstream &outp
                     scope = scope->parent;
                 }
 
-                if ((scope != NULL) && (scope->owner->type == Token_Type::FEATURE_DEF)) {
+                if ((scope != NULL) /*&& (scope->owner->type == Token_Type::FEATURE_DEF)*/) {
                     if (argsize == 0) {
                         output << ", ";
                         codegen_typesig(p, scope->owner->definition_number, output);
@@ -684,7 +729,8 @@ void Codegen::codegen_fun_predecl(Program *p, Token *t, std::ostringstream &outp
     }
 }
 
-void Codegen::codegen_fun_decl(Program *p, Token *t, std::ostringstream &output) {
+void Codegen::codegen_constructor_internal_decl(Program *p, Token *t, std::ostringstream &output) {
+
     for (unsigned int i = 0; i < p->funs.size(); ++i) {
         if (p->funs[i]->is_constructor) {
             //If it's internal, it's an implied constructor and doesn't need an inner call
@@ -739,7 +785,15 @@ void Codegen::codegen_fun_decl(Program *p, Token *t, std::ostringstream &output)
                 }
                 output << "return ret_val__;" << std::endl << "}" << std::endl;
             }
-            else {
+        }
+    }
+}
+
+void Codegen::codegen_constructor_not_internal_decl(Program *p, Token *t, std::ostringstream &output) {
+    for (unsigned int i = 0; i < p->funs.size(); ++i) {
+        if (p->funs[i]->is_constructor) {
+            //If it's internal, it's an implied constructor and doesn't need an inner call
+            if (p->funs[i]->is_internal == false) {
                 //Find the constructed type
                 Function_Def *fd = p->funs[i];
                 Scope *scope = p->funs[i]->token->scope;
@@ -781,6 +835,17 @@ void Codegen::codegen_fun_decl(Program *p, Token *t, std::ostringstream &output)
                     //output << "type__" << scope->owner->definition_number;
                     codegen_typesig_no_tail(p, scope->owner->definition_number, output);
                     output << "));" << std::endl;
+                    output << "fun__" << i << "(m__, ret_val__";
+                    if (argsize > 0) {
+                        output << ", ";
+                    }
+                    for (unsigned int j = 0; j < argsize; ++j) {
+                        if (j > 0) {
+                            output << ", ";
+                        }
+                        output << " var__" << fd->arg_def_nums[j];
+                    }
+                    output << ");" << std::endl;
 
                     output << "add_actor_to_sched__((Scheduler__*)m__->sched, (Actor__*)ret_val__);" << std::endl;
                 }
@@ -794,6 +859,17 @@ void Codegen::codegen_fun_decl(Program *p, Token *t, std::ostringstream &output)
                     //output << "type__" << scope->owner->definition_number;
                     codegen_typesig_no_tail(p, scope->owner->definition_number, output);
                     output << "));" << std::endl;
+                    output << "fun__" << i << "(m__, ret_val__";
+                    if (argsize > 0) {
+                        output << ", ";
+                    }
+                    for (unsigned int j = 0; j < argsize; ++j) {
+                        if (j > 0) {
+                            output << ", ";
+                        }
+                        output << " var__" << fd->arg_def_nums[j];
+                    }
+                    output << ");" << std::endl;
                     output << "Message__ *msg__ = get_msg_from_cache__(m__->sched);" << std::endl;
                     output << "msg__->message_type = MESSAGE_TYPE_CREATE_ISOLATED_ACTOR;" << std::endl;
                     output << "msg__->args[0].VoidPtr = ret_val__;" << std::endl;
@@ -826,6 +902,11 @@ void Codegen::codegen_fun_decl(Program *p, Token *t, std::ostringstream &output)
                 output << "return ret_val__;" << std::endl << "}" << std::endl;
             }
         }
+    }
+}
+
+void Codegen::codegen_action_decl(Program *p, Token *t, std::ostringstream &output) {
+    for (unsigned int i = 0; i < p->funs.size(); ++i) {
         if ((p->funs[i]->is_internal == false) && (p->funs[i]->external_name == "")) {
             Function_Def *fd = p->funs[i];
             if (fd->token->type == Token_Type::ACTION_DEF) {
@@ -847,6 +928,12 @@ void Codegen::codegen_fun_decl(Program *p, Token *t, std::ostringstream &output)
                     }
                 }
 
+                unsigned int argsize = fd->arg_def_nums.size();
+                for (unsigned int j = 0; j < argsize; ++j) {
+                    codegen_typesig(p, p->vars[fd->arg_def_nums[j]]->type_def_num, output);
+                    output << " var__" << fd->arg_def_nums[j] << ";" << std::endl;;
+                }
+
                 //find "this" ptr
                 bool has_actor = false;
                 Scope *scope = fd->token->scope;
@@ -859,18 +946,6 @@ void Codegen::codegen_fun_decl(Program *p, Token *t, std::ostringstream &output)
                         output << ")m__->recipient;" << std::endl;
                     }
                     scope = scope->parent;
-                }
-
-
-                unsigned int argsize = fd->arg_def_nums.size();
-                for (unsigned int j = 0; j < argsize; ++j) {
-                    codegen_typesig(p, p->vars[fd->arg_def_nums[j]]->type_def_num, output);
-                    output << " var__" << fd->arg_def_nums[j] << " = ";
-                    output << "(";
-                    codegen_typesig(p, p->vars[fd->arg_def_nums[j]]->type_def_num, output);
-                    output << ")m__->args[" << j << "].";
-                    codegen_tu_typesig(p, p->vars[fd->arg_def_nums[j]]->type_def_num, output);
-                    output << ";" << std::endl;
                 }
 
                 if (fd->continuation_sites.size() > 1) {
@@ -907,6 +982,15 @@ void Codegen::codegen_fun_decl(Program *p, Token *t, std::ostringstream &output)
                             codegen_default_value(p, vd->type_def_num, output);
                             output << ";" << std::endl;
                         }
+                        for (unsigned int j = 0; j < argsize; ++j) {
+                            output << " var__" << fd->arg_def_nums[j] << " = ";
+                            output << "(";
+                            codegen_typesig(p, p->vars[fd->arg_def_nums[j]]->type_def_num, output);
+                            output << ")m__->args[" << j << "].";
+                            codegen_tu_typesig(p, p->vars[fd->arg_def_nums[j]]->type_def_num, output);
+                            output << ";" << std::endl;
+                        }
+
                     }
                     output << "}" << std::endl;
 
@@ -938,7 +1022,15 @@ void Codegen::codegen_fun_decl(Program *p, Token *t, std::ostringstream &output)
                 output << "return FALSE;" << std::endl << "}" << std::endl;
 
             }
-            else {
+        }
+    }
+}
+
+void Codegen::codegen_fun_decl(Program *p, Token *t, std::ostringstream &output) {
+    for (unsigned int i = 0; i < p->funs.size(); ++i) {
+        if ((p->funs[i]->is_internal == false) && (p->funs[i]->external_name == "")) {
+            Function_Def *fd = p->funs[i];
+            if (fd->token->type == Token_Type::FUN_DEF) {
                 codegen_typesig(p, fd->return_type_def_num, output);
                 output << " fun__" << i << "(";
 
@@ -970,7 +1062,7 @@ void Codegen::codegen_fun_decl(Program *p, Token *t, std::ostringstream &output)
                     scope = scope->parent;
                 }
 
-                if ((scope != NULL) && (scope->owner->type == Token_Type::FEATURE_DEF)) {
+                if ((scope != NULL) /*&& (scope->owner->type == Token_Type::FEATURE_DEF)*/) {
                     if (argsize == 0) {
                         output << ", ";
                         codegen_typesig(p, scope->owner->definition_number, output);
@@ -1317,13 +1409,19 @@ void Codegen::codegen(Program *p, Token *t, std::ostringstream &output) {
     output << "#include <Aquarium.hpp>" << std::endl;
 
     codegen_class_predecl(p, t, output);
+    codegen_constructor_internal_predecl(p, t, output);
+    codegen_constructor_not_internal_predecl(p, t, output);
     codegen_fun_predecl(p, t, output);
+    codegen_action_predecl(p, t, output);
     codegen_copy_predecl(p, 0, output);
     codegen_delete_predecl(p, output);
     codegen_safe_eq_predecl(p, t, output);
 
     codegen_class_decl(p, t, output);
+    codegen_constructor_internal_decl(p, t, output);
+    codegen_constructor_not_internal_decl(p, t, output);
     codegen_fun_decl(p, t, output);
+    codegen_action_decl(p, t, output);
     codegen_copy_decl(p, 0, output);
     codegen_delete_decl(p, output);
     codegen_safe_eq_decl(p, t, output);
