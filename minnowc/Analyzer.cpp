@@ -498,6 +498,7 @@ void Analyzer::analyze_fun_blocks(Program *program, Token *token, Scope **scope)
         break;
 
         case (Token_Type::ACTOR_DEF) :
+        case (Token_Type::ISOLATED_ACTOR_DEF) :
         case (Token_Type::FEATURE_DEF) : {
             block_dive = true;
             *scope = token->scope;
@@ -632,7 +633,8 @@ void Analyzer::analyze_var_type_and_scope(Program *program, Token *token, Scope 
 
         analyze_var_type_and_scope(program, token->children[2], scope);
 
-        if ((token->type == Token_Type::ACTOR_DEF) || (token->type == Token_Type::FEATURE_DEF)) {
+        if ((token->type == Token_Type::ACTOR_DEF) || (token->type == Token_Type::ISOLATED_ACTOR_DEF) ||
+                (token->type == Token_Type::FEATURE_DEF)) {
             //Check to make sure they don't have any var type variables as properties
             unsigned int var_type_def_num = program->global->local_types["var"];
             for (std::map<std::string, unsigned int>::iterator iter = scope->local_vars.begin(), end = scope->local_vars.end();
@@ -724,7 +726,8 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
                             check_fun_call(program, token->children[1], scope, scope);
                         }
 
-                        if ((dot_type->token->type == Token_Type::ACTOR_DEF) && (token->children[0]->type != Token_Type::THIS)) {
+                        if (((dot_type->token->type == Token_Type::ACTOR_DEF) || (dot_type->token->type == Token_Type::ISOLATED_ACTOR_DEF))
+                                && (token->children[0]->type != Token_Type::THIS)) {
                             throw Compiler_Exception("Actor methods can not be accessed directly, use actions instead", token->children[1]->start_pos);
                         }
 
@@ -790,7 +793,7 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
                     Type_Def *dot_type = program->types[token->children[0]->type_def_num];
                     //Scope *dot_scope = dot_type->token->scope;
 
-                    if ((dot_type->token->type == Token_Type::ACTOR_DEF) && (token->children[0]->type != Token_Type::THIS)) {
+                    if (((dot_type->token->type == Token_Type::ACTOR_DEF) || (dot_type->token->type == Token_Type::ACTOR_DEF)) && (token->children[0]->type != Token_Type::THIS)) {
                         throw Compiler_Exception("Actor attributes can not be accessed directly, use actions instead", token->children[1]->start_pos);
                     }
 
@@ -957,7 +960,8 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
     }
     else if (token->type == Token_Type::THIS) {
         while (scope != NULL) {
-            if ((scope->owner != NULL) && ((scope->owner->type == Token_Type::ACTOR_DEF) || (scope->owner->type == Token_Type::FEATURE_DEF))) {
+            if ((scope->owner != NULL) && ((scope->owner->type == Token_Type::ACTOR_DEF)
+                    || (scope->owner->type == Token_Type::ISOLATED_ACTOR_DEF) || (scope->owner->type == Token_Type::FEATURE_DEF))) {
                 token->type_def_num = scope->owner->definition_number;
                 return;
             }
@@ -1012,11 +1016,13 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
         else if ((token->contents == "<+") || (token->contents == "+>")) {
             //Melding operator
             if ((token->children[0]->type_def_num < (signed)program->global->local_types["object"]) ||
-                    (program->types[token->children[0]->type_def_num]->token->type == Token_Type::ACTOR_DEF)){
+                    (program->types[token->children[0]->type_def_num]->token->type == Token_Type::ACTOR_DEF) ||
+                    (program->types[token->children[0]->type_def_num]->token->type == Token_Type::ISOLATED_ACTOR_DEF)){
                 throw Compiler_Exception("Object expected on left hand side of meld operator", token->children[0]->start_pos);
             }
             if ((token->children[1]->type_def_num < (signed)program->global->local_types["object"]) ||
-                    (program->types[token->children[1]->type_def_num]->token->type == Token_Type::ACTOR_DEF)) {
+                    (program->types[token->children[1]->type_def_num]->token->type == Token_Type::ACTOR_DEF) ||
+                    (program->types[token->children[0]->type_def_num]->token->type == Token_Type::ISOLATED_ACTOR_DEF)) {
                 throw Compiler_Exception("Object or feature expected on right hand side of meld operator", token->children[1]->start_pos);
             }
             token->type_def_num = (signed)program->global->local_types["object"];
@@ -1066,6 +1072,7 @@ void Analyzer::analyze_implied_this(Program *program, Token *token, Scope *scope
         while (scope != NULL) {
             if (scope->local_funs.find(fullname) != scope->local_funs.end()) {
                 if ((scope->owner != NULL) && ((scope->owner->type == Token_Type::ACTOR_DEF) ||
+                        (scope->owner->type == Token_Type::ISOLATED_ACTOR_DEF) ||
                         (scope->owner->type == Token_Type::FEATURE_DEF))) {
 
                     Token *new_fun_call = new Token(Token_Type::FUN_CALL);
@@ -1076,7 +1083,8 @@ void Analyzer::analyze_implied_this(Program *program, Token *token, Scope *scope
                     if (scope->owner->type == Token_Type::FEATURE_DEF) {
                         token->type = Token_Type::METHOD_CALL;
                     }
-                    else if (scope->owner->type == Token_Type::ACTOR_DEF) {
+                    else if ((scope->owner->type == Token_Type::ACTOR_DEF)
+                            || (scope->owner->type == Token_Type::ISOLATED_ACTOR_DEF)) {
                         token->type = Token_Type::ACTION_CALL;
                         token->type_def_num = program->global->local_types["error"];
                     }

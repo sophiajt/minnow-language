@@ -63,6 +63,13 @@ public:
     void codegen_continuation_site(Program *p, Token *t, std::ostringstream &output);
     void codegen_deletion_site(Program *p, Token *t, std::ostringstream &output);
 
+    void codegen_constructor_internal_predecl(Program *p, Token *t, std::ostringstream &output);
+    void codegen_constructor_not_internal_predecl(Program *p, Token *t, std::ostringstream &output);
+    void codegen_constructor_internal_decl(Program *p, Token *t, std::ostringstream &output);
+    void codegen_constructor_not_internal_decl(Program *p, Token *t, std::ostringstream &output);
+
+    void codegen_action_predecl(Program *p, Token *t, std::ostringstream &output);
+    void codegen_action_decl(Program *p, Token *t, std::ostringstream &output);
     void codegen_fun_predecl(Program *p, Token *t, std::ostringstream &output);
     void codegen_fun_decl(Program *p, Token *t, std::ostringstream &output);
 
