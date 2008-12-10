@@ -53,7 +53,7 @@ public:
         }
     }
     bool operator<=(const Position &other) const {
-        if (this->line <= other.line) {
+        if (this->line < other.line) {
             return true;
         }
         else if ((this->line == other.line) && (this->col <= other.col)) {
@@ -64,7 +64,7 @@ public:
         }
     }
     bool operator>=(const Position &other) const {
-        if (this->line >= other.line) {
+        if (this->line > other.line) {
             return true;
         }
         else if ((this->line == other.line) && (this->col >= other.col)) {

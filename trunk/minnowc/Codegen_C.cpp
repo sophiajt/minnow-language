@@ -231,7 +231,7 @@ void Codegen::codegen_symbol(Program *p, Token *t, std::ostringstream &output) {
                 codegen_token(p, t->children[0], output);
                 output << " = add_primary_feature__(";
                 output << "var__" << t->children[0]->children[0]->definition_number;
-                output << ", ";
+                output << ", (Object_Feature__ *)";
                 codegen_token(p, t->children[1], output);
                 output << ")";
 
@@ -239,7 +239,7 @@ void Codegen::codegen_symbol(Program *p, Token *t, std::ostringstream &output) {
             else {
                 output << "add_primary_feature__(";
                 codegen_token(p, t->children[0], output);
-                output << ", ";
+                output << ", (Object_Feature__ *)";
                 codegen_token(p, t->children[1], output);
                 output << ")";
             }
@@ -247,7 +247,7 @@ void Codegen::codegen_symbol(Program *p, Token *t, std::ostringstream &output) {
         else {
             output << "add_child_feature__(";
             codegen_token(p, t->children[0], output);
-            output << ", ";
+            output << ", (Object_Feature__ *)";
             codegen_token(p, t->children[1], output);
             output << ")";
         }
@@ -255,7 +255,7 @@ void Codegen::codegen_symbol(Program *p, Token *t, std::ostringstream &output) {
     else if (t->contents == "+>") {
         output << "remove_feature__(";
         codegen_token(p, t->children[0], output);
-        output << ", ";
+        output << ", (Object_Feature__ *)";
         codegen_token(p, t->children[1], output);
         output << ")";
     }
@@ -1186,7 +1186,11 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
         output << "  case(" << i << "): {" << std::endl;
         Type_Def *td = p->types[i];
 
-        if (td->container == Container_Type::LIST) {
+        if (i == obj_id) {
+            output << "  Object_Feature__ *ret_val__ = copy__(v__, ((Object_Feature__*)v__)->feature_id);" << std::endl;
+            output << "  return ret_val__;" << std::endl;
+        }
+        else if (td->container == Container_Type::LIST) {
             output << "  unsigned int i;" << std::endl;
             output << "  Typeless_Vector__ *ret_val__ = create_typeless_vector__(((Typeless_Vector__ *)v__)->elem_size, ((Typeless_Vector__ *)v__)->current_size);" << std::endl;
             output << "  for (i = 0; i < ((Typeless_Vector__ *)v__)->current_size; ++i)" << std::endl << "  {" << std::endl;
@@ -1266,7 +1270,10 @@ void Codegen::codegen_delete_decl(Program *p, std::ostringstream &output) {
         output << "  case(" << i << "): {" << std::endl;
         Type_Def *td = p->types[i];
 
-        if (td->container == Container_Type::LIST) {
+        if (i == obj_id) {
+            output << "  delete__(v__, ((Object_Feature__*)v__)->feature_id);" << std::endl;
+        }
+        else if (td->container == Container_Type::LIST) {
             output << "  unsigned int i;" << std::endl;
             Type_Def *contained = p->types[td->contained_type_def_num];
             if ((contained->token->type != Token_Type::ACTOR_DEF) && (contained->token->type != Token_Type::ISOLATED_ACTOR_DEF)) {
