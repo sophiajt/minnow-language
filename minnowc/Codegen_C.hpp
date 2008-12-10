@@ -24,6 +24,8 @@ class Codegen {
     unsigned int cont_id;
     unsigned int temp_num;
 
+    Function_Def *current_fun;
+
 public:
     void codegen_typesig(Program *p, unsigned int type_def_num, std::ostringstream &output);
     void codegen_typesig_no_tail(Program *p, unsigned int type_def_num, std::ostringstream &output);
