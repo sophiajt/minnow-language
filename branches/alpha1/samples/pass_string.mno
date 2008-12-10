@@ -1,0 +1,13 @@
+actor receiver
+  action get(string s)
+    putstring(s)
+    exit(0)
+  end
+end
+
+action main()
+  spawn receiver r
+  var string s
+  s = "Hello, world"
+  r::get(s)
+end

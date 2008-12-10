@@ -1,0 +1,4 @@
+action main()
+  putstring("Hello")
+  exit(0)
+end
