@@ -1,9 +1,0 @@
-feature Deep
-  def call
-  end
-end
-
-action main
-  a : Deep
-  a.call()
-end

@@ -1,8 +1,0 @@
-def main
-  //x : bool = true
-  if (0 == 0)
-  elseif (1 == 0)
-  elseif (2 == 0)
-  else
-  end
-end

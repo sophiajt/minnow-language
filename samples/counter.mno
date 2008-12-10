@@ -1,0 +1,10 @@
+action main(string[] args)
+  var int i = convertToInt(args[0])
+  var int total = 0
+  while (i > 0)
+    total = total + 1
+    i = i - 1
+  end
+  puti(total)
+  exit(0)
+end

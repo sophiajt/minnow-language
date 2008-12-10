@@ -1,4 +1,0 @@
-action main
-  x : List[int] = new List[int]
-  x[3] = 5
-end

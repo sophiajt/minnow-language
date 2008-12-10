@@ -1,4 +1,0 @@
-action main
-  print("H" + 'e' + 'l' + 'l' + 'o' + '\n')
-  sys.exit()
-end

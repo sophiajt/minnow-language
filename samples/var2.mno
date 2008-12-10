@@ -1,7 +1,0 @@
-def get_val(x:int) : int
-  return x+1
-end
-
-action main
-  x : var = get_val(5)
-end

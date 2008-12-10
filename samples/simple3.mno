@@ -1,3 +1,0 @@
-action main(x : List[string])
-  sys.exit(0)
-end

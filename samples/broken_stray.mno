@@ -1,4 +1,0 @@
-action main
-  x : var y : var
-  z =  x + y
-end
