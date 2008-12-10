@@ -1244,6 +1244,9 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
             output << "  if (((Object_Feature__*)v__)->next != NULL) {" << std::endl;
             output << "    ret_val__->next = copy__( ((Object_Feature__*)v__)->next, ((Object_Feature__*)(((Object_Feature__*)v__)->next))->feature_id);" << std::endl;
             output << "  }" << std::endl;
+            output << "  else {" << std::endl;
+            output << "    ret_val__->next = NULL;" << std::endl;
+            output << "  }" << std::endl;
             output << "  return ret_val__;" << std::endl;
         }
         output << "  }; break;" << std::endl;
