@@ -1007,6 +1007,14 @@ void Codegen::codegen_action_decl(Program *p, Token *t, std::ostringstream &outp
                             codegen_default_value(p, vd->type_def_num, output);
                             output << ";" << std::endl;
                         }
+                        for (unsigned int j = 0; j < argsize; ++j) {
+                            output << " var__" << fd->arg_def_nums[j] << " = ";
+                            output << "(";
+                            codegen_typesig(p, p->vars[fd->arg_def_nums[j]]->type_def_num, output);
+                            output << ")m__->args[" << j << "].";
+                            codegen_tu_typesig(p, p->vars[fd->arg_def_nums[j]]->type_def_num, output);
+                            output << ";" << std::endl;
+                        }
                         codegen_block(p, fd->token->children[2], output);
                     }
                 }
