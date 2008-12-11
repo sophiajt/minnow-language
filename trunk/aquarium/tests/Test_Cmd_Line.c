@@ -13,8 +13,11 @@ BOOL main_action(Message__ *m) {
     printf("Number of cmd_line_args: %i\n", tv->current_size);
 
     for (i = 0; i < tv->current_size; ++i) {
-        char *arg = INDEX_AT__(tv, i, char*);
-        printf("Arg %i: %s\n", i, arg);
+        Typeless_Vector__ *arg = INDEX_AT__(tv, i, Typeless_Vector__*);
+        print_i__(i);
+        printf(" ");
+        print_s__(arg);
+        printf("\n");
     }
 
     exit(0);

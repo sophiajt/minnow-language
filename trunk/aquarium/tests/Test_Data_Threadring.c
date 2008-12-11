@@ -104,9 +104,10 @@ BOOL main_action__(Message__ *m) {
         exit(0);
     }
 
-    char *arg = (char*)(INDEX_AT__(tv, 0, union Type_Union__).VoidPtr);
+    //char *arg = (char*)(INDEX_AT__(tv, 0, union Type_Union__).VoidPtr);
+    token = convert_s_to_i__(INDEX_AT__(tv, 0, Typeless_Vector__*));
 
-    token = atoi(arg);
+    //token = atoi(arg);
 
     //printf("Scheduling recipients\n");
     for (i = 0; i < num_recipients; ++i) {
