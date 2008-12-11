@@ -1,0 +1,31 @@
+feature Bob
+  x : int
+
+  def greet()
+    print("Hello")
+  end
+
+  def Bob(i : int)
+    x = i
+  end
+end
+
+actor Doer
+  action do(l : List[object])
+    o : object = l[0]
+    print(o.Bob.x)
+    o.Bob.greet()
+    sys.exit()
+  end
+end
+
+action main
+  l : List[object] = new List[object]
+  o : object <+ new Bob(3)
+  a : Doer = spawn Doer()
+
+  l.push(o)
+
+  a::do(l)
+end
+

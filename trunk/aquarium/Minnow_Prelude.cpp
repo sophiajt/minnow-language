@@ -11,6 +11,7 @@ void print_i__(int i) {
 }
 
 void print_s__(Typeless_Vector__ *s) {
+    if (s == NULL) return;
     push_onto_char_string__(s, 0);
     printf("%s", (char *)(s->contents));
     pop_off_char_string__(s);
@@ -37,6 +38,7 @@ void exit__() {
 }
 
 int convert_s_to_i__(Typeless_Vector__ *s) {
+    if (s == NULL) return 0;
     int retval;
     push_onto_char_string__(s, 0);
     retval = atoi((char *)(s->contents));

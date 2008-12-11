@@ -1,11 +1,13 @@
 isolated actor Bob
+  y : int
   action greet
     print("Hello from isolated\n")
+    print(y)
     sys.exit()
   end
 
   def Bob(x : int)
-    print(x)
+    y = x
   end
 end
 
