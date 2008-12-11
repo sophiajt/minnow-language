@@ -105,6 +105,7 @@ int main(int argc, char *argv[]) {
     Analyzer an;
     Codegen c;
     Lex_Parser lp;
+    char *output_file = NULL;
 
     if (argc < 2) {
         printf("Please specify the file to compile\n");
@@ -128,20 +129,36 @@ int main(int argc, char *argv[]) {
             an.analyze_token_types(p, t, p->global);
 
         }
-        for (int i = 1; i < argc; ++i) {
-            std::string contents = load_file(argv[i]);
-            std::string filename = argv[i];
-            t = lp.lexparse_file(filename, contents);
-            an.analyze_strays(t);
+        //for (int i = 1; i < argc; ++i) {
+        int i = 1;
+        while (i < argc) {
+            if (strcmp(argv[i], "-o") == 0) {
+                //grab output file
+                if ((i+1) < argc) {
+                    output_file = argv[i+1];
+                    i = i + 2;
+                }
+                else {
+                    printf("Missing output filename:  Use -o <filename> to output a binary\n");
+                    exit(0);
+                }
+            }
+            else {
+                std::string contents = load_file(argv[i]);
+                std::string filename = argv[i];
+                t = lp.lexparse_file(filename, contents);
+                an.analyze_strays(t);
 
-            //Start building app
-            Scope *start = p->global;
-            an.analyze_type_blocks(p, t, &start);
-            start = p->global;
-            an.analyze_fun_blocks(p, t, &start);
-            an.add_implied_constructors(p);
-            an.analyze_var_type_and_scope(p, t, p->global);
-            an.analyze_token_types(p, t, p->global);
+                //Start building app
+                Scope *start = p->global;
+                an.analyze_type_blocks(p, t, &start);
+                start = p->global;
+                an.analyze_fun_blocks(p, t, &start);
+                an.add_implied_constructors(p);
+                an.analyze_var_type_and_scope(p, t, p->global);
+                an.analyze_token_types(p, t, p->global);
+                ++i;
+            }
         }
         an.analyze_embedded_functions(p, t);
         an.analyze_implied_this(p, t, p->global);
@@ -157,8 +174,32 @@ int main(int argc, char *argv[]) {
 
         std::ostringstream output;
         c.codegen(p, t, output);
-        //std::cout << "Code: " << std::endl;
-        std::cout << output.str();
+        if (output_file == NULL) {
+            std::cout << output.str();
+        }
+        else {
+            std::ofstream outfile;
+            outfile.open("tmpXXXXX.c");
+            outfile << output.str();
+            outfile.close();
+            std::ostringstream exe_cmdline;
+
+            exe_cmdline << "gcc -ggdb -O3 -o " << output_file << " tmpXXXXX.c -Werror -Iaquarium -L. -laquarium";
+
+            if (system(exe_cmdline.str().c_str()) == 0) {
+                remove("tmpXXXXX.cpp");
+            }
+            else {
+                std::cout << "For commandline: ";
+                for (int i = 0; i < argc; ++i) {
+                    std::cout << argv[i] << " ";
+                }
+                std::cout << std::endl;
+                std::cout << "Used compile line: " << exe_cmdline.str() << std::endl;
+                exit(-1);
+            }
+
+        }
 
     }
     catch (Compiler_Exception &ce) {

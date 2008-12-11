@@ -15,13 +15,16 @@ end
 namespace global
 
 action main
-  x : Bob.Cool
-  y : Math.Complex.Complex_Number
+  x : Bob.Cool = new Bob.Cool()
+  y : Math.Complex.Complex_Number = new Math.Complex.Complex_Number()
 
   o : object <+ new Bob.Cool() <+ new Math.Complex.Complex_Number()
-  o.(Bob.Cool).x = "Nice"
+  o.(Bob.Cool).x = "Bob Cool\n"
 
-  x.x = "Bob Cool"
+  x.x = "Nice"
   y.real = 10.0
   y.imaginary = 100.0
+
+  print(o.(Bob.Cool).x)
+  sys.exit()
 end

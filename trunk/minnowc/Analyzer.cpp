@@ -254,7 +254,10 @@ void Analyzer::find_constructor(Program *program, Token *ns, Scope *scope) {
                     td = program->types[ns->children[1]->children[0]->type_def_num];
 
                     check_fun_call(program, ns->children[1], td->token->scope, scope);
+                    //ns->type_def_num = ns->children[1]->type_def_num;
+                    ns->definition_number = ns->children[1]->definition_number;
                     ns->type_def_num = ns->children[1]->children[0]->type_def_num;
+                    //ns->definition_number = ns->children[1]->children[0]->definition_number;
                     ns->children[1]->type = Token_Type::CONSTRUCTOR_CALL;
                 }
                 catch (Compiler_Exception &ce){
@@ -801,6 +804,7 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
                 }
             }
             else {
+                analyze_token_types(program, token->children[0], scope);
                 unsigned int type_def_num = find_type(program, token->children[1], scope);
                 token->type = Token_Type::REFERENCE_FEATURE;
                 token->type_def_num = type_def_num;
