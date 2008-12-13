@@ -159,6 +159,101 @@ void Codegen::codegen_method_call(Program *p, Token *t, std::ostringstream &outp
             codegen_token(p, t->children[0], output);
             output << ")";
         }
+        else if ((child->children[0]->contents == "to_float") && (t->children[0]->type_def_num == (signed)p->global->local_types["string"])) {
+            output << "convert_s_to_f__(";
+            codegen_token(p, t->children[0], output);
+            output << ")";
+        }
+        else if ((child->children[0]->contents == "to_double") && (t->children[0]->type_def_num == (signed)p->global->local_types["string"])) {
+            output << "convert_s_to_d__(";
+            codegen_token(p, t->children[0], output);
+            output << ")";
+        }
+        else if ((child->children[0]->contents == "to_char") && (t->children[0]->type_def_num == (signed)p->global->local_types["string"])) {
+            output << "convert_s_to_c__(";
+            codegen_token(p, t->children[0], output);
+            output << ")";
+        }
+        else if ((child->children[0]->contents == "to_string") && (t->children[0]->type_def_num == (signed)p->global->local_types["int"])) {
+            output << "convert_i_to_s__(";
+            codegen_token(p, t->children[0], output);
+            output << ")";
+        }
+        else if ((child->children[0]->contents == "to_float") && (t->children[0]->type_def_num == (signed)p->global->local_types["int"])) {
+            output << "convert_i_to_f__(";
+            codegen_token(p, t->children[0], output);
+            output << ")";
+        }
+        else if ((child->children[0]->contents == "to_double") && (t->children[0]->type_def_num == (signed)p->global->local_types["int"])) {
+            output << "convert_i_to_d__(";
+            codegen_token(p, t->children[0], output);
+            output << ")";
+        }
+        else if ((child->children[0]->contents == "to_char") && (t->children[0]->type_def_num == (signed)p->global->local_types["int"])) {
+            output << "convert_i_to_c__(";
+            codegen_token(p, t->children[0], output);
+            output << ")";
+        }
+        else if ((child->children[0]->contents == "to_string") && (t->children[0]->type_def_num == (signed)p->global->local_types["double"])) {
+            output << "convert_d_to_s__(";
+            codegen_token(p, t->children[0], output);
+            output << ")";
+        }
+        else if ((child->children[0]->contents == "to_float") && (t->children[0]->type_def_num == (signed)p->global->local_types["double"])) {
+            output << "convert_d_to_f__(";
+            codegen_token(p, t->children[0], output);
+            output << ")";
+        }
+        else if ((child->children[0]->contents == "to_int") && (t->children[0]->type_def_num == (signed)p->global->local_types["double"])) {
+            output << "convert_d_to_i__(";
+            codegen_token(p, t->children[0], output);
+            output << ")";
+        }
+        else if ((child->children[0]->contents == "to_char") && (t->children[0]->type_def_num == (signed)p->global->local_types["double"])) {
+            output << "convert_d_to_c__(";
+            codegen_token(p, t->children[0], output);
+            output << ")";
+        }
+        else if ((child->children[0]->contents == "to_string") && (t->children[0]->type_def_num == (signed)p->global->local_types["float"])) {
+            output << "convert_f_to_s__(";
+            codegen_token(p, t->children[0], output);
+            output << ")";
+        }
+        else if ((child->children[0]->contents == "to_int") && (t->children[0]->type_def_num == (signed)p->global->local_types["float"])) {
+            output << "convert_f_to_i__(";
+            codegen_token(p, t->children[0], output);
+            output << ")";
+        }
+        else if ((child->children[0]->contents == "to_double") && (t->children[0]->type_def_num == (signed)p->global->local_types["float"])) {
+            output << "convert_f_to_d__(";
+            codegen_token(p, t->children[0], output);
+            output << ")";
+        }
+        else if ((child->children[0]->contents == "to_char") && (t->children[0]->type_def_num == (signed)p->global->local_types["float"])) {
+            output << "convert_f_to_c__(";
+            codegen_token(p, t->children[0], output);
+            output << ")";
+        }
+        else if ((child->children[0]->contents == "to_string") && (t->children[0]->type_def_num == (signed)p->global->local_types["char"])) {
+            output << "convert_c_to_s__(";
+            codegen_token(p, t->children[0], output);
+            output << ")";
+        }
+        else if ((child->children[0]->contents == "to_float") && (t->children[0]->type_def_num == (signed)p->global->local_types["char"])) {
+            output << "convert_c_to_f__(";
+            codegen_token(p, t->children[0], output);
+            output << ")";
+        }
+        else if ((child->children[0]->contents == "to_double") && (t->children[0]->type_def_num == (signed)p->global->local_types["char"])) {
+            output << "convert_c_to_d__(";
+            codegen_token(p, t->children[0], output);
+            output << ")";
+        }
+        else if ((child->children[0]->contents == "to_int") && (t->children[0]->type_def_num == (signed)p->global->local_types["char"])) {
+            output << "convert_c_to_i__(";
+            codegen_token(p, t->children[0], output);
+            output << ")";
+        }
     }
 }
 

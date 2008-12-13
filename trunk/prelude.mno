@@ -7,6 +7,25 @@ extern def print_f__(f : float)
 extern def exit_i__(i : int)
 extern def exit__()
 extern def convert_s_to_i__(s : string) : int
+extern def convert_s_to_f__(s : string) : float
+extern def convert_s_to_d__(s : string) : double
+extern def convert_s_to_c__(s : string) : char
+extern def convert_i_to_s__(i : int) : string
+extern def convert_i_to_f__(i : int) : float
+extern def convert_i_to_d__(i : int) : double
+extern def convert_i_to_c__(i : int) : char
+extern def convert_d_to_s__(d : double) : string
+extern def convert_d_to_f__(d : double) : float
+extern def convert_d_to_i__(d : double) : int
+extern def convert_d_to_c__(d : double) : char
+extern def convert_f_to_s__(f : float) : string
+extern def convert_f_to_i__(f : float) : int
+extern def convert_f_to_d__(f : float) : double
+extern def convert_f_to_c__(f : float) : char
+extern def convert_c_to_s__(c : char) : string
+extern def convert_c_to_f__(c : char) : float
+extern def convert_c_to_d__(c : char) : double
+extern def convert_c_to_i__(c : char) : int
 
 namespace global
 def print(i : int)
