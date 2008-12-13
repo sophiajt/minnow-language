@@ -98,13 +98,42 @@ std::string load_file(const char *filename) {
     return ret_val;
 }
 
-int main(int argc, char *argv[]) {
-    Program *p = new Program();
+void translate_file(Program *p, std::string filename) {
     Token *t;
 
     Analyzer an;
-    Codegen c;
     Lex_Parser lp;
+
+    std::string contents = load_file(filename.c_str());
+    t = lp.lexparse_file(filename, contents);
+    an.analyze_strays(t);
+
+    //Start building app
+    Scope *start = p->global;
+    an.analyze_type_blocks(p, t, &start);
+    start = p->global;
+    an.analyze_fun_blocks(p, t, &start);
+    an.add_implied_constructors(p);
+    an.analyze_var_type_and_scope(p, t, p->global);
+    an.analyze_token_types(p, t, p->global);
+    an.analyze_embedded_functions(p, t);
+    an.analyze_implied_this(p, t, p->global);
+    an.analyze_return_calls(p, t, 0);
+    an.analyze_var_visibility(p, t);
+    an.analyze_freeze_resume(p, t, p->global);
+    an.analyze_copy_delete(p, t, p->global);
+    //debug_print_def(p, t, "");
+    //debug_print_vars(p, t);
+    //debug_print(p, "");
+
+    p->files.push_back(t);
+
+    return;
+}
+
+int main(int argc, char *argv[]) {
+    Program *p = new Program();
+    Codegen c;
     char *output_file = NULL;
 
     if (argc < 2) {
@@ -113,22 +142,8 @@ int main(int argc, char *argv[]) {
     }
 
     try {
-        {
-            std::string contents = load_file("prelude.mno");
-            std::string filename = "prelude.mno";
-            t = lp.lexparse_file(filename, contents);
-            an.analyze_strays(t);
+        translate_file(p, "prelude.mno");
 
-            //Start building app
-            Scope *start = p->global;
-            an.analyze_type_blocks(p, t, &start);
-            start = p->global;
-            an.analyze_fun_blocks(p, t, &start);
-            an.add_implied_constructors(p);
-            an.analyze_var_type_and_scope(p, t, p->global);
-            an.analyze_token_types(p, t, p->global);
-
-        }
         //for (int i = 1; i < argc; ++i) {
         int i = 1;
         while (i < argc) {
@@ -144,36 +159,14 @@ int main(int argc, char *argv[]) {
                 }
             }
             else {
-                std::string contents = load_file(argv[i]);
-                std::string filename = argv[i];
-                t = lp.lexparse_file(filename, contents);
-                an.analyze_strays(t);
-
-                //Start building app
-                Scope *start = p->global;
-                an.analyze_type_blocks(p, t, &start);
-                start = p->global;
-                an.analyze_fun_blocks(p, t, &start);
-                an.add_implied_constructors(p);
-                an.analyze_var_type_and_scope(p, t, p->global);
-                an.analyze_token_types(p, t, p->global);
+                translate_file(p, argv[i]);
                 ++i;
             }
         }
-        an.analyze_embedded_functions(p, t);
-        an.analyze_implied_this(p, t, p->global);
-        an.analyze_return_calls(p, t, 0);
-        an.analyze_var_visibility(p, t);
-        an.analyze_freeze_resume(p, t, p->global);
-        an.analyze_copy_delete(p, t, p->global);
-        //debug_print_def(p, t, "");
-        //debug_print_vars(p, t);
-        //debug_print(p, "");
-
         //Start outputting code
 
         std::ostringstream output;
-        c.codegen(p, t, output);
+        c.codegen(p, p->files[0], output);
         if (output_file == NULL) {
             std::cout << output.str();
         }

@@ -20,6 +20,7 @@ void Codegen::codegen_typesig(Program *p, unsigned int type_def_num, std::ostrin
             case (Internal_Type::DOUBLE) : output << "double"; break;
             case (Internal_Type::STRING) : output << "Typeless_Vector__*"; break;
             case (Internal_Type::CHAR) : output << "char"; break;
+            case (Internal_Type::POINTER) : output << "void*"; break;
             case (Internal_Type::OBJECT) : output << "void*"; break;
         }
     }
@@ -44,6 +45,7 @@ void Codegen::codegen_typesig_no_tail(Program *p, unsigned int type_def_num, std
             case (Internal_Type::DOUBLE) : output << "double"; break;
             case (Internal_Type::STRING) : output << "Typeless_Vector__"; break;
             case (Internal_Type::CHAR) : output << "char"; break;
+            case (Internal_Type::POINTER) : output << "void*"; break;
             case (Internal_Type::OBJECT) : output << "void*"; break;
         }
     }
@@ -67,6 +69,7 @@ void Codegen::codegen_tu_typesig(Program *p, unsigned int type_def_num, std::ost
             case (Internal_Type::DOUBLE) : output << "Double"; break;
             case (Internal_Type::STRING) : output << "VoidPtr"; break;
             case (Internal_Type::CHAR) : output << "Int8"; break;
+            case (Internal_Type::POINTER) : output << "VoidPtr"; break;
             case (Internal_Type::OBJECT) : output << "VoidPtr"; break;
         }
     }
@@ -90,6 +93,7 @@ void Codegen::codegen_default_value(Program *p, unsigned int type_def_num, std::
             case (Internal_Type::DOUBLE) : output << "0.0"; break;
             case (Internal_Type::STRING) : output << "NULL"; break;
             case (Internal_Type::CHAR) : output << "0"; break;
+            case (Internal_Type::POINTER) : output << "NULL"; break;
             case (Internal_Type::OBJECT) : output << "NULL"; break;
         }
     }
@@ -1552,6 +1556,7 @@ void Codegen::codegen(Program *p, Token *t, std::ostringstream &output) {
     internal_type_map[p->global->local_types["float"]] = Internal_Type::FLOAT;
     internal_type_map[p->global->local_types["double"]] = Internal_Type::DOUBLE;
     internal_type_map[p->global->local_types["char"]] = Internal_Type::CHAR;
+    internal_type_map[p->global->local_types["pointer"]] = Internal_Type::POINTER;
     internal_type_map[p->global->local_types["object"]] = Internal_Type::OBJECT;
 
     output << "#include <Aquarium.hpp>" << std::endl;

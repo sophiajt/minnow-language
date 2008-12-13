@@ -30,6 +30,48 @@ void print_f__(float f) {
     printf("%f", f);
 }
 
+/*
+ * todo: do a proper file open
+ */
+void* file_open_file_s__(Typeless_Vector__ *s) {
+    FILE *in;
+
+    push_onto_char_string__(s, 0);
+    in = fopen((char *)(s->contents), "rb");
+    pop_off_char_string__(s);
+    return in;
+}
+
+void file_close_file_p__(void *p) {
+    if (p != NULL) {
+        FILE *in = (FILE*)p;
+        fclose(in);
+    }
+}
+
+/*
+ * todo: do a proper file length
+ */
+int file_length_p__(void *p) {
+    FILE *in = (FILE*)p;
+    unsigned int filelen;
+    fseek(in, 0L, SEEK_END);
+    filelen = ftell(in);
+    fseek(in, 0L, SEEK_SET);
+
+    return (int)filelen;
+}
+
+Typeless_Vector__ *file_read_all_p__(void *p) {
+    FILE *in = (FILE*)p;
+    int length = file_length_p__(p);
+    Typeless_Vector__ *tv = create_char_string__(length);
+    tv->current_size = (unsigned int)length;
+    fread(tv->contents, length, 1, in);
+
+    return tv;
+}
+
 void exit_i__(int i) {
     exit(i);
 }

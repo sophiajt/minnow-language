@@ -1,0 +1,13 @@
+action main
+  f : sys.file = new sys.file()
+  f.open("tmp/test.txt")
+  print("Size: ")
+  print(f.length())
+  print("\n")
+  contents : string = f.read_all()
+  print(contents)
+  f.close()
+
+  sys.exit()
+end 
+  

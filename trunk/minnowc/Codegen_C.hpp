@@ -16,7 +16,7 @@
 #include "LexParser.hpp"
 #include "Analyzer.hpp"
 
-class Internal_Type { public: enum Type { ERROR, VOID, BOOL, INT, CHAR, FLOAT, DOUBLE, UINT, STRING, OBJECT }; };
+class Internal_Type { public: enum Type { ERROR, VOID, BOOL, INT, CHAR, FLOAT, DOUBLE, UINT, STRING, POINTER, OBJECT }; };
 
 class Codegen {
     std::map<unsigned int, unsigned int> internal_type_map;

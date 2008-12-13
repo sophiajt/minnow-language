@@ -37,6 +37,11 @@ double convert_f_to_d__(float f);
 char convert_f_to_c__(float f);
 int convert_f_to_i__(float f);
 
+void* file_open_file_s__(Typeless_Vector__ *s);
+void file_close_file_p__(void *p);
+int file_length_p__(void *p);
+Typeless_Vector__ *file_read_all_p__(void *p);
+
 void exit_i__(int i);
 void exit__();
 

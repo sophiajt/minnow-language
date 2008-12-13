@@ -4,6 +4,10 @@ extern def print_s__(s : string)
 extern def print_d__(d : double)
 extern def print_c__(c : char)
 extern def print_f__(f : float)
+extern def file_open_file_s__(s : string) : pointer
+extern def file_close_file_p__(p : pointer)
+extern def file_length_p__(p : pointer) : int
+extern def file_read_all_p__(p : pointer) : string
 extern def exit_i__(i : int)
 extern def exit__()
 extern def convert_s_to_i__(s : string) : int
@@ -51,6 +55,26 @@ end
 //----SYS----
 
 namespace sys
+
+feature file
+  handle : pointer
+
+  def open(fname : string)
+    handle = sys.externals.file_open_file_s__(fname)
+  end
+
+  def read_all() : string
+    return sys.externals.file_read_all_p__(handle)
+  end
+
+  def length() : int
+    return sys.externals.file_length_p__(handle)
+  end
+
+  def close() 
+    sys.externals.file_close_file_p__(handle)
+  end
+end
 
 def exit(i : int)
   sys.externals.exit_i__(i)
