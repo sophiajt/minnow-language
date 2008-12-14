@@ -146,13 +146,24 @@ Token *Lex_Parser::lexparse_number(std::string::iterator &curr, std::string::ite
         while (((*curr >= '0') && (*curr <= '9')) || (*curr == '.')) {
             if (*curr == '.') {
                 if (have_decimal) {
-                    throw Compiler_Exception("Multiple decimal points.  For functions use (0.0).function() format", p);
+                    //throw Compiler_Exception("Multiple decimal points.  For functions use (0.0).function() format", p);
+                    break;
                 }
                 have_decimal = true;
             }
             ++curr;
             ++p.col;
         }
+
+        --curr;
+        if (*curr == '.') {
+            //if we end in a point, we're still not a float since it's probably a function call
+            have_decimal = false;
+        }
+        else {
+            ++curr;
+        }
+
         std::string val(start, curr);
 
         Token *token;

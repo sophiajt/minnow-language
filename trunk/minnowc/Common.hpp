@@ -156,10 +156,12 @@ public:
     Token *token;
     unsigned int type_def_num;
     bool is_property;
-    bool is_removed; //todo: use proper tracing instead of the work around
+    bool is_removed; //todo: use proper tracing instead of the work around.  Todo: remove this.
+    bool is_dependent; //if we're responsible for this variable directly.
+
     Position usage_start, usage_end;
 
-    Var_Def() : token(NULL), type_def_num(-1), is_property(false), is_removed(false) {}
+    Var_Def() : token(NULL), type_def_num(-1), is_property(false), is_removed(false), is_dependent(true) {}
 };
 
 class Scope {

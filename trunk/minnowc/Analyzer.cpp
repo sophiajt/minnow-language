@@ -1561,6 +1561,190 @@ std::vector<int> Analyzer::build_push_pop_list(Program *program, Scope *scope, P
     return ret_val;
 }
 
+Token *Analyzer::create_temp_replacement(Program *program, Token *token, Scope *var_scope, unsigned int type_def_num) {
+    Var_Def *vd = new Var_Def();
+
+    if (type_def_num == program->global->local_types["void"]) {
+        throw Compiler_Exception("Unexpected void return type", token->start_pos);
+    }
+
+    vd->token = new Token(token->type);
+    *(vd->token) = *token;
+    vd->type_def_num = type_def_num;
+    vd->usage_start = token->start_pos;
+
+    program->vars.push_back(vd);
+
+    unsigned int definition_number = program->vars.size() - 1;
+
+    std::ostringstream varname;
+    varname << "tmp__" << definition_number;
+
+    //build a replacement variable reference to replace where the function had been
+    Token *var_ref = new Token(Token_Type::VAR_CALL);
+    var_ref->contents = varname.str();
+    var_ref->start_pos = vd->token->start_pos;
+    var_ref->end_pos = vd->token->end_pos;
+    var_ref->definition_number = definition_number;
+    var_ref->type_def_num = type_def_num;
+
+    var_scope->local_vars[varname.str()] = definition_number;
+
+    return var_ref;
+}
+
+Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Scope *scope) {
+    if ((token->type == Token_Type::ACTION_DEF) || (token->type == Token_Type::FUN_DEF)) {
+        //scope = token->scope;
+        scope = token->children[2]->scope;
+
+        analyze_ports_of_entry(program, token->children[2], scope);
+    }
+    else if ((token->type == Token_Type::FEATURE_DEF) || (token->type == Token_Type::ACTOR_DEF) ||
+            (token->type == Token_Type::ISOLATED_ACTOR_DEF)) {
+        analyze_ports_of_entry(program, token->children[2], scope);
+    }
+    else if (token->type == Token_Type::EXTERN_FUN_DEF) {
+        //do nothing
+    }
+    else {
+        if (token->type == Token_Type::BLOCK) {
+            unsigned int i = 0;
+            while (i < token->children.size()) {
+                Token *ret_val = analyze_ports_of_entry(program, token->children[i], scope);
+                if (ret_val != NULL) {
+                    Var_Def *vd = program->vars[program->vars.size() - 1];
+                    Token *equation = new Token(Token_Type::SYMBOL);
+                    equation->contents = "=";
+                    equation->type_def_num = ret_val->type_def_num;
+
+                    Token *var_ref = new Token(Token_Type::VAR_DECL);
+                    var_ref->definition_number = program->vars.size() - 1;
+                    var_ref->type_def_num = ret_val->type_def_num;
+
+                    equation->children.push_back(var_ref);
+                    equation->children.push_back(ret_val);
+                    vd->usage_end = ret_val->end_pos;
+
+                    token->children.insert(token->children.begin() + i, equation);
+                }
+                ++i;
+            }
+            return NULL;
+        }
+        else {
+            if (token->type == Token_Type::FUN_CALL) {
+                for (unsigned int j = 0; j < token->children.size(); ++j) {
+                    Token *child = analyze_ports_of_entry(program, token->children[j], scope);
+                    if (child != NULL) {
+                        return child;
+                    }
+                }
+
+                if (token->type_def_num != (int)program->global->local_types["void"]) {
+                    Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num);
+                    *token = *replacement;
+                    return program->vars[token->definition_number]->token;
+                }
+                else {
+                    return NULL;
+                }
+            }
+            else if (token->type == Token_Type::METHOD_CALL) {
+                Token *child = analyze_ports_of_entry(program, token->children[0], scope);
+                if (child != NULL) {
+                    return child;
+                }
+
+                for (unsigned int j = 0; j < token->children[1]->children.size(); ++j) {
+                    Token *child = analyze_ports_of_entry(program, token->children[1]->children[j], scope);
+                    if (child != NULL) {
+                        return child;
+                    }
+                }
+
+                if (token->type_def_num != (int)program->global->local_types["void"]) {
+                    Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num);
+                    *token = *replacement;
+                    return program->vars[token->definition_number]->token;
+                }
+                else {
+                    return NULL;
+                }
+            }
+            else if (token->type == Token_Type::REFERENCE_FEATURE) {
+                for (unsigned int j = 0; j < token->children[0]->children.size(); ++j) {
+                    Token *child = analyze_ports_of_entry(program, token->children[0]->children[j], scope);
+                    if (child != NULL) {
+                        return child;
+                    }
+                }
+                for (unsigned int j = 0; j < token->children[1]->children.size(); ++j) {
+                    Token *child = analyze_ports_of_entry(program, token->children[1]->children[j], scope);
+                    if (child != NULL) {
+                        return child;
+                    }
+                }
+
+                if (token->type_def_num != (int)program->global->local_types["void"]) {
+                    Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num);
+                    *token = *replacement;
+                    return program->vars[token->definition_number]->token;
+                }
+                else {
+                    return NULL;
+                }
+            }
+            else if (token->type == Token_Type::NEW_ALLOC) {
+                for (unsigned int j = 0; j < token->children[1]->children.size(); ++j) {
+                    Token *child = analyze_ports_of_entry(program, token->children[1]->children[j], scope);
+                    if (child != NULL) {
+                        return child;
+                    }
+                }
+
+                Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num);
+                *token = *replacement;
+                return program->vars[token->definition_number]->token;
+            }
+            else if (token->type == Token_Type::SPAWN_ACTOR) {
+                for (unsigned int j = 0; j < token->children[1]->children.size(); ++j) {
+                    Token *child = analyze_ports_of_entry(program, token->children[1]->children[j], scope);
+                    if (child != NULL) {
+                        return child;
+                    }
+                }
+
+                Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num);
+                *token = *replacement;
+                return program->vars[token->definition_number]->token;
+            }
+            else if (token->type == Token_Type::CONCATENATE) {
+                for (unsigned int j = 0; j < token->children.size(); ++j) {
+                    Token *child = analyze_ports_of_entry(program, token->children[j], scope);
+                    if (child != NULL) {
+                        return child;
+                    }
+                }
+
+                Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num);
+                *token = *replacement;
+                return program->vars[token->definition_number]->token;
+            }
+            else {
+                for (unsigned int j = 0; j < token->children.size(); ++j) {
+                    Token *child = analyze_ports_of_entry(program, token->children[j], scope);
+                    if (child != NULL) {
+                        return child;
+                    }
+                }
+                return NULL;
+            }
+        }
+    }
+    return NULL;
+}
+
 void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scope) {
     if ((token->type == Token_Type::ACTION_DEF) || (token->type == Token_Type::FUN_DEF)) {
         //scope = token->scope;

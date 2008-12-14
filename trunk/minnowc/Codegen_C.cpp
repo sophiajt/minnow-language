@@ -1430,7 +1430,7 @@ void Codegen::codegen_delete_decl(Program *p, std::ostringstream &output) {
         else if (td->token->type == Token_Type::FEATURE_DEF) {
             if (td->token->scope->local_funs.find("delete") != td->token->scope->local_funs.end()) {
                 //Function_Def *delete_fd = p->funs[td->token->scope->local_funs["delete"]];
-                output << "  fun__" << td->token->scope->local_funs["delete"] << "( (";
+                output << "  fun__" << td->token->scope->local_funs["delete"] << "(NULL,  (";
                 codegen_typesig(p, i, output);
                 output << ")v__);" << std::endl;
             }

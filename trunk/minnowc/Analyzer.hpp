@@ -47,6 +47,9 @@ public:
     std::vector<int> build_push_pop_list(Program *program, Scope *scope, Position &tok_start, Position &tok_end);
     void analyze_freeze_resume(Program *program, Token *token, Scope *scope);
 
+    Token *create_temp_replacement(Program *program, Token *token, Scope *var_scope, unsigned int type_def_num);
+    Token *analyze_ports_of_entry(Program *program, Token *token, Scope *scope);
+
     std::vector<int> build_delete_list(Program *program, Scope *scope, Position &position);
     std::vector<int> build_delete_remaining_list(Program *program, Scope *scope);
 
