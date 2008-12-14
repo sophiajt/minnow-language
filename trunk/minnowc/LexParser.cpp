@@ -240,36 +240,16 @@ Token *Lex_Parser::lexparse_quoted_string(std::string::iterator &curr, std::stri
     std::string contents = "";
     Position start = p;
     while ((curr != end) && (*curr != '\"')) {
-        /*
+
         if (*curr == '\\') {
-            ++curr;
-            ++p.col;
-            if (curr != end) {
-                switch (*curr) {
-                    case ('n') :
-                        contents.append(1, '\n');
-                    break;
-                    case ('r') :
-                        contents.append(1, '\r');
-                    break;
-                    case ('t') :
-                        contents.append(1, '\t');
-                    break;
-                    case ('0') :
-                        contents.append(1, '\0');
-                    break;
-                    default :
-                        contents.append(1, *curr);
-                    break;
-                }
-            }
-            else {
+            contents.append(1, *curr);
+            if (curr == end) {
                 throw Compiler_Exception("Unclosed quotation", p);
             }
+            ++curr;
+            ++p.col;
         }
-        else {*/
-            contents.append(1, *curr);
-        //}
+        contents.append(1, *curr);
         ++curr;
         ++p.col;
     }
@@ -289,36 +269,17 @@ Token *Lex_Parser::lexparse_single_quoted_string(std::string::iterator &curr, st
     std::string contents = "";
     Position start = p;
     while ((curr != end) && (*curr != '\'')) {
-        /*
         if (*curr == '\\') {
-            ++curr;
-            ++p.col;
-            if (curr != end) {
-                switch (*curr) {
-                    case ('n') :
-                        contents.append(1, '\n');
-                    break;
-                    case ('r') :
-                        contents.append(1, '\r');
-                    break;
-                    case ('t') :
-                        contents.append(1, '\t');
-                    break;
-                    case ('0') :
-                        contents.append(1, '\0');
-                    break;
-                    default :
-                        contents.append(1, *curr);
-                    break;
-                }
-            }
-            else {
+            contents.append(1, *curr);
+            if (curr == end) {
                 throw Compiler_Exception("Unclosed single quote", p);
             }
+            ++curr;
+            ++p.col;
         }
-        else {*/
-            contents.append(1, *curr);
-        //}
+
+        contents.append(1, *curr);
+
         ++curr;
         ++p.col;
     }

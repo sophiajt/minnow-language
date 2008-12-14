@@ -688,7 +688,7 @@ void Analyzer::check_fun_call(Program *program, Token *token, Scope *fun_scope, 
         }
         scope = scope->parent;
     }
-    throw Compiler_Exception("Can not find usage of '" + fullname + "'", token->start_pos);
+    throw Compiler_Exception("Can not find usage of '" + fullname.substr(0, fullname.find("__")) + "'", token->start_pos);
 
 }
 
@@ -1017,7 +1017,7 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
                 throw Compiler_Exception("Mismatched types in equation", token->start_pos);
             }
         }
-        else if ((token->contents == "<+") || (token->contents == "+>")) {
+        else if (token->contents == "<+") {
             //Melding operator
             if ((token->children[0]->type_def_num < (signed)program->global->local_types["object"]) ||
                     (program->types[token->children[0]->type_def_num]->token->type == Token_Type::ACTOR_DEF) ||
@@ -1029,7 +1029,22 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
                     (program->types[token->children[0]->type_def_num]->token->type == Token_Type::ISOLATED_ACTOR_DEF)) {
                 throw Compiler_Exception("Object or feature expected on right hand side of meld operator", token->children[1]->start_pos);
             }
-            token->type_def_num = (signed)program->global->local_types["object"];
+            token->type_def_num = token->children[0]->type_def_num;
+            return;
+        }
+        else if (token->contents == "+>") {
+            //Extraction operator
+            if ((token->children[0]->type_def_num < (signed)program->global->local_types["object"]) ||
+                    (program->types[token->children[0]->type_def_num]->token->type == Token_Type::ACTOR_DEF) ||
+                    (program->types[token->children[0]->type_def_num]->token->type == Token_Type::ISOLATED_ACTOR_DEF)){
+                throw Compiler_Exception("Object expected on left hand side of extraction operator", token->children[0]->start_pos);
+            }
+            if ((token->children[1]->type_def_num < (signed)program->global->local_types["object"]) ||
+                    (program->types[token->children[1]->type_def_num]->token->type == Token_Type::ACTOR_DEF) ||
+                    (program->types[token->children[0]->type_def_num]->token->type == Token_Type::ISOLATED_ACTOR_DEF)) {
+                throw Compiler_Exception("Object or feature expected on right hand side of extraction operator", token->children[1]->start_pos);
+            }
+            token->type_def_num = token->children[1]->type_def_num;
             return;
         }
         else {
