@@ -1,6 +1,6 @@
 action main
   f : sys.file = new sys.file()
-  f.open("tmp/test.txt")
+  f.open("samples/file_op.txt")
   print("Size: ")
   print(f.length())
   print("\n")

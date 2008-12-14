@@ -36,8 +36,18 @@ void print_f__(float f) {
 void* file_open_file_s__(Typeless_Vector__ *s) {
     FILE *in;
 
+    print_s__(s);
+
     push_onto_char_string__(s, 0);
     in = fopen((char *)(s->contents), "rb");
+    if (in == NULL) {
+        printf("Can not open file: ");
+        print_s__(s);
+        exit(0);
+    }
+    else {
+        printf("Success: %p\n", in);
+    }
     pop_off_char_string__(s);
     return in;
 }

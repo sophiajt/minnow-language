@@ -324,6 +324,13 @@ void Codegen::codegen_symbol(Program *p, Token *t, std::ostringstream &output) {
     else if (t->contents == ":") {
         codegen_token(p, t->children[0], output);
     }
+    else if (t->contents == "**") {
+        output << "pow(";
+        codegen_token(p, t->children[0], output);
+        output << ",";
+        codegen_token(p, t->children[1], output);
+        output << ")";
+    }
     else if (t->contents == "<+") {
         if (t->children[0]->type_def_num == (signed)p->global->local_types["object"]) {
             if (t->children[0]->type == Token_Type::VAR_DECL) {
@@ -1386,6 +1393,7 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
         }
         output << "  }; break;" << std::endl;
     }
+
     output << "}" << std::endl;
 
     output << "}" << std::endl;
@@ -1560,6 +1568,7 @@ void Codegen::codegen(Program *p, Token *t, std::ostringstream &output) {
     internal_type_map[p->global->local_types["object"]] = Internal_Type::OBJECT;
 
     output << "#include <Aquarium.hpp>" << std::endl;
+    output << "#include <math.h>" << std::endl;
 
     codegen_class_predecl(p, t, output);
     codegen_constructor_internal_predecl(p, t, output);

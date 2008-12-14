@@ -54,7 +54,10 @@ Scope *Analyzer::find_namespace(Program *program, Token *ns, bool throw_exceptio
     Scope *ret_val;
     //First, recurse left
     if (ns->children.size() > 0) {
-        ret_val = find_or_create_namespace(program, ns->children[0]);
+        ret_val = find_namespace(program, ns->children[0], throw_exceptions);
+        if (ret_val == NULL) {
+            return NULL;
+        }
     }
     else {
         //We hit the bottom
