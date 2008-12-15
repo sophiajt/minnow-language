@@ -89,7 +89,8 @@ public:
 
     void add_default_types() {
         //KEEP OBJECT LAST !!!!!!!!  At least for the time being it's used for meld operator type checking
-        const char *internal_types[] = {"error", "var", "void", "int", "uint", "bool", "float", "double", "string", "char", "pointer", "object"};
+        //KEEP STRING AS FIRST COMPLEX!!!
+        const char *internal_types[] = {"error", "var", "void", "int", "uint", "bool", "float", "double", "char", "string", "pointer", "object"};
 
         for (unsigned int i = 0; i < (sizeof(internal_types) / sizeof(char*)) ; ++i) {
             Type_Def *td = new Type_Def(true);

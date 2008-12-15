@@ -5,9 +5,13 @@ action main (args : Array[string])
 
  k : int = 3
  j.push(3)
- l : int = 4
- j.insert(l, 0)
+ j[0] = 2
+ j.insert(4, 0)
 
+ print(j[0])
+ print(j[1])
+
+ j.delete(0)
  print(j[0])
  sys.exit()
 end
