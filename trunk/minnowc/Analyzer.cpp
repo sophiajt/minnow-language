@@ -313,6 +313,17 @@ void Analyzer::build_function_args(Program *program, Token *token, Scope *scope,
             throw Compiler_Exception("Implied types not allowed in function header", token->children[1]->start_pos);
         }
         var_def_num = build_var_def(program, token, scope);
+        //If this is an arg into an actor, make sure we know we're responsible for it
+        {
+            Var_Def *vd = program->vars[var_def_num];
+            if (fd->token->type == Token_Type::ACTION_DEF) {
+                vd->is_dependent = true;
+            }
+            else {
+                vd->is_dependent = false;
+            }
+        }
+
         fd->arg_def_nums.push_back(var_def_num);
         if (scope->local_vars.find(token->children[0]->contents) != scope->local_vars.end()) {
             Var_Def *redux = program->vars[scope->local_vars[token->children[0]->contents]];
@@ -524,6 +535,9 @@ void Analyzer::analyze_fun_blocks(Program *program, Token *token, Scope **scope)
             fd->token = token;
             new_scope->owner = token;
             token->scope = new_scope;
+            if (token->type == Token_Type::ACTION_DEF) {
+                fd->is_port_of_exit = true;
+            }
 
             //Build function def using the prototype
             std::string full_fn_name = build_function_def(program, token, new_scope, fd);
@@ -1579,7 +1593,8 @@ std::vector<int> Analyzer::build_push_pop_list(Program *program, Scope *scope, P
     return ret_val;
 }
 
-Token *Analyzer::create_temp_replacement(Program *program, Token *token, Scope *var_scope, unsigned int type_def_num) {
+Token *Analyzer::create_temp_replacement(Program *program, Token *token, Scope *var_scope,
+        unsigned int type_def_num, bool is_dependent) {
     Var_Def *vd = new Var_Def();
 
     if (type_def_num == program->global->local_types["void"]) {
@@ -1590,6 +1605,7 @@ Token *Analyzer::create_temp_replacement(Program *program, Token *token, Scope *
     *(vd->token) = *token;
     vd->type_def_num = type_def_num;
     vd->usage_start = token->start_pos;
+    vd->is_dependent = is_dependent;
 
     program->vars.push_back(vd);
 
@@ -1611,16 +1627,16 @@ Token *Analyzer::create_temp_replacement(Program *program, Token *token, Scope *
     return var_ref;
 }
 
-Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Scope *scope) {
+Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Scope *scope, bool is_lhs) {
     if ((token->type == Token_Type::ACTION_DEF) || (token->type == Token_Type::FUN_DEF)) {
         //scope = token->scope;
         scope = token->children[2]->scope;
 
-        analyze_ports_of_entry(program, token->children[2], scope);
+        analyze_ports_of_entry(program, token->children[2], scope, false);
     }
     else if ((token->type == Token_Type::FEATURE_DEF) || (token->type == Token_Type::ACTOR_DEF) ||
             (token->type == Token_Type::ISOLATED_ACTOR_DEF)) {
-        analyze_ports_of_entry(program, token->children[2], scope);
+        analyze_ports_of_entry(program, token->children[2], scope, false);
     }
     else if (token->type == Token_Type::EXTERN_FUN_DEF) {
         //do nothing
@@ -1629,7 +1645,7 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Scope *s
         if (token->type == Token_Type::BLOCK) {
             unsigned int i = 0;
             while (i < token->children.size()) {
-                Token *ret_val = analyze_ports_of_entry(program, token->children[i], scope);
+                Token *ret_val = analyze_ports_of_entry(program, token->children[i], scope, is_lhs);
                 if (ret_val != NULL) {
                     Var_Def *vd = program->vars[program->vars.size() - 1];
                     Token *equation = new Token(Token_Type::SYMBOL);
@@ -1651,16 +1667,67 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Scope *s
             return NULL;
         }
         else {
-            if (token->type == Token_Type::FUN_CALL) {
+            if (token->contents == "=") {
+                Token *child = analyze_ports_of_entry(program, token->children[0], scope, true);
+                if (child != NULL) {
+                    return child;
+                }
+
+                child = analyze_ports_of_entry(program, token->children[1], scope, false);
+                if (child != NULL) {
+                    return child;
+                }
+
+                return NULL;
+            }
+            else if (token->contents == ":") {
+                //ignore type stuff
+                return NULL;
+            }
+            else if (token->type == Token_Type::ARRAY_CALL) {
                 for (unsigned int j = 0; j < token->children.size(); ++j) {
-                    Token *child = analyze_ports_of_entry(program, token->children[j], scope);
+                    Token *child = analyze_ports_of_entry(program, token->children[j], scope, is_lhs);
+                    if (child != NULL) {
+                        return child;
+                    }
+                }
+
+                if (is_lhs == false) {
+                    if (token->type_def_num != (int)program->global->local_types["void"]) {
+                        Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num, false);
+                        *token = *replacement;
+                        return program->vars[token->definition_number]->token;
+                    }
+                    else {
+                        return NULL;
+                    }
+                }
+                else {
+                    return NULL;
+                }
+            }
+            else if (token->type == Token_Type::FUN_CALL) {
+                for (unsigned int j = 0; j < token->children.size(); ++j) {
+                    Token *child = analyze_ports_of_entry(program, token->children[j], scope, is_lhs);
                     if (child != NULL) {
                         return child;
                     }
                 }
 
                 if (token->type_def_num != (int)program->global->local_types["void"]) {
-                    Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num);
+                    if (token->definition_number == -1) {
+                        throw Compiler_Exception("Internal definition number error", token->start_pos);
+                    }
+                    Function_Def *fd = program->funs[token->definition_number];
+                    bool is_dependent;
+                    if (fd->is_port_of_entry) {
+                        is_dependent = true;
+                    }
+                    else {
+                        is_dependent = false;
+                    }
+
+                    Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num, is_dependent);
                     *token = *replacement;
                     return program->vars[token->definition_number]->token;
                 }
@@ -1669,20 +1736,31 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Scope *s
                 }
             }
             else if (token->type == Token_Type::METHOD_CALL) {
-                Token *child = analyze_ports_of_entry(program, token->children[0], scope);
+                Token *child = analyze_ports_of_entry(program, token->children[0], scope, is_lhs);
                 if (child != NULL) {
                     return child;
                 }
 
                 for (unsigned int j = 0; j < token->children[1]->children.size(); ++j) {
-                    Token *child = analyze_ports_of_entry(program, token->children[1]->children[j], scope);
+                    Token *child = analyze_ports_of_entry(program, token->children[1]->children[j], scope, is_lhs);
                     if (child != NULL) {
                         return child;
                     }
                 }
 
                 if (token->type_def_num != (int)program->global->local_types["void"]) {
-                    Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num);
+                    if (token->children[1]->definition_number == -1) {
+                        throw Compiler_Exception("Internal definition number error", token->start_pos);
+                    }
+                    Function_Def *fd = program->funs[token->children[1]->definition_number];
+                    bool is_dependent;
+                    if (fd->is_port_of_entry) {
+                        is_dependent = true;
+                    }
+                    else {
+                        is_dependent = false;
+                    }
+                    Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num, is_dependent);
                     *token = *replacement;
                     return program->vars[token->definition_number]->token;
                 }
@@ -1692,20 +1770,20 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Scope *s
             }
             else if (token->type == Token_Type::REFERENCE_FEATURE) {
                 for (unsigned int j = 0; j < token->children[0]->children.size(); ++j) {
-                    Token *child = analyze_ports_of_entry(program, token->children[0]->children[j], scope);
+                    Token *child = analyze_ports_of_entry(program, token->children[0]->children[j], scope, is_lhs);
                     if (child != NULL) {
                         return child;
                     }
                 }
                 for (unsigned int j = 0; j < token->children[1]->children.size(); ++j) {
-                    Token *child = analyze_ports_of_entry(program, token->children[1]->children[j], scope);
+                    Token *child = analyze_ports_of_entry(program, token->children[1]->children[j], scope, is_lhs);
                     if (child != NULL) {
                         return child;
                     }
                 }
 
                 if (token->type_def_num != (int)program->global->local_types["void"]) {
-                    Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num);
+                    Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num, false);
                     *token = *replacement;
                     return program->vars[token->definition_number]->token;
                 }
@@ -1715,43 +1793,43 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Scope *s
             }
             else if (token->type == Token_Type::NEW_ALLOC) {
                 for (unsigned int j = 0; j < token->children[1]->children.size(); ++j) {
-                    Token *child = analyze_ports_of_entry(program, token->children[1]->children[j], scope);
+                    Token *child = analyze_ports_of_entry(program, token->children[1]->children[j], scope, is_lhs);
                     if (child != NULL) {
                         return child;
                     }
                 }
 
-                Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num);
+                Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num, true);
                 *token = *replacement;
                 return program->vars[token->definition_number]->token;
             }
             else if (token->type == Token_Type::SPAWN_ACTOR) {
                 for (unsigned int j = 0; j < token->children[1]->children.size(); ++j) {
-                    Token *child = analyze_ports_of_entry(program, token->children[1]->children[j], scope);
+                    Token *child = analyze_ports_of_entry(program, token->children[1]->children[j], scope, is_lhs);
                     if (child != NULL) {
                         return child;
                     }
                 }
 
-                Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num);
+                Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num, true);
                 *token = *replacement;
                 return program->vars[token->definition_number]->token;
             }
             else if (token->type == Token_Type::CONCATENATE) {
                 for (unsigned int j = 0; j < token->children.size(); ++j) {
-                    Token *child = analyze_ports_of_entry(program, token->children[j], scope);
+                    Token *child = analyze_ports_of_entry(program, token->children[j], scope, is_lhs);
                     if (child != NULL) {
                         return child;
                     }
                 }
 
-                Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num);
+                Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num, true);
                 *token = *replacement;
                 return program->vars[token->definition_number]->token;
             }
             else {
                 for (unsigned int j = 0; j < token->children.size(); ++j) {
-                    Token *child = analyze_ports_of_entry(program, token->children[j], scope);
+                    Token *child = analyze_ports_of_entry(program, token->children[j], scope, is_lhs);
                     if (child != NULL) {
                         return child;
                     }
@@ -1916,13 +1994,10 @@ std::vector<int> Analyzer::build_delete_list(Program *program, Scope *scope, Pos
                 end = scope->local_vars.end(); iter != end; ++iter) {
 
             Var_Def *vd = program->vars[iter->second];
-            unsigned int type_def_num = vd->type_def_num;
-            Type_Def *td = program->types[vd->type_def_num];
 
-            if ((vd->usage_end <= position) && (vd->is_property == false) && (vd->is_removed == false) &&
-                    ((type_def_num >= program->global->local_types["object"]) || (type_def_num == program->global->local_types["string"])) &&
-                    (td->token->type != Token_Type::ACTOR_DEF) &&
-                    (td->token->type != Token_Type::ISOLATED_ACTOR_DEF)) {
+            if ((vd->usage_end <= position) && (vd->is_property == false)
+                    && (vd->is_dependent == true) && (vd->is_removed == false) &&
+                    (is_complex_var(program, iter->second))) {
 
                 vd->is_removed = true;
                 ret_val.push_back(iter->second);
@@ -1942,13 +2017,9 @@ std::vector<int> Analyzer::build_delete_remaining_list(Program *program, Scope *
                 end = scope->local_vars.end(); iter != end; ++iter) {
 
             Var_Def *vd = program->vars[iter->second];
-            unsigned int type_def_num = vd->type_def_num;
-            Type_Def *td = program->types[vd->type_def_num];
 
-            if ((vd->is_property == false) && (vd->is_removed == false) &&
-                    ((type_def_num >= program->global->local_types["object"]) || (type_def_num == program->global->local_types["string"])) &&
-                    (td->token->type != Token_Type::ACTOR_DEF) &&
-                    (td->token->type != Token_Type::ISOLATED_ACTOR_DEF)) {
+            if ((vd->is_property == false) && (vd->is_dependent == true) && (vd->is_removed == false) &&
+                    (is_complex_var(program, iter->second))) {
 
                 vd->is_removed = true;
                 ret_val.push_back(iter->second);
@@ -1961,14 +2032,6 @@ std::vector<int> Analyzer::build_delete_remaining_list(Program *program, Scope *
 }
 
 void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope) {
-
-    if (token->contents == "<+") {
-        if (token->children[1]->type == Token_Type::VAR_CALL) {
-            Var_Def *vd = program->vars[token->children[1]->definition_number];
-            vd->is_removed = true;
-        }
-    }
-
 
     if ((token->type == Token_Type::ACTION_DEF) || (token->type == Token_Type::FUN_DEF)) {
         //scope = token->scope;
@@ -2032,47 +2095,85 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope)
                     if (child->children.size() > 1) {
                         if (child->children[1]->type == Token_Type::VAR_CALL) {
                             Var_Def *vd = program->vars[child->children[1]->definition_number];
-                            vd->is_removed = true;
+                            if (vd->is_dependent == true) {
+                                vd->is_removed = true;
+                                std::vector<int> delete_site = build_delete_remaining_list(program, scope);
+                                if (delete_site.size() > 0) {
+                                    Token *deletion = new Token(Token_Type::DELETION_SITE);
+                                    program->var_sites.push_back(delete_site);
+                                    deletion->definition_number = program->var_sites.size() - 1;
+
+                                    token->children.insert(token->children.begin() + i, deletion);
+                                    i += 2;
+                                }
+                                else {
+                                    ++i;
+                                }
+                                vd->is_removed = false;
+                            }
+                            else {
+                                if (is_complex_type(program, child->children[1]->type_def_num)) {
+                                    Token *copy_t = new Token(Token_Type::COPY);
+                                    copy_t->start_pos = child->children[1]->start_pos;
+                                    copy_t->end_pos = child->children[1]->end_pos;
+                                    copy_t->type_def_num = child->children[1]->type_def_num;
+                                    copy_t->children.push_back(child->children[1]);
+
+                                    child->children[1] = copy_t;
+                                }
+                                std::vector<int> delete_site = build_delete_remaining_list(program, scope);
+                                if (delete_site.size() > 0) {
+                                    Token *deletion = new Token(Token_Type::DELETION_SITE);
+                                    program->var_sites.push_back(delete_site);
+                                    deletion->definition_number = program->var_sites.size() - 1;
+
+                                    token->children.insert(token->children.begin() + i, deletion);
+                                    i += 2;
+                                }
+                                else {
+                                    ++i;
+                                }
+                            }
+                        }
+                        else {
+                            ++i;
                         }
                     }
-
-                    std::vector<int> delete_site = build_delete_remaining_list(program, scope);
-                    if (delete_site.size() > 0) {
-                        Token *deletion = new Token(Token_Type::DELETION_SITE);
-                        program->var_sites.push_back(delete_site);
-                        deletion->definition_number = program->var_sites.size() - 1;
-
-                        token->children.insert(token->children.begin() + i, deletion);
-                        i += 2;
-                    }
                     else {
-                        ++i;
+                        std::vector<int> delete_site = build_delete_remaining_list(program, scope);
+                        if (delete_site.size() > 0) {
+                            Token *deletion = new Token(Token_Type::DELETION_SITE);
+                            program->var_sites.push_back(delete_site);
+                            deletion->definition_number = program->var_sites.size() - 1;
+
+                            token->children.insert(token->children.begin() + i, deletion);
+                            i += 2;
+                        }
+                        else {
+                            ++i;
+                        }
                     }
                 }
-                else if (child->type == Token_Type::ACTION_CALL) {
-                    if (child->children[1]->children.size() > 1) {
-                        Token *parm = child->children[1]->children[1];
-                        if (parm->contents == ",") {
-                            while (parm->contents == ",") {
-                                Token *rhs = parm->children[1];
-                                Token *lhs = parm->children[0];
+                else if ((child->type == Token_Type::ACTION_CALL) || (child->type == Token_Type::METHOD_CALL)
+                        || (child->type == Token_Type::FUN_CALL)) {
 
-                                if (rhs->contents == ".") {
-                                    Token *copy_t = new Token(Token_Type::COPY);
-                                    copy_t->start_pos = rhs->start_pos;
-                                    copy_t->end_pos = rhs->end_pos;
-                                    copy_t->type_def_num = rhs->type_def_num;
-                                    copy_t->children.push_back(rhs);
+                    Function_Def *fd;
+                    if ((child->type == Token_Type::ACTION_CALL) || (child->type == Token_Type::METHOD_CALL)) {
+                        fd = program->funs[child->children[1]->definition_number];
+                    }
+                    else if (child->type == Token_Type::FUN_CALL) {
+                        fd = program->funs[child->definition_number];
+                    }
 
-                                    parm->children[1] = copy_t;
-                                }
-                                else if (rhs->type == Token_Type::VAR_CALL) {
-                                    Var_Def *vd = program->vars[rhs->definition_number];
-                                    Type_Def *td = program->types[vd->type_def_num];
-                                    if ((vd->is_removed == false) && (vd->type_def_num >= program->global->local_types["object"])
-                                            && (td->token->type != Token_Type::ACTOR_DEF)
-                                            && (td->token->type != Token_Type::ISOLATED_ACTOR_DEF))  {
+                    if (fd->is_port_of_exit) {
+                        if (child->children[1]->children.size() > 1) {
+                            Token *parm = child->children[1]->children[1];
+                            if (parm->contents == ",") {
+                                while (parm->contents == ",") {
+                                    Token *rhs = parm->children[1];
+                                    Token *lhs = parm->children[0];
 
+                                    if (rhs->contents == ".") {
                                         Token *copy_t = new Token(Token_Type::COPY);
                                         copy_t->start_pos = rhs->start_pos;
                                         copy_t->end_pos = rhs->end_pos;
@@ -2081,23 +2182,27 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope)
 
                                         parm->children[1] = copy_t;
                                     }
-                                }
+                                    else if (rhs->type == Token_Type::VAR_CALL) {
+                                        Var_Def *vd = program->vars[rhs->definition_number];
+                                        if (((vd->is_removed == false) || (vd->is_dependent == false))
+                                                && (is_complex_var(program, rhs->definition_number)))  {
 
-                                if (lhs->contents == ".") {
-                                    Token *copy_t = new Token(Token_Type::COPY);
-                                    copy_t->start_pos = lhs->start_pos;
-                                    copy_t->end_pos = lhs->end_pos;
-                                    copy_t->type_def_num = lhs->type_def_num;
-                                    copy_t->children.push_back(lhs);
+                                            if ((vd->usage_end == rhs->end_pos) && (vd->is_dependent == true)) {
+                                                vd->is_removed = true;
+                                            }
+                                            else {
+                                                Token *copy_t = new Token(Token_Type::COPY);
+                                                copy_t->start_pos = rhs->start_pos;
+                                                copy_t->end_pos = rhs->end_pos;
+                                                copy_t->type_def_num = rhs->type_def_num;
+                                                copy_t->children.push_back(rhs);
 
-                                    parm->children[0] = copy_t;
-                                }
-                                else if (lhs->type == Token_Type::VAR_CALL) {
-                                    Var_Def *vd = program->vars[lhs->definition_number];
-                                    Type_Def *td = program->types[vd->type_def_num];
-                                    if ((vd->is_removed == false) && (vd->type_def_num >= program->global->local_types["object"])
-                                            && (td->token->type != Token_Type::ACTOR_DEF)
-                                            && (td->token->type != Token_Type::ISOLATED_ACTOR_DEF))  {
+                                                parm->children[1] = copy_t;
+                                            }
+                                        }
+                                    }
+
+                                    if (lhs->contents == ".") {
                                         Token *copy_t = new Token(Token_Type::COPY);
                                         copy_t->start_pos = lhs->start_pos;
                                         copy_t->end_pos = lhs->end_pos;
@@ -2106,41 +2211,78 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope)
 
                                         parm->children[0] = copy_t;
                                     }
+                                    else if (lhs->type == Token_Type::VAR_CALL) {
+                                        Var_Def *vd = program->vars[lhs->definition_number];
+                                        if (((vd->is_removed == false) || (vd->is_dependent == false))
+                                                && (is_complex_var(program, lhs->definition_number)))  {
+
+                                            if ((vd->usage_end == lhs->end_pos) && (vd->is_dependent == true)) {
+                                                vd->is_removed = true;
+                                            }
+                                            else {
+                                                Token *copy_t = new Token(Token_Type::COPY);
+                                                copy_t->start_pos = lhs->start_pos;
+                                                copy_t->end_pos = lhs->end_pos;
+                                                copy_t->type_def_num = lhs->type_def_num;
+                                                copy_t->children.push_back(lhs);
+
+                                                parm->children[0] = copy_t;
+                                            }
+                                        }
+                                    }
+                                    parm = parm->children[0];
                                 }
-                                parm = parm->children[0];
+                            }
+                            else {
+                                if (parm->contents == ".") {
+                                    if (is_complex_type(program, parm->type_def_num)) {
+                                        Token *copy_t = new Token(Token_Type::COPY);
+                                        copy_t->start_pos = parm->start_pos;
+                                        copy_t->end_pos = parm->end_pos;
+                                        copy_t->type_def_num = parm->type_def_num;
+                                        copy_t->children.push_back(parm);
+
+                                        child->children[1]->children[1] = copy_t;
+                                    }
+                                }
+                                else if (parm->type == Token_Type::VAR_CALL) {
+                                    Var_Def *vd = program->vars[parm->definition_number];
+                                    if (((vd->is_removed == false) || (vd->is_dependent == false))
+                                            && (is_complex_var(program, parm->definition_number)))  {
+
+                                        if ((vd->usage_end == parm->end_pos) && (vd->is_dependent == true)) {
+                                            vd->is_removed = true;
+                                        }
+                                        else {
+                                            Token *copy_t = new Token(Token_Type::COPY);
+                                            copy_t->start_pos = parm->start_pos;
+                                            copy_t->end_pos = parm->end_pos;
+                                            copy_t->type_def_num = parm->type_def_num;
+                                            copy_t->children.push_back(parm);
+
+                                            child->children[1]->children[1] = copy_t;
+                                        }
+                                    }
+                                }
                             }
                         }
+                    }
+                    ++i;
+                }
+                else if (child->contents == "<+") {
+                    if (child->children[1]->type == Token_Type::VAR_CALL) {
+                        Var_Def *vd = program->vars[child->children[1]->definition_number];
+                        if (vd->is_dependent == true) {
+                            vd->is_removed = true;
+                        }
                         else {
-                            if (parm->contents == ".") {
-                                Type_Def *td = program->types[parm->type_def_num];
-                                if ((parm->type_def_num >= (signed)program->global->local_types["object"])
-                                        && (td->token->type != Token_Type::ACTOR_DEF)
-                                        && (td->token->type != Token_Type::ISOLATED_ACTOR_DEF))  {
+                            Token *copy_t = new Token(Token_Type::COPY);
+                            copy_t->start_pos = child->children[1]->start_pos;
+                            copy_t->end_pos = child->children[1]->end_pos;
+                            copy_t->type_def_num = child->children[1]->type_def_num;
+                            copy_t->children.push_back(child->children[1]);
 
-                                    Token *copy_t = new Token(Token_Type::COPY);
-                                    copy_t->start_pos = parm->start_pos;
-                                    copy_t->end_pos = parm->end_pos;
-                                    copy_t->type_def_num = parm->type_def_num;
-                                    copy_t->children.push_back(parm);
-
-                                    child->children[1]->children[1] = copy_t;
-                                }
-                            }
-                            else if (parm->type == Token_Type::VAR_CALL) {
-                                Var_Def *vd = program->vars[parm->definition_number];
-                                Type_Def *td = program->types[vd->type_def_num];
-                                if ((vd->is_removed == false) && (vd->type_def_num >= program->global->local_types["object"])
-                                        && (td->token->type != Token_Type::ACTOR_DEF)
-                                        && (td->token->type != Token_Type::ISOLATED_ACTOR_DEF))  {
-                                    Token *copy_t = new Token(Token_Type::COPY);
-                                    copy_t->start_pos = parm->start_pos;
-                                    copy_t->end_pos = parm->end_pos;
-                                    copy_t->type_def_num = parm->type_def_num;
-                                    copy_t->children.push_back(parm);
-
-                                    child->children[1]->children[1] = copy_t;
-                                }
-                            }
+                            child->children[1] = copy_t;
                         }
                     }
                     ++i;
@@ -2149,7 +2291,7 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope)
                     if ((child->children[1]->type == Token_Type::VAR_CALL) || (child->children[1]->type == Token_Type::VAR_DECL)) {
                         Var_Def *vd = program->vars[child->children[1]->definition_number];
 
-                        if (vd->is_removed == false) {
+                        if ((vd->is_removed == false) && (vd->is_dependent == true)) {
                             Token *delete_t = new Token(Token_Type::DELETE);
                             delete_t->children.push_back(child->children[1]);
                             token->children.insert(token->children.begin() + i, delete_t);
@@ -2170,12 +2312,10 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope)
                     //Don't allow any deletion of references
                     if ((child->children[0]->type == Token_Type::VAR_CALL) || (child->children[0]->type == Token_Type::VAR_DECL)) {
                         Var_Def *vd = program->vars[child->children[0]->definition_number];
-                        /*
-                        Type_Def *td = program->types[vd->type_def_num];
-                        if ((vd->is_removed == false) && (child->children[0]->type == Token_Type::VAR_CALL)  &&
-                                ((vd->type_def_num >= program->global->local_types["object"]) || (vd->type_def_num == program->global->local_types["string"]))
-                                && (td->token->type != Token_Type::ACTOR_DEF) &&
-                                (td->token->type != Token_Type::ISOLATED_ACTOR_DEF) ) {
+
+                        if ((vd->is_removed == false) && (vd->is_dependent == true)
+                                && (child->children[0]->type == Token_Type::VAR_CALL)  &&
+                                (is_complex_var(program, child->children[0]->definition_number))) {
 
                             Token *delete_t = new Token(Token_Type::DELETE);
                             delete_t->children.push_back(child->children[0]);
@@ -2186,11 +2326,13 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope)
                         else {
                             ++i;
                         }
-                        */
-                        ++i;
 
                         if (child->children[1]->type == Token_Type::REFERENCE_FEATURE) {
-                            vd->is_removed = true;
+                            //vd->is_removed = true;
+                            vd->is_dependent = false;
+                        }
+                        else if (child->children[1]->type == Token_Type::COPY) {
+                            vd->is_dependent = true;
                         }
                     }
                     else {
@@ -2198,11 +2340,9 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope)
                     }
 
                     //Copy any rhs that is not ours
+                    /*
                     if (child->children[1]->contents == ".") {
-                        Type_Def *td = program->types[child->children[1]->type_def_num];
-                        if ( ((child->children[1]->type_def_num >= (signed)program->global->local_types["object"]) || (child->children[1]->type_def_num >= (signed)program->global->local_types["string"]))
-                                && (td->token->type != Token_Type::ACTOR_DEF)
-                                && (td->token->type != Token_Type::ISOLATED_ACTOR_DEF))  {
+                        if (is_complex_type(program, child->children[1]->type_def_num))  {
 
                             Token *copy_t = new Token(Token_Type::COPY);
                             copy_t->start_pos = child->children[1]->start_pos;
@@ -2212,21 +2352,26 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope)
 
                             child->children[1] = copy_t;
                         }
+
                     }
-                    else if ((child->children[1]->type == Token_Type::VAR_DECL) || (child->children[1]->type == Token_Type::VAR_CALL)) {
+                    */
+                    if ((child->children[1]->type == Token_Type::VAR_DECL) || (child->children[1]->type == Token_Type::VAR_CALL)) {
                         Var_Def *vd = program->vars[child->children[1]->definition_number];
-                        Type_Def *td = program->types[vd->type_def_num];
-                        if ((vd->is_removed == false) && ((vd->type_def_num >= program->global->local_types["object"]) || (vd->type_def_num >= program->global->local_types["string"])) &&
-                                (td->token->type != Token_Type::ACTOR_DEF) &&
-                                (td->token->type != Token_Type::ISOLATED_ACTOR_DEF)) {
+                        if (((vd->is_removed == false) || (vd->is_dependent == false))
+                                && (is_complex_var(program, child->children[1]->definition_number))) {
 
-                            Token *copy_t = new Token(Token_Type::COPY);
-                            copy_t->start_pos = child->children[1]->start_pos;
-                            copy_t->end_pos = child->children[1]->end_pos;
-                            copy_t->type_def_num = child->children[1]->type_def_num;
-                            copy_t->children.push_back(child->children[1]);
+                            if ((vd->usage_end == child->children[1]->end_pos) && (vd->is_dependent == true)) {
+                                vd->is_removed = true;
+                            }
+                            else {
+                                Token *copy_t = new Token(Token_Type::COPY);
+                                copy_t->start_pos = child->children[1]->start_pos;
+                                copy_t->end_pos = child->children[1]->end_pos;
+                                copy_t->type_def_num = child->children[1]->type_def_num;
+                                copy_t->children.push_back(child->children[1]);
 
-                            child->children[1] = copy_t;
+                                child->children[1] = copy_t;
+                            }
                         }
                     }
                 }

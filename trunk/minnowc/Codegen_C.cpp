@@ -575,12 +575,16 @@ void Codegen::codegen_spawn(Program *p, Token *t, std::ostringstream &output) {
 
 void Codegen::codegen_reference_feature(Program *p, Token *t, std::ostringstream &output) {
     if (t->children[0]->type_def_num == (signed)p->global->local_types["object"]) {
-        output << "find_primary_feature__((Object_Feature__*)(";
+        output << "(";
+        codegen_typesig(p, t->type_def_num, output);
+        output << ")find_primary_feature__((Object_Feature__*)(";
         codegen_token(p, t->children[0], output);
         output << "), " << t->type_def_num << ")";
     }
     else {
-        output << "find_feature__((Object_Feature__*)(";
+        output << "(";
+        codegen_typesig(p, t->type_def_num, output);
+        output << ")find_feature__((Object_Feature__*)(";
         codegen_token(p, t->children[0], output);
         output << "), " << t->type_def_num << ")";
     }
@@ -596,13 +600,13 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
         codegen_token(p, t->children[0], output);
         output << ";" << std::endl;
 
-        output << "timeslice__ = ((Actor__*)m__->recipient)->timeslice_remaining;" << std::endl;
-        output << "if (timeslice__ == 0) {" << std::endl;
-
         //Deletion if it's there
         if (t->children.size() > 1) {
             codegen_token(p, t->children[1], output);
         }
+
+        output << "timeslice__ = ((Actor__*)m__->recipient)->timeslice_remaining;" << std::endl;
+        output << "if (timeslice__ == 0) {" << std::endl;
 
         if (t->definition_number != -1) {
             for (unsigned int i = 0; i < p->var_sites[t->definition_number].size(); ++i) {
@@ -624,11 +628,11 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
 
     }
     else {
-        output << "if (--timeslice__ == 0) {" << std::endl;
-        output << "((Actor__*)m__->recipient)->timeslice_remaining = timeslice__;" << std::endl;
         if ((t->children.size() > 0) && (t->children[0]->type == Token_Type::DELETION_SITE)) {
             codegen_token(p, t->children[0], output);
         }
+        output << "if (--timeslice__ == 0) {" << std::endl;
+        output << "((Actor__*)m__->recipient)->timeslice_remaining = timeslice__;" << std::endl;
         if (t->definition_number != -1) {
             for (unsigned int i = 0; i < p->var_sites[t->definition_number].size(); ++i) {
                 output << "push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &var__" << p->var_sites[t->definition_number][i] << ");" << std::endl;

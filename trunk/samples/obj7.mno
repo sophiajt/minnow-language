@@ -25,7 +25,7 @@ action main
   a : Doer = spawn Doer()
 
   l.push(o)
-
+  
   a::do(l)
 end
 

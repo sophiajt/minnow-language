@@ -52,6 +52,7 @@ public:
         push_fd->return_type_def_num = global->local_types["void"];
         push_fd->arg_def_nums.push_back(owner->contained_type_def_num);
         push_fd->token = new Token(Token_Type::FUN_DEF);
+        push_fd->is_port_of_exit = true;
 
         Function_Def *pop_fd = new Function_Def(true);
         pop_fd->return_type_def_num = owner->contained_type_def_num;
@@ -66,6 +67,7 @@ public:
         insert_fd->arg_def_nums.push_back(global->local_types["int"]);
         insert_fd->arg_def_nums.push_back(owner->contained_type_def_num);
         insert_fd->token = new Token(Token_Type::FUN_DEF);
+        insert_fd->is_port_of_exit = true;
 
         Function_Def *delete_fd = new Function_Def(true);
         delete_fd->return_type_def_num = global->local_types["void"];
@@ -190,6 +192,7 @@ public:
 
         build_internal_func(char_def_num, char_def_num, char_def_num, "=");
         build_internal_func(char_def_num, string_def_num, string_def_num, "+");
+
     }
 
     Program() {

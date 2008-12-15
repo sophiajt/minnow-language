@@ -52,6 +52,14 @@ public:
             return false;
         }
     }
+    bool operator==(const Position &other) const {
+        if ((this->line == other.line) && (this->col == other.col) && (this->filename == other.filename)) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
     bool operator<=(const Position &other) const {
         if (this->line < other.line) {
             return true;
@@ -113,17 +121,19 @@ public:
     std::vector<unsigned int> arg_def_nums;
     bool is_internal;
     bool is_constructor;
+    bool is_port_of_entry; //if this function can yield return values that the scope is responsible for
+    bool is_port_of_exit; //if the args given to this function draw them out of scope (forcing a copy if that's not possible)
     std::string external_name; //if set use this name instead in codegen
     std::vector<int> continuation_sites;
 
-    Function_Def() : token(NULL), is_internal(false), is_constructor(false) {
+    Function_Def() : token(NULL), is_internal(false), is_constructor(false), is_port_of_entry(true), is_port_of_exit(false) {
         continuation_sites.push_back(-1);
     }
-    Function_Def(bool internal) : token(NULL), is_internal(internal), is_constructor(false) {
+    Function_Def(bool internal) : token(NULL), is_internal(internal), is_constructor(false), is_port_of_entry(true), is_port_of_exit(false) {
         continuation_sites.push_back(-1);
     }
     Function_Def(bool internal, unsigned int return_type, unsigned int lhs, unsigned int rhs) : token(NULL), return_type_def_num(return_type),
-        is_internal(internal), is_constructor(false) {
+        is_internal(internal), is_constructor(false), is_port_of_entry(true), is_port_of_exit(false) {
 
         continuation_sites.push_back(-1);
 

@@ -64,11 +64,12 @@ void debug_print_vars(Program *p, Token *token) {
 
 void debug_print_def(Program *p, Token *token, std::string prepend) {
     if (token->contents == "") {
-        std::cout << prepend << "(" << token->type << " def:" << token->definition_number << " type:" << token->type_def_num << " " << token->scope << ")" << std::endl;
+        std::cout << prepend << "(" << token->type << " def:" << token->definition_number << " type:" << token->type_def_num << " "
+        << token->scope << " " << token->start_pos.line << " " << token->start_pos.col << ")" << std::endl;
     }
     else {
         std::cout << prepend << token->contents << " (" << token->type << " def:" << token->definition_number
-            << " type:" << token->type_def_num << " " << token->scope << ")" << std::endl;
+            << " type:" << token->type_def_num << " " << token->scope << " " << token->start_pos.line << " " << token->start_pos.col<< ")" << std::endl;
     }
 
     if (token->scope != NULL) {
@@ -117,7 +118,7 @@ void translate_file(Program *p, std::string filename) {
     an.analyze_var_type_and_scope(p, t, p->global);
     an.analyze_token_types(p, t, p->global);
 
-    an.analyze_ports_of_entry(p, t, p->global);
+    an.analyze_ports_of_entry(p, t, p->global, false);
     an.analyze_implied_this(p, t, p->global);
     an.analyze_return_calls(p, t, 0);
     an.analyze_var_visibility(p, t);
