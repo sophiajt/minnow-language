@@ -108,6 +108,12 @@ public:
                 }
             }
         }
+        //Handle string differently
+        unsigned int td_type_def_num = this->global->local_types["string"];
+        Type_Def *td_string = this->types[td_type_def_num];
+        td_string->container = Container_Type::ARRAY;
+        td_string->contained_type_def_num = this->global->local_types["char"];
+        build_internal_array_methods(td_string, td_type_def_num);
     }
 
     void build_internal_func(unsigned int arg_type1, unsigned int arg_type2, unsigned int ret_type, const char *op) {

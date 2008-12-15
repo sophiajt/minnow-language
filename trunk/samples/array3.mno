@@ -1,7 +1,7 @@
-action main (args : List[string])
+action main (args : Array[string])
  i:int
- j:List[int]
- k:List[List[int]]
+ j:Array[int]
+ k:Array[Array[int]]
 
  j = k[0]
 end

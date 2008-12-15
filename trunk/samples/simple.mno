@@ -5,7 +5,7 @@ end
 def out : int
 end
 
-action main(args : List[string])
+action main(args : Array[string])
   x:int = 3 + 5
   y:int = 3 + 5
   while (true)

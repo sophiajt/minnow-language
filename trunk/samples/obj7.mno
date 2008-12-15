@@ -11,7 +11,7 @@ feature Bob
 end
 
 actor Doer
-  action do(l : List[object])
+  action do(l : Array[object])
     o : object = l[0]
     print(o.Bob.x)
     o.Bob.greet()
@@ -20,7 +20,7 @@ actor Doer
 end
 
 action main
-  l : List[object] = new List[object]
+  l : Array[object] = new Array[object]
   o : object <+ new Bob(3)
   a : Doer = spawn Doer()
 

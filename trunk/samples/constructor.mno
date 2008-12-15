@@ -13,7 +13,7 @@ action main
   z : Fred = new Fred(5)
   o : object <+ new Fred(3) <+ new Fred(4)
   s : George.Sally = new George.Sally(10)
-  //a : List[Fred] = new List[Fred]
+  //a : Array[Fred] = new Array[Fred]
 end
 
 namespace George

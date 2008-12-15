@@ -1,8 +1,8 @@
-action main (args : List[string])
+action main (args : Array[string])
  i:int
- j:List[int]
- j = new List[int]
+ j:Array[int]
+ j = new Array[int]
 
- k:List[int] = new List[int]
+ k:Array[int] = new Array[int]
  i = k[0]
 end

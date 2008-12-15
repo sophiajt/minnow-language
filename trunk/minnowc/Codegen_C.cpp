@@ -7,7 +7,7 @@
 void Codegen::codegen_typesig(Program *p, unsigned int type_def_num, std::ostringstream &output) {
     Type_Def *td = p->types[type_def_num];
 
-    if (td->container == Container_Type::LIST) {
+    if (td->container == Container_Type::ARRAY) {
         output << "Typeless_Vector__*";
     }
     else if (td->is_internal) {
@@ -32,7 +32,7 @@ void Codegen::codegen_typesig(Program *p, unsigned int type_def_num, std::ostrin
 void Codegen::codegen_typesig_no_tail(Program *p, unsigned int type_def_num, std::ostringstream &output) {
     Type_Def *td = p->types[type_def_num];
 
-    if (td->container == Container_Type::LIST) {
+    if (td->container == Container_Type::ARRAY) {
         output << "Typeless_Vector__";
     }
     else if (td->is_internal) {
@@ -57,7 +57,7 @@ void Codegen::codegen_typesig_no_tail(Program *p, unsigned int type_def_num, std
 void Codegen::codegen_tu_typesig(Program *p, unsigned int type_def_num, std::ostringstream &output) {
     Type_Def *td = p->types[type_def_num];
 
-    if (td->container == Container_Type::LIST) {
+    if (td->container == Container_Type::ARRAY) {
         output << "VoidPtr";
     }
     else if (td->is_internal) {
@@ -80,7 +80,7 @@ void Codegen::codegen_tu_typesig(Program *p, unsigned int type_def_num, std::ost
 
 void Codegen::codegen_default_value(Program *p, unsigned int type_def_num, std::ostringstream &output) {
     Type_Def *td = p->types[type_def_num];
-    if (td->container == Container_Type::LIST) {
+    if (td->container == Container_Type::ARRAY) {
         output << "NULL";
     }
     else if (td->is_internal) {
@@ -151,12 +151,17 @@ void Codegen::codegen_method_call(Program *p, Token *t, std::ostringstream &outp
     else {
         Token *child = t->children[1];
         Type_Def *td = p->types[t->children[0]->type_def_num];
-        if ((child->children[0]->contents == "push") && (td->container == Container_Type::LIST)) {
+        if ((child->children[0]->contents == "push") && (td->container == Container_Type::ARRAY)) {
             output << "push_onto_typeless_vector__(";
             codegen_token(p, t->children[0], output);
             output << ", &";
             codegen_token(p, child->children[1], output);
             output << ")";
+        }
+        else if ((child->children[0]->contents == "size") && (td->container == Container_Type::ARRAY)) {
+            codegen_token(p, t->children[0], output);
+            output << "->";
+            output << "current_size";
         }
         else if ((child->children[0]->contents == "to_int") && (t->children[0]->type_def_num == (signed)p->global->local_types["string"])) {
             output << "convert_s_to_i__(";
@@ -545,7 +550,7 @@ void Codegen::codegen_new(Program *p, Token *t, std::ostringstream &output) {
         }
         output << ")";
     }
-    else if (td->container == Container_Type::LIST) {
+    else if (td->container == Container_Type::ARRAY) {
         output << "create_typeless_vector__(sizeof(";
         codegen_typesig(p, td->contained_type_def_num, output);
         output << "), 0)";
@@ -1324,7 +1329,7 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
             output << "  Object_Feature__ *ret_val__ = (Object_Feature__*)copy__(v__, ((Object_Feature__*)v__)->feature_id);" << std::endl;
             output << "  return ret_val__;" << std::endl;
         }
-        else if (td->container == Container_Type::LIST) {
+        else if (td->container == Container_Type::ARRAY) {
             output << "  unsigned int i;" << std::endl;
             output << "  Typeless_Vector__ *ret_val__ = create_typeless_vector__(((Typeless_Vector__ *)v__)->elem_size, ((Typeless_Vector__ *)v__)->current_size);" << std::endl;
             output << "  for (i = 0; i < ((Typeless_Vector__ *)v__)->current_size; ++i)" << std::endl << "  {" << std::endl;
@@ -1423,7 +1428,7 @@ void Codegen::codegen_delete_decl(Program *p, std::ostringstream &output) {
         if (i == obj_id) {
             output << "  delete__(v__, ((Object_Feature__*)v__)->feature_id);" << std::endl;
         }
-        else if (td->container == Container_Type::LIST) {
+        else if (td->container == Container_Type::ARRAY) {
             output << "  unsigned int i;" << std::endl;
             //Type_Def *contained = p->types[td->contained_type_def_num];
             //if ((contained->token->type != Token_Type::ACTOR_DEF) && (contained->token->type != Token_Type::ISOLATED_ACTOR_DEF)) {

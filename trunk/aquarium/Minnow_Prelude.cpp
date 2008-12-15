@@ -63,16 +63,23 @@ void file_close_file_p__(void *p) {
  * todo: do a proper file length
  */
 int file_length_p__(void *p) {
-    FILE *in = (FILE*)p;
-    unsigned int filelen;
-    fseek(in, 0L, SEEK_END);
-    filelen = ftell(in);
-    fseek(in, 0L, SEEK_SET);
+    if (p != NULL) {
+        FILE *in = (FILE*)p;
+        unsigned int filelen;
+        fseek(in, 0L, SEEK_END);
+        filelen = ftell(in);
+        fseek(in, 0L, SEEK_SET);
 
-    return (int)filelen;
+        return (int)filelen;
+    }
+    else {
+        return -1;
+    }
 }
 
 Typeless_Vector__ *file_read_all_p__(void *p) {
+    if (p == NULL) return NULL;
+
     FILE *in = (FILE*)p;
     int length = file_length_p__(p);
     Typeless_Vector__ *tv = create_char_string__(length);

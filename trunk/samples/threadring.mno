@@ -18,8 +18,8 @@ actor Passer
   end
 end
  
-action main(args : List[string])
-  passers : List[Passer] = new List[Passer]
+action main(args : Array[string])
+  passers : Array[Passer] = new Array[Passer]
   passers.push(spawn Passer())
   i:int = 0
   while (i < 502)

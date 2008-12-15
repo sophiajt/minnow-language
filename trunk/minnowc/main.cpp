@@ -143,6 +143,7 @@ void translate_file(Program *p, std::string filename) {
 }
 
 int main(int argc, char *argv[]) {
+
     Program *p = new Program();
     Codegen c;
     char *output_file = NULL;

@@ -9,7 +9,7 @@ end
 
 action main
   o : object = new Fred()
-  v : List[object] = new List[object]
+  v : Array[object] = new Array[object]
   o <+ new Bob()
   o.Bob
   x : var = o.Bob

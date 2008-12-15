@@ -119,7 +119,7 @@ unsigned int Analyzer::find_type(Program *program, Token *ns, Scope *scope) {
             if (ns->children.size() != 2) {
                 throw Compiler_Exception("Type incomplete", ns->start_pos);
             }
-            else if (ns->children[0]->contents != "List") {
+            else if (ns->children[0]->contents != "Array") {
                 throw Compiler_Exception("Unsupported container type", ns->children[0]->start_pos);
             }
             else {
@@ -135,7 +135,7 @@ unsigned int Analyzer::find_type(Program *program, Token *ns, Scope *scope) {
                 else {
                     //It doesn't exist yet, so let's create it
                     Type_Def *container = new Type_Def();
-                    container->container = Container_Type::LIST;
+                    container->container = Container_Type::ARRAY;
                     container->contained_type_def_num = ns->children[1]->type_def_num;
                     container->token = new Token(Token_Type::EMPTY); //todo: set this to something reasonable
                     container->token->scope = new Scope();
@@ -205,7 +205,7 @@ void Analyzer::find_constructor(Program *program, Token *ns, Scope *scope) {
             if (ns->children.size() != 2) {
                 throw Compiler_Exception("Type incomplete", ns->start_pos);
             }
-            else if (ns->children[0]->contents != "List") {
+            else if (ns->children[0]->contents != "Array") {
                 throw Compiler_Exception("Unsupported container type", ns->children[0]->start_pos);
             }
             else {
@@ -221,7 +221,7 @@ void Analyzer::find_constructor(Program *program, Token *ns, Scope *scope) {
                 else {
                     //It doesn't exist yet, so let's create it
                     Type_Def *container = new Type_Def();
-                    container->container = Container_Type::LIST;
+                    container->container = Container_Type::ARRAY;
                     container->contained_type_def_num = ns->children[1]->type_def_num;
                     container->token = new Token(Token_Type::EMPTY); //todo: set this to something reasonable
                     container->token->scope = new Scope();

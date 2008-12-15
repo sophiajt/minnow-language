@@ -144,7 +144,7 @@ public:
 
 class Container_Type {
     public:
-        enum Type { SCALAR, LIST };
+        enum Type { SCALAR, ARRAY };
 };
 
 class Type_Def {
