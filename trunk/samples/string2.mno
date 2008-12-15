@@ -1,4 +1,4 @@
 action main
   print("H" + 'e' + 'l' + 'l' + 'o' + '\n')
-  sys.exit()
+  Sys.exit()
 end

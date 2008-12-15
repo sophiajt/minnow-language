@@ -2,5 +2,5 @@ action main
   s : string = "Bob"
   print(s[1])
   print(s.size())
-  sys.exit()
+  Sys.exit()
 end

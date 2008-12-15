@@ -1,4 +1,4 @@
-namespace sys.externals
+namespace Sys.Externals
 extern def print_i__(i : int)
 extern def print_s__(s : string)
 extern def print_d__(d : double)
@@ -34,54 +34,54 @@ extern def create_char_string__(num_elems : uint) : string
 
 namespace global
 def print(i : int)
-  sys.externals.print_i__(i)
+  Sys.Externals.print_i__(i)
 end
 
 def print(s : string)
-  sys.externals.print_s__(s)
+  Sys.Externals.print_s__(s)
 end
 
 def print(d : double)
-  sys.externals.print_d__(d)
+  Sys.Externals.print_d__(d)
 end
 
 def print(c : char)
-  sys.externals.print_c__(c)
+  Sys.Externals.print_c__(c)
 end
 
 def print(f : float)
-  sys.externals.print_f__(f)
+  Sys.Externals.print_f__(f)
 end
 
 //----SYS----
 
-namespace sys
+namespace Sys
 
-feature file
+feature File
   handle : pointer
 
   def open(fname : string)
-    handle = sys.externals.file_open_file_s__(fname)
+    handle = Sys.Externals.file_open_file_s__(fname)
   end
 
   def read_all() : string
-    return sys.externals.file_read_all_p__(handle)
+    return Sys.Externals.file_read_all_p__(handle)
   end
 
   def length() : int
-    return sys.externals.file_length_p__(handle)
+    return Sys.Externals.file_length_p__(handle)
   end
 
   def close() 
-    sys.externals.file_close_file_p__(handle)
+    Sys.Externals.file_close_file_p__(handle)
   end
 end
 
 def exit(i : int)
-  sys.externals.exit_i__(i)
+  Sys.Externals.exit_i__(i)
 end
 
 def exit()
-  sys.externals.exit__()
+  Sys.Externals.exit__()
 end
 

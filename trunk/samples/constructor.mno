@@ -20,7 +20,7 @@ namespace George
 feature Sally
   def Sally(q : int)
     print(q)
-    sys.exit()
+    Sys.exit()
   end
 end
 

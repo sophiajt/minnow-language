@@ -4,5 +4,5 @@ action main
   z : var
   z = 'C' + y + x + x
   print(z)
-  sys.exit()
+  Sys.exit()
 end

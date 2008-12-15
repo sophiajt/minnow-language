@@ -6,7 +6,7 @@ actor Bob
     if (a > 0)
       greet(a-1)
     else
-      sys.exit()
+      Sys.exit()
     end
   end
 end

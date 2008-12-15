@@ -5,6 +5,6 @@ action main
   s : string = f.to_string()
   print(s)
   print("\n")
-  sys.exit()
+  Sys.exit()
 
 end

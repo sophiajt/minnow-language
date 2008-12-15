@@ -13,5 +13,5 @@ action main (args : Array[string])
 
  j.delete(0)
  print(j[0])
- sys.exit()
+ Sys.exit()
 end

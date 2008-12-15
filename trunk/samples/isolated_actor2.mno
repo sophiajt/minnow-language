@@ -3,7 +3,7 @@ isolated actor Bob
   action greet
     print("Hello from isolated\n")
     print(y)
-    sys.exit()
+    Sys.exit()
   end
 
   def Bob(x : int)

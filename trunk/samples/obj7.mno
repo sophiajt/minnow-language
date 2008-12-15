@@ -15,7 +15,7 @@ actor Doer
     o : object = l[0]
     print(o.Bob.x)
     o.Bob.greet()
-    sys.exit()
+    Sys.exit()
   end
 end
 

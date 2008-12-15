@@ -26,5 +26,5 @@ action main
   y.imaginary = 100.0
 
   print(o.(Bob.Cool).x)
-  sys.exit()
+  Sys.exit()
 end

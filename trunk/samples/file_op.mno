@@ -1,5 +1,5 @@
 action main
-  f : sys.file = new sys.file()
+  f : Sys.File = new Sys.File()
   f.open("samples/file_op.txt")
   print("Size: ")
   print(f.length())
@@ -8,6 +8,6 @@ action main
   print(contents)
   f.close()
 
-  sys.exit()
+  Sys.exit()
 end 
   

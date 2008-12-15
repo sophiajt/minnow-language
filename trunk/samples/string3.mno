@@ -4,5 +4,5 @@ end
 
 action main
   greet(3)
-  sys.exit()
+  Sys.exit()
 end

@@ -14,7 +14,7 @@ actor Doer
   action do(o : object)
     print(o.Bob.x)
     o.Bob.greet()
-    sys.exit()
+    Sys.exit()
   end
 end
 

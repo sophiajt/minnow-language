@@ -5,7 +5,7 @@ actor Passer
   action pass(token : int)
     if (token == 0)
       print(m_id)
-      sys.exit(0)
+      Sys.exit(0)
     else
       token = token - 1
       m_next::pass(token)
@@ -46,7 +46,7 @@ actor Passer
   action pass(token : int)
     if (token == 0)
       print(m_id)
-      sys.exit(0)
+      Sys.exit(0)
     else
       token -= 1
       m_next::pass(token)

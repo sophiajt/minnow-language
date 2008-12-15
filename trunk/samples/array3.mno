@@ -8,5 +8,5 @@ action main (args : Array[string])
  j.push(i)
  z : int = j.pop() 
  print(z)
- sys.exit()
+ Sys.exit()
 end
