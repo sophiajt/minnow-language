@@ -124,14 +124,6 @@ void translate_file(Program *p, std::string filename) {
     an.analyze_var_visibility(p, t);
     an.analyze_freeze_resume(p, t, p->global);
     an.analyze_copy_delete(p, t, p->global);
-    /*
-    an.analyze_embedded_functions(p, t);
-    an.analyze_implied_this(p, t, p->global);
-    an.analyze_return_calls(p, t, 0);
-    an.analyze_var_visibility(p, t);
-    an.analyze_freeze_resume(p, t, p->global);
-    an.analyze_copy_delete(p, t, p->global);
-    */
 
     //debug_print_def(p, t, "");
     //debug_print_vars(p, t);

@@ -163,6 +163,29 @@ void Codegen::codegen_method_call(Program *p, Token *t, std::ostringstream &outp
             output << "->";
             output << "current_size";
         }
+        else if ((child->children[0]->contents == "pop") && (td->container == Container_Type::ARRAY)) {
+            output << "pop_off_typeless_vector__(";
+            codegen_token(p, t->children[0], output);
+            output << ").";
+            codegen_tu_typesig(p, td->contained_type_def_num, output);
+        }
+        else if ((child->children[0]->contents == "insert") && (td->container == Container_Type::ARRAY)) {
+            output << "insert_into_typeless_vector__(";
+            codegen_token(p, t->children[0], output);
+            output << ", &";
+            codegen_token(p, child->children[1]->children[0], output);
+            output << ", ";
+            codegen_token(p, child->children[1]->children[1], output);
+            output << ")";
+        }
+        else if ((child->children[0]->contents == "delete") && (td->container == Container_Type::ARRAY)) {
+            output << "delete_from_typeless_vector__(";
+            codegen_token(p, t->children[0], output);
+            output << ", ";
+            codegen_token(p, child->children[1], output);
+            output << ").";
+            codegen_tu_typesig(p, td->contained_type_def_num, output);
+        }
         else if ((child->children[0]->contents == "to_int") && (t->children[0]->type_def_num == (signed)p->global->local_types["string"])) {
             output << "convert_s_to_i__(";
             codegen_token(p, t->children[0], output);

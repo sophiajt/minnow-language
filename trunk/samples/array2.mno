@@ -3,6 +3,11 @@ action main (args : Array[string])
  j:Array[int]
  j = new Array[int]
 
- k:Array[int] = new Array[int]
- i = k[0]
+ k : int = 3
+ j.push(3)
+ l : int = 4
+ j.insert(l, 0)
+
+ print(j[0])
+ sys.exit()
 end

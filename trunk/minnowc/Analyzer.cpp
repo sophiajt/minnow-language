@@ -1792,13 +1792,14 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Scope *s
                 }
             }
             else if (token->type == Token_Type::NEW_ALLOC) {
-                for (unsigned int j = 0; j < token->children[1]->children.size(); ++j) {
-                    Token *child = analyze_ports_of_entry(program, token->children[1]->children[j], scope, is_lhs);
-                    if (child != NULL) {
-                        return child;
+                if (token->children[1]->type != Token_Type::ARRAY_CALL) {
+                    for (unsigned int j = 0; j < token->children[1]->children.size(); ++j) {
+                        Token *child = analyze_ports_of_entry(program, token->children[1]->children[j], scope, is_lhs);
+                        if (child != NULL) {
+                            return child;
+                        }
                     }
                 }
-
                 Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num, true);
                 *token = *replacement;
                 return program->vars[token->definition_number]->token;

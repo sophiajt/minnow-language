@@ -70,7 +70,7 @@ public:
         insert_fd->is_port_of_exit = true;
 
         Function_Def *delete_fd = new Function_Def(true);
-        delete_fd->return_type_def_num = global->local_types["void"];
+        delete_fd->return_type_def_num = owner->contained_type_def_num;
         delete_fd->arg_def_nums.push_back(global->local_types["int"]);
         delete_fd->token = new Token(Token_Type::FUN_DEF);
 

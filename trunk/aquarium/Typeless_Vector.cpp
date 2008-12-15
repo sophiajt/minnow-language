@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "Common.hpp"
 #include "Typeless_Vector.hpp"
 
 /**
@@ -111,9 +112,12 @@ void push_onto_typeless_vector__(Typeless_Vector__ *container, void *value) {
  * Pops a value off the vector
  * @param container The container to pop off
  */
-void pop_off_typeless_vector__(Typeless_Vector__ *container) {
+union Type_Union__ pop_off_typeless_vector__(Typeless_Vector__ *container) {
+    union Type_Union__ ret_val = INDEX_AT__(container, container->current_size - 1, union Type_Union__);
     if (container->current_size > 0)
         --(container->current_size);
+
+    return ret_val;
 }
 
 /**
@@ -162,16 +166,20 @@ void insert_into_typeless_vector__(Typeless_Vector__ *container, void* value, un
  * @param container The container to use
  * @param pos The position to delete
  */
-void delete_from_typeless_vector__(Typeless_Vector__ *container, unsigned int pos) {
+union Type_Union__ delete_from_typeless_vector__(Typeless_Vector__ *container, unsigned int pos) {
+    union Type_Union__ ret_val;
     if (pos >= container->current_size) {
+        ret_val = INDEX_AT__(container, container->current_size - 1, union Type_Union__ );
         pop_off_typeless_vector__(container);
     }
     else {
+        ret_val = INDEX_AT__(container, pos, union Type_Union__ );
         memmove((char*) container->contents + pos * container->elem_size, (char*) container->contents
                 + (pos + 1) * container->elem_size, container->elem_size
                 * (container->current_size - pos));
         --(container->current_size);
     }
+    return ret_val;
 }
 
 /**

@@ -4,6 +4,7 @@
 #ifndef TYPELESS_VECTOR_H_
 #define TYPELESS_VECTOR_H_
 
+#include "Common.hpp"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -33,9 +34,11 @@ Typeless_Vector__ *create_typeless_vector__(unsigned int elem_size, unsigned int
 void initialize_typeless_vector__(Typeless_Vector__ *container, unsigned int elem_size, unsigned int num_elems);
 void delete_typeless_vector__(Typeless_Vector__ *container);
 void push_onto_typeless_vector__(Typeless_Vector__ *container, void *value);
-void pop_off_typeless_vector__(Typeless_Vector__ *container);
+union Type_Union__ pop_off_typeless_vector__(Typeless_Vector__ *container);
 void insert_into_typeless_vector__(Typeless_Vector__ *container, void* value, unsigned int pos);
-void delete_from_typeless_vector__(Typeless_Vector__ *container, unsigned int pos);
+union Type_Union__ delete_from_typeless_vector__(Typeless_Vector__ *container, unsigned int pos);
+
+//todo: figure out how to do the next one safely with codegen memory management:
 void delete_from_typeless_vector_range__(Typeless_Vector__ *container, unsigned int pos,
         unsigned int amount);
 /*@}*/
