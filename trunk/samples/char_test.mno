@@ -1,0 +1,29 @@
+action main
+  s : var = "Bob"
+  if (s[1] == 'o')
+    print("Coolness\n")
+  else
+    print("Suckness\n")
+  end
+  if (s.size() == 3)
+    print("Just right\n")
+  else
+    print("Not so right\n")
+  end
+
+  a : var = new Array[string]
+
+  a.push("Hello")
+  a.push("there")
+  a.push("Bob")
+
+  len : var = a.size()
+  i : var = 0
+
+  while (i < len)
+    print(a[i] + ' ')
+    i = i + 1
+  end
+
+  Sys.exit()
+end
