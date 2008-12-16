@@ -173,7 +173,6 @@ void Codegen::codegen_method_call(Program *p, Token *t, std::ostringstream &outp
             codegen_tu_typesig(p, td->contained_type_def_num, output);
         }
         else if ((child->children[0]->contents == "insert") && (td->container == Container_Type::ARRAY)) {
-            unsigned int pod_edge = p->global->local_types["string"];
             output << "{ ";
             codegen_typesig(p, td->contained_type_def_num, output);
             output << " tmp_member__ = ";
