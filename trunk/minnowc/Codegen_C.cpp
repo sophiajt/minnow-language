@@ -715,6 +715,7 @@ void Codegen::codegen_deletion_site(Program *p, Token *t, std::ostringstream &ou
         for (unsigned int i = 0; i < vars.size(); ++i) {
             Var_Def *vd = p->vars[vars[i]];
             output << "delete__(var__" << vars[i] << ", " << vd->type_def_num << ");" << std::endl;
+            output << "var__" << vars[i] << " = NULL;" << std::endl;
         }
     }
 }
@@ -749,7 +750,9 @@ void Codegen::codegen_token(Program *p, Token *t, std::ostringstream &output) {
         case (Token_Type::DELETE) : {
             output << "delete__(";
             codegen_token(p, t->children[0], output);
-            output << ", " << t->children[0]->type_def_num << ")";
+            output << ", " << t->children[0]->type_def_num << ");";
+            codegen_token(p, t->children[0], output);
+            output << " = NULL;";
         }
         break;
         case (Token_Type::DELETION_SITE) : codegen_deletion_site(p, t, output); break;
@@ -1138,14 +1141,16 @@ void Codegen::codegen_action_decl(Program *p, Token *t, std::ostringstream &outp
                         if (fd->continuation_sites[i] != -1) {
                             if (p->var_sites[fd->continuation_sites[i]].size() > 0) {
                                 output << "  case(" << i << ") : " << std::endl;
-                            }
-                            for (unsigned int j = 0; j < p->var_sites[fd->continuation_sites[i]].size(); ++j) {
-                                Var_Def *vd = p->vars[p->var_sites[fd->continuation_sites[i]][j]];
-                                output << "  var__" << p->var_sites[fd->continuation_sites[i]][j] << " = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack,";
-                                output << "    ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, ";
-                                codegen_typesig(p, vd->type_def_num, output);
-                                output << ");" << std::endl;
-                                output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
+
+                                for (int j = p->var_sites[fd->continuation_sites[i]].size() - 1; j >= 0; --j) {
+
+                                    Var_Def *vd = p->vars[p->var_sites[fd->continuation_sites[i]][j]];
+                                    output << "  var__" << p->var_sites[fd->continuation_sites[i]][j] << " = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack,";
+                                    output << "    ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, ";
+                                    codegen_typesig(p, vd->type_def_num, output);
+                                    output << ");" << std::endl;
+                                    output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
+                                }
                                 output << "  break;" << std::endl;
                             }
                         }
@@ -1296,14 +1301,15 @@ void Codegen::codegen_fun_decl(Program *p, Token *t, std::ostringstream &output)
                         if (fd->continuation_sites[i] != -1) {
                             if (p->var_sites[fd->continuation_sites[i]].size() > 0) {
                                 output << "  case(" << i << ") : " << std::endl;
-                            }
-                            for (unsigned int j = 0; j < p->var_sites[fd->continuation_sites[i]].size(); ++j) {
-                                Var_Def *vd = p->vars[p->var_sites[fd->continuation_sites[i]][j]];
-                                output << "  var__" << p->var_sites[fd->continuation_sites[i]][j] << " = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack,";
-                                output << "    ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, ";
-                                codegen_typesig(p, vd->type_def_num, output);
-                                output << ");" << std::endl;
-                                output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
+
+                                for (int j = p->var_sites[fd->continuation_sites[i]].size() - 1; j >= 0; --j) {
+                                    Var_Def *vd = p->vars[p->var_sites[fd->continuation_sites[i]][j]];
+                                    output << "  var__" << p->var_sites[fd->continuation_sites[i]][j] << " = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack,";
+                                    output << "    ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, ";
+                                    codegen_typesig(p, vd->type_def_num, output);
+                                    output << ");" << std::endl;
+                                    output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
+                                }
                                 output << "  break;" << std::endl;
                             }
                         }
@@ -1402,7 +1408,7 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
             output << "  return ret_val__;" << std::endl;
         }
         else if ((td->token->type == Token_Type::ACTOR_DEF) || (td->token->type == Token_Type::ISOLATED_ACTOR_DEF)) {
-            //do nothing
+            output << "  return v__;" << std::endl;
         }
         else if (td->token->type == Token_Type::FEATURE_DEF) {
             output << "  Object_Feature__ *ret_val__ = (Object_Feature__ *)create_feature__(sizeof(";
