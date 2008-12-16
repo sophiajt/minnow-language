@@ -125,7 +125,7 @@ void translate_file(Program *p, std::string filename) {
     an.analyze_freeze_resume(p, t, p->global);
     an.analyze_copy_delete(p, t, p->global);
 
-    //debug_print_def(p, t, "");
+    debug_print_def(p, t, "");
     //debug_print_vars(p, t);
     //debug_print(p, "");
 

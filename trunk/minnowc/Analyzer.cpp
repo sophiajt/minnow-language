@@ -1498,13 +1498,14 @@ void Analyzer::find_var_endpoints(Program *program, Token *token, unsigned int v
             vd->usage_end = token->end_pos;
         }
     }
+    /*
     else if (token->type == Token_Type::IF_BLOCK) {
         //todo: tracing usage will give more accurate results than doing it this way
-        if (contains_var(token, var_def_num)) {
-            Var_Def *vd = program->vars[var_def_num];
-            vd->usage_end = token->end_pos;
-        }
+
+        //First, look for else, if there's an else, it's the last point in an if block, otherwise, use whole if (until we get better tracing)
+        find_var_endpoints(program, token->children[i], var_def_num);
     }
+    */
     else if ((token->type == Token_Type::VAR_CALL) && (token->definition_number == (signed)var_def_num)) {
         Var_Def *vd = program->vars[var_def_num];
         vd->usage_end = token->end_pos;
@@ -2187,7 +2188,6 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope)
                                         Var_Def *vd = program->vars[rhs->definition_number];
                                         if (((vd->is_removed == false) || (vd->is_dependent == false))
                                                 && (is_complex_var(program, rhs->definition_number)))  {
-
                                             if ((vd->usage_end == rhs->end_pos) && (vd->is_dependent == true)) {
                                                 vd->is_removed = true;
                                             }
@@ -2315,7 +2315,7 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope)
                         Var_Def *vd = program->vars[child->children[0]->definition_number];
 
                         if ((vd->is_removed == false) && (vd->is_dependent == true)
-                                && (child->children[0]->type == Token_Type::VAR_CALL)  &&
+                                && /*(child->children[0]->type == Token_Type::VAR_CALL)  && */
                                 (is_complex_var(program, child->children[0]->definition_number))) {
 
                             Token *delete_t = new Token(Token_Type::DELETE);
