@@ -3,6 +3,14 @@ action main
   y : var = x
   z : var
   z = 'C' + y + x + x
-  print(z)
+  print(z + '\n')
+  if (z == "CBobBobBob")
+    print("match\n")
+  else
+    print("no match\n")
+  end
+  if (z != "Frog")
+    print("good\n")
+  end
   Sys.exit()
 end

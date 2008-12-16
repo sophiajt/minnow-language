@@ -193,6 +193,12 @@ public:
         build_internal_func(double_def_num, double_def_num, bool_def_num, ">=");
         build_internal_func(double_def_num, double_def_num, bool_def_num, "<=");
 
+        build_internal_func(char_def_num, char_def_num, bool_def_num, "==");
+        build_internal_func(char_def_num, char_def_num, bool_def_num, "!=");
+
+        build_internal_func(string_def_num, string_def_num, bool_def_num, "==");
+        build_internal_func(string_def_num, string_def_num, bool_def_num, "!=");
+
         build_internal_func(string_def_num, string_def_num, string_def_num, "=");
         build_internal_func(string_def_num, string_def_num, string_def_num, "+");
         build_internal_func(string_def_num, char_def_num, string_def_num, "+");
