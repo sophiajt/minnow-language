@@ -86,4 +86,3 @@ if [ $OUT -ne 0 ]; then
   kill 0
 fi
 
-rm -rf tmp

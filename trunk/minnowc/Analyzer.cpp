@@ -1844,6 +1844,7 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Scope *s
 }
 
 void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scope) {
+
     if ((token->type == Token_Type::ACTION_DEF) || (token->type == Token_Type::FUN_DEF)) {
         //scope = token->scope;
         scope = token->children[2]->scope;
@@ -1855,6 +1856,12 @@ void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scop
         analyze_freeze_resume(program, token->children[2], scope);
     }
     else {
+        for (unsigned int i = 0; i < token->children.size(); ++i) {
+            if (token->children[i]->type != Token_Type::CONTINUATION_SITE) {
+                analyze_freeze_resume(program, token->children[i], scope);
+            }
+        }
+
         if (token->type == Token_Type::BLOCK) {
             unsigned int i = 0;
             while (i < token->children.size()) {
@@ -1933,12 +1940,6 @@ void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scop
                     }
                 }
                 ++i;
-            }
-        }
-
-        for (unsigned int i = 0; i < token->children.size(); ++i) {
-            if (token->children[i]->type != Token_Type::CONTINUATION_SITE) {
-                analyze_freeze_resume(program, token->children[i], scope);
             }
         }
 

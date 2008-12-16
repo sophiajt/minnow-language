@@ -1256,15 +1256,15 @@ void Codegen::codegen_action_decl(Program *p, Token *t, std::ostringstream &outp
                     output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
                     output << "  switch(cont_id__) {" << std::endl;
 
-                    for (unsigned int i = 0; i < fd->continuation_sites.size(); ++i) {
-                        if (fd->continuation_sites[i] != -1) {
-                            if (p->var_sites[fd->continuation_sites[i]].size() > 0) {
-                                output << "  case(" << i << ") : " << std::endl;
+                    for (unsigned int k = 0; k < fd->continuation_sites.size(); ++k) {
+                        if (fd->continuation_sites[k] != -1) {
+                            if (p->var_sites[fd->continuation_sites[k]].size() > 0) {
+                                output << "  case(" << k << ") : " << std::endl;
 
-                                for (int j = p->var_sites[fd->continuation_sites[i]].size() - 1; j >= 0; --j) {
+                                for (int j = p->var_sites[fd->continuation_sites[k]].size() - 1; j >= 0; --j) {
 
-                                    Var_Def *vd = p->vars[p->var_sites[fd->continuation_sites[i]][j]];
-                                    output << "  var__" << p->var_sites[fd->continuation_sites[i]][j] << " = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack,";
+                                    Var_Def *vd = p->vars[p->var_sites[fd->continuation_sites[k]][j]];
+                                    output << "  var__" << p->var_sites[fd->continuation_sites[k]][j] << " = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack,";
                                     output << "    ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, ";
                                     codegen_typesig(p, vd->type_def_num, output);
                                     output << ");" << std::endl;
@@ -1416,14 +1416,14 @@ void Codegen::codegen_fun_decl(Program *p, Token *t, std::ostringstream &output)
                     output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
                     output << "  switch(cont_id__) {" << std::endl;
 
-                    for (unsigned int i = 0; i < fd->continuation_sites.size(); ++i) {
-                        if (fd->continuation_sites[i] != -1) {
-                            if (p->var_sites[fd->continuation_sites[i]].size() > 0) {
-                                output << "  case(" << i << ") : " << std::endl;
+                    for (unsigned int k = 0; k < fd->continuation_sites.size(); ++k) {
+                        if (fd->continuation_sites[k] != -1) {
+                            if (p->var_sites[fd->continuation_sites[k]].size() > 0) {
+                                output << "  case(" << k << ") : " << std::endl;
 
-                                for (int j = p->var_sites[fd->continuation_sites[i]].size() - 1; j >= 0; --j) {
-                                    Var_Def *vd = p->vars[p->var_sites[fd->continuation_sites[i]][j]];
-                                    output << "  var__" << p->var_sites[fd->continuation_sites[i]][j] << " = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack,";
+                                for (int j = p->var_sites[fd->continuation_sites[k]].size() - 1; j >= 0; --j) {
+                                    Var_Def *vd = p->vars[p->var_sites[fd->continuation_sites[k]][j]];
+                                    output << "  var__" << p->var_sites[fd->continuation_sites[k]][j] << " = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack,";
                                     output << "    ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, ";
                                     codegen_typesig(p, vd->type_def_num, output);
                                     output << ");" << std::endl;
