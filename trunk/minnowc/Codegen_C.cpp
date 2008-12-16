@@ -408,6 +408,70 @@ void Codegen::codegen_symbol(Program *p, Token *t, std::ostringstream &output) {
 
         }
     }
+    else if (t->contents == "<") {
+        int string_id = p->global->local_types["string"];
+        if ((t->children[0]->type_def_num == string_id) && (t->children[1]->type_def_num == string_id)) {
+            output << "compare_char_string__(";
+            codegen_token(p, t->children[0], output);
+            output << ", ";
+            codegen_token(p, t->children[1], output);
+            output << ") < 0";
+        }
+        else {
+            codegen_token(p, t->children[0], output);
+            output << t->contents;
+            codegen_token(p, t->children[1], output);
+
+        }
+    }
+    else if (t->contents == ">") {
+        int string_id = p->global->local_types["string"];
+        if ((t->children[0]->type_def_num == string_id) && (t->children[1]->type_def_num == string_id)) {
+            output << "compare_char_string__(";
+            codegen_token(p, t->children[0], output);
+            output << ", ";
+            codegen_token(p, t->children[1], output);
+            output << ") > 0";
+        }
+        else {
+            codegen_token(p, t->children[0], output);
+            output << t->contents;
+            codegen_token(p, t->children[1], output);
+
+        }
+    }
+    else if (t->contents == "<=") {
+        int string_id = p->global->local_types["string"];
+        if ((t->children[0]->type_def_num == string_id) && (t->children[1]->type_def_num == string_id)) {
+            output << "compare_char_string__(";
+            codegen_token(p, t->children[0], output);
+            output << ", ";
+            codegen_token(p, t->children[1], output);
+            output << ") <= 0";
+        }
+        else {
+            codegen_token(p, t->children[0], output);
+            output << t->contents;
+            codegen_token(p, t->children[1], output);
+
+        }
+    }
+    else if (t->contents == ">=") {
+        int string_id = p->global->local_types["string"];
+        if ((t->children[0]->type_def_num == string_id) && (t->children[1]->type_def_num == string_id)) {
+            output << "compare_char_string__(";
+            codegen_token(p, t->children[0], output);
+            output << ", ";
+            codegen_token(p, t->children[1], output);
+            output << ") >= 0";
+        }
+        else {
+            codegen_token(p, t->children[0], output);
+            output << t->contents;
+            codegen_token(p, t->children[1], output);
+
+        }
+    }
     else if (t->contents == ":") {
         codegen_token(p, t->children[0], output);
     }
