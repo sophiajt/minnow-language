@@ -152,24 +152,14 @@ void Codegen::codegen_method_call(Program *p, Token *t, std::ostringstream &outp
         Token *child = t->children[1];
         Type_Def *td = p->types[t->children[0]->type_def_num];
         if ((child->children[0]->contents == "push") && (td->container == Container_Type::ARRAY)) {
-            unsigned int pod_edge = p->global->local_types["string"];
-            if (td->contained_type_def_num < (signed)pod_edge) {
-                output << "{ ";
-                codegen_typesig(p, td->contained_type_def_num, output);
-                output << " tmp_member__ = ";
-                codegen_token(p, child->children[1], output);
-                output << "; push_onto_typeless_vector__(";
-                codegen_token(p, t->children[0], output);
-                output << ", &tmp_member__";
-                output << "); }";
-            }
-            else {
-                output << "push_onto_typeless_vector__(";
-                codegen_token(p, t->children[0], output);
-                output << ", &";
-                codegen_token(p, child->children[1], output);
-                output << ")";
-            }
+            output << "{ ";
+            codegen_typesig(p, td->contained_type_def_num, output);
+            output << " tmp_member__ = ";
+            codegen_token(p, child->children[1], output);
+            output << "; push_onto_typeless_vector__(";
+            codegen_token(p, t->children[0], output);
+            output << ", &tmp_member__";
+            output << "); }";
         }
         else if ((child->children[0]->contents == "size") && (td->container == Container_Type::ARRAY)) {
             codegen_token(p, t->children[0], output);
@@ -184,26 +174,15 @@ void Codegen::codegen_method_call(Program *p, Token *t, std::ostringstream &outp
         }
         else if ((child->children[0]->contents == "insert") && (td->container == Container_Type::ARRAY)) {
             unsigned int pod_edge = p->global->local_types["string"];
-            if (td->contained_type_def_num < (signed)pod_edge) {
-                output << "{ ";
-                codegen_typesig(p, td->contained_type_def_num, output);
-                output << " tmp_member__ = ";
-                codegen_token(p, child->children[1]->children[0], output);
-                output << "; insert_into_typeless_vector__(";
-                codegen_token(p, t->children[0], output);
-                output << ", &tmp_member__, ";
-                codegen_token(p, child->children[1]->children[1], output);
-                output << "); }";
-            }
-            else {
-                output << "insert_into_typeless_vector__(";
-                codegen_token(p, t->children[0], output);
-                output << ", &";
-                codegen_token(p, child->children[1]->children[0], output);
-                output << ", ";
-                codegen_token(p, child->children[1]->children[1], output);
-                output << ")";
-            }
+            output << "{ ";
+            codegen_typesig(p, td->contained_type_def_num, output);
+            output << " tmp_member__ = ";
+            codegen_token(p, child->children[1]->children[0], output);
+            output << "; insert_into_typeless_vector__(";
+            codegen_token(p, t->children[0], output);
+            output << ", &tmp_member__, ";
+            codegen_token(p, child->children[1]->children[1], output);
+            output << "); }";
         }
         else if ((child->children[0]->contents == "delete") && (td->container == Container_Type::ARRAY)) {
             output << "delete_from_typeless_vector__(";

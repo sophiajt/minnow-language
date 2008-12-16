@@ -3,15 +3,18 @@ action main
   if (s[1] == 'o')
     print("Coolness\n")
   else
-    print("Suckness\n")
+    print("Suckiness\n")
   end
-  if (s.size() == 3)
+  s.push('b')
+  s.push('y')
+  if (s.size() == 5)
     print("Just right\n")
   else
     print("Not so right\n")
   end
 
-  a : var = new Array[string]
+  a : var
+  a = new Array[string]
 
   a.push("Hello")
   a.push("there")
