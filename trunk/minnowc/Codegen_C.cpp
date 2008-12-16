@@ -579,11 +579,35 @@ void Codegen::codegen_while(Program *p, Token *t, std::ostringstream &output) {
 }
 
 void Codegen::codegen_return(Program *p, Token *t, std::ostringstream &output) {
-    output << "return";
-    if (t->children.size() > 1) {
-        output << "(";
-        codegen_token(p, t->children[1], output);
-        output << ")";
+    if (current_fun->token->type == Token_Type::ACTION_DEF) {
+        bool has_actor = false;
+        Scope *scope = current_fun->token->scope;
+        while (scope != NULL) {
+            if ((scope->owner != NULL) && ((scope->owner->type == Token_Type::ACTOR_DEF) || (scope->owner->type == Token_Type::ISOLATED_ACTOR_DEF))) {
+                has_actor = true;
+                codegen_typesig(p, scope->owner->definition_number, output);
+                output << " this_ptr__ = (";
+                codegen_typesig(p, scope->owner->definition_number, output);
+                output << ")m__->recipient;" << std::endl;
+            }
+            scope = scope->parent;
+        }
+
+        if (has_actor) {
+            output << "this_ptr__->base__.actor_state = ACTOR_STATE_WAITING_FOR_ACTION__;" << std::endl;
+        }
+        else {
+            output << "((Actor__*)m__->recipient)->actor_state = ACTOR_STATE_WAITING_FOR_ACTION__;" << std::endl;
+        }
+        output << "return FALSE;" << std::endl;
+    }
+    else {
+        output << "return";
+        if (t->children.size() > 1) {
+            output << "(";
+            codegen_token(p, t->children[1], output);
+            output << ")";
+        }
     }
 }
 

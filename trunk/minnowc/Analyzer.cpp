@@ -2033,6 +2033,7 @@ std::vector<int> Analyzer::build_delete_remaining_list(Program *program, Scope *
     return ret_val;
 }
 
+
 void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope) {
 
     if ((token->type == Token_Type::ACTION_DEF) || (token->type == Token_Type::FUN_DEF)) {
@@ -2271,20 +2272,23 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope)
                     ++i;
                 }
                 else if (child->contents == "<+") {
-                    if (child->children[1]->type == Token_Type::VAR_CALL) {
-                        Var_Def *vd = program->vars[child->children[1]->definition_number];
-                        if (vd->is_dependent == true) {
-                            vd->is_removed = true;
-                        }
-                        else {
-                            Token *copy_t = new Token(Token_Type::COPY);
-                            copy_t->start_pos = child->children[1]->start_pos;
-                            copy_t->end_pos = child->children[1]->end_pos;
-                            copy_t->type_def_num = child->children[1]->type_def_num;
-                            copy_t->children.push_back(child->children[1]);
+                    while (child->contents == "<+") {
+                        if (child->children[1]->type == Token_Type::VAR_CALL) {
+                            Var_Def *vd = program->vars[child->children[1]->definition_number];
+                            if (vd->is_dependent == true) {
+                                vd->is_removed = true;
+                            }
+                            else {
+                                Token *copy_t = new Token(Token_Type::COPY);
+                                copy_t->start_pos = child->children[1]->start_pos;
+                                copy_t->end_pos = child->children[1]->end_pos;
+                                copy_t->type_def_num = child->children[1]->type_def_num;
+                                copy_t->children.push_back(child->children[1]);
 
-                            child->children[1] = copy_t;
+                                child->children[1] = copy_t;
+                            }
                         }
+                        child = child->children[0];
                     }
                     ++i;
                 }
@@ -2314,8 +2318,7 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope)
                     if ((child->children[0]->type == Token_Type::VAR_CALL) || (child->children[0]->type == Token_Type::VAR_DECL)) {
                         Var_Def *vd = program->vars[child->children[0]->definition_number];
 
-                        if ((vd->is_removed == false) && (vd->is_dependent == true)
-                                && /*(child->children[0]->type == Token_Type::VAR_CALL)  && */
+                        if ((vd->is_removed == false) && (vd->is_dependent == true) &&
                                 (is_complex_var(program, child->children[0]->definition_number))) {
 
                             Token *delete_t = new Token(Token_Type::DELETE);
@@ -2341,21 +2344,6 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope)
                     }
 
                     //Copy any rhs that is not ours
-                    /*
-                    if (child->children[1]->contents == ".") {
-                        if (is_complex_type(program, child->children[1]->type_def_num))  {
-
-                            Token *copy_t = new Token(Token_Type::COPY);
-                            copy_t->start_pos = child->children[1]->start_pos;
-                            copy_t->end_pos = child->children[1]->end_pos;
-                            copy_t->type_def_num = child->children[1]->type_def_num;
-                            copy_t->children.push_back(child->children[1]);
-
-                            child->children[1] = copy_t;
-                        }
-
-                    }
-                    */
                     if ((child->children[1]->type == Token_Type::VAR_DECL) || (child->children[1]->type == Token_Type::VAR_CALL)) {
                         Var_Def *vd = program->vars[child->children[1]->definition_number];
                         if (((vd->is_removed == false) || (vd->is_dependent == false))
@@ -2388,4 +2376,5 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope)
         }
     }
 }
+
 
