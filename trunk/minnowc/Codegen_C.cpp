@@ -152,13 +152,14 @@ void Codegen::codegen_method_call(Program *p, Token *t, std::ostringstream &outp
         Token *child = t->children[1];
         Type_Def *td = p->types[t->children[0]->type_def_num];
         if ((child->children[0]->contents == "push") && (td->container == Container_Type::ARRAY)) {
+            ++temp_num;
             output << "{ ";
             codegen_typesig(p, td->contained_type_def_num, output);
-            output << " tmp_member__ = ";
+            output << " tmp_member__" << temp_num << " = ";
             codegen_token(p, child->children[1], output);
             output << "; push_onto_typeless_vector__(";
             codegen_token(p, t->children[0], output);
-            output << ", &tmp_member__";
+            output << ", &tmp_member__" << temp_num;
             output << "); }";
         }
         else if ((child->children[0]->contents == "size") && (td->container == Container_Type::ARRAY)) {
@@ -173,13 +174,14 @@ void Codegen::codegen_method_call(Program *p, Token *t, std::ostringstream &outp
             codegen_tu_typesig(p, td->contained_type_def_num, output);
         }
         else if ((child->children[0]->contents == "insert") && (td->container == Container_Type::ARRAY)) {
+            ++temp_num;
             output << "{ ";
             codegen_typesig(p, td->contained_type_def_num, output);
-            output << " tmp_member__ = ";
+            output << " tmp_member__" << temp_num << " = ";
             codegen_token(p, child->children[1]->children[0], output);
             output << "; insert_into_typeless_vector__(";
             codegen_token(p, t->children[0], output);
-            output << ", &tmp_member__, ";
+            output << ", &tmp_member__" << temp_num << ", ";
             codegen_token(p, child->children[1]->children[1], output);
             output << "); }";
         }
