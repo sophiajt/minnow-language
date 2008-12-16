@@ -1,0 +1,59 @@
+actor Bang
+  response_count : int
+  collector : Bang
+
+  action collect()
+    response_count = response_count + 1
+    if (response_count == 10)
+      Sys.exit()
+    end
+  end
+
+  action recv()
+    response_count = response_count + 1
+    if (response_count == 10)
+      collector::collect()
+    end
+  end
+
+  action reply(b : Bang)
+    b::recv()
+  end
+
+  action msg_others(list : Array[Bang])
+    i : int = 0
+    while (i < 10)
+      list[i]::reply(this)
+      i = i + 1
+    end
+  end
+
+  def Bang(coll : Bang)
+    response_count = 0
+    collector = coll
+  end
+
+  def Bang()
+    response_count = 0
+  end
+
+end
+
+action main
+  collector : Bang = spawn Bang()
+  list : Array[Bang] = new Array[Bang]
+
+  i : int = 0
+  while (i < 10)
+    b : Bang = spawn Bang(collector)
+    list.push(b)
+    i = i + 1
+  end
+
+  i = 0
+  while (i < 10)
+    list[i]::msg_others(list)
+    i = i + 1
+  end
+end
+
