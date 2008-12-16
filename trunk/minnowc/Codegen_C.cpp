@@ -648,7 +648,6 @@ void Codegen::codegen_reference_feature(Program *p, Token *t, std::ostringstream
 void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream &output) {
     Function_Def *owner = this->current_fun;
     ++this->cont_id;
-    output << "case(" << this->cont_id << "):" << std::endl;
 
     if ((t->children.size() > 0) && (t->children[0]->type != Token_Type::DELETION_SITE)) {
         output << "((Actor__*)m__->recipient)->timeslice_remaining = timeslice__;" << std::endl;
@@ -705,6 +704,7 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
             output << "; } " << std::endl;
         }
     }
+    output << "case(" << this->cont_id << "):" << std::endl;
 
 }
 
