@@ -1,0 +1,50 @@
+feature Name
+  name : string
+ 
+  def Name(n : string)
+    name = n
+  end
+end
+
+feature Token
+  token : int
+
+  def Token(i : int)
+    token = i
+  end
+end
+
+actor Passer
+  m_id : int
+  m_next : Passer
+ 
+  action pass(holder : object)
+    if (holder.Token.token == 0)
+      print(m_id)
+      Sys.exit(0)
+    else
+      holder.Token.token = holder.Token.token - 1
+      m_next::pass(holder)
+    end
+  end
+ 
+  action setIdAndNext(id : int, next : Passer)
+    m_id = id
+    m_next = next
+  end
+end
+ 
+action main(args : Array[string])
+  passers : Array[Passer] = new Array[Passer]
+  passers.push(spawn Passer())
+  i:int = 0
+  while (i < 502)
+    passers.push(spawn Passer())
+    passers[i]::setIdAndNext(i+1, passers[i+1])
+    i = i + 1
+  end
+  passers[502]::setIdAndNext(503, passers[0])
+
+  holder : object <+ new Name("Bob") <+ new Token(args[0].to_int()) 
+  passers[0]::pass(holder)
+end
