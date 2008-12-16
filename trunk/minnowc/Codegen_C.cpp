@@ -536,12 +536,25 @@ void Codegen::codegen_while(Program *p, Token *t, std::ostringstream &output) {
     unsigned int top = this->temp_num++;
     unsigned int block_start = this->temp_num++;
     unsigned int block_end = this->temp_num++;
+    bool cont_at_end = false;
+
+
+    if (t->children[1]->children.size() > 1) {
+        if (t->children[1]->children[0]->type == Token_Type::CONTINUATION_SITE) {
+            if (t->children[1]->children[0]->children.size() == 0) {
+                cont_at_end = true;
+            }
+        }
+    }
+
 
     output << "whilejmp" << top << ":" << std::endl;
     if (t->children[1]->children.size() > 1) {
-        for (unsigned int i = 0; i < t->children[1]->children.size() - 1; ++i) {
-            codegen_token(p, t->children[1]->children[i], output);
-            output << ";" << std::endl;
+        if (cont_at_end == false) {
+            for (unsigned int i = 0; i < t->children[1]->children.size() - 1; ++i) {
+                codegen_token(p, t->children[1]->children[i], output);
+                output << ";" << std::endl;
+            }
         }
         output << "if (";
         codegen_token(p, t->children[1]->children[t->children[1]->children.size() - 1], output);
@@ -555,6 +568,12 @@ void Codegen::codegen_while(Program *p, Token *t, std::ostringstream &output) {
 
     output << "whilejmp" << block_start << ":" << std::endl;
     codegen_block(p, t->children[2], output);
+    if (cont_at_end) {
+        for (unsigned int i = 0; i < t->children[1]->children.size() - 1; ++i) {
+            codegen_token(p, t->children[1]->children[i], output);
+            output << ";" << std::endl;
+        }
+    }
     output << "goto whilejmp" << top << ";" << std::endl;
     output << "whilejmp" << block_end << ":" << std::endl;
 }
