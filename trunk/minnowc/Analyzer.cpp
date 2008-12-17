@@ -1064,6 +1064,30 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
             token->type_def_num = token->children[1]->type_def_num;
             return;
         }
+        else if (token->contents == "+=") {
+            Token *new_sign = new Token(Token_Type::SYMBOL);
+            new_sign->contents = "+";
+            new_sign->start_pos = token->start_pos;
+            new_sign->end_pos = token->end_pos;
+            new_sign->children.push_back(token->children[0]);
+            new_sign->children.push_back(token->children[1]);
+            token->children[1] = new_sign;
+            token->contents = "=";
+            analyze_token_types(program, token, scope);
+            return;
+        }
+        else if (token->contents == "-=") {
+            Token *new_sign = new Token(Token_Type::SYMBOL);
+            new_sign->contents = "-";
+            new_sign->start_pos = token->start_pos;
+            new_sign->end_pos = token->end_pos;
+            new_sign->children.push_back(token->children[0]);
+            new_sign->children.push_back(token->children[1]);
+            token->children[1] = new_sign;
+            token->contents = "=";
+            analyze_token_types(program, token, scope);
+            return;
+        }
         else {
             std::ostringstream name;
             name << token->contents << "__" << token->children[0]->type_def_num << "__" << token->children[1]->type_def_num;
