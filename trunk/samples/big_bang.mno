@@ -4,14 +4,14 @@ actor Bang
   collector : Bang
 
   action collect()
-    response_count = response_count + 1
+    response_count += 1
     if (response_count == stop_at)
       Sys.exit()
     end
   end
 
   action recv()
-    response_count = response_count + 1
+    response_count += 1
     if (response_count == stop_at)
       collector::collect()
     end
@@ -25,7 +25,7 @@ actor Bang
     i : int = 0
     while (i < stop_at)
       list[i]::reply(this)
-      i = i + 1
+      i += 1
     end
   end
 
@@ -52,13 +52,13 @@ action main(args : Array[string])
   while (i < stop_at)
     b : Bang = spawn Bang(collector, stop_at)
     list.push(b)
-    i = i + 1
+    i += 1
   end
 
   i = 0
   while (i < stop_at)
     list[i]::msg_others(list)
-    i = i + 1
+    i += 1
   end
 end
 

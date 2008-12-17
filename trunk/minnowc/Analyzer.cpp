@@ -1069,7 +1069,10 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
             new_sign->contents = "+";
             new_sign->start_pos = token->start_pos;
             new_sign->end_pos = token->end_pos;
-            new_sign->children.push_back(token->children[0]);
+
+            Token *new_rhs = new Token(token->children[0]->type);
+            *new_rhs = *(token->children[0]);
+            new_sign->children.push_back(new_rhs);
             new_sign->children.push_back(token->children[1]);
             token->children[1] = new_sign;
             token->contents = "=";
@@ -1081,7 +1084,10 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
             new_sign->contents = "-";
             new_sign->start_pos = token->start_pos;
             new_sign->end_pos = token->end_pos;
-            new_sign->children.push_back(token->children[0]);
+
+            Token *new_rhs = new Token(token->children[0]->type);
+            *new_rhs = *(token->children[0]);
+            new_sign->children.push_back(new_rhs);
             new_sign->children.push_back(token->children[1]);
             token->children[1] = new_sign;
             token->contents = "=";

@@ -7,7 +7,7 @@ actor Passer
       print(m_id)
       Sys.exit(0)
     else
-      token = token - 1
+      token -= 1
       m_next::pass(token)
     end
   end
@@ -25,7 +25,7 @@ action main(args : Array[string])
   while (i < 502)
     passers.push(spawn Passer())
     passers[i]::setIdAndNext(i+1, passers[i+1])
-    i = i + 1
+    i += 1
   end
   passers[502]::setIdAndNext(503, passers[0])
  
