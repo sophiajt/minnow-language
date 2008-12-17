@@ -474,6 +474,15 @@ void Analyzer::analyze_type_blocks(Program *program, Token *token, Scope **scope
                 program->types.push_back(td);
                 token->definition_number = program->types.size() - 1;
                 (*scope)->local_types[td->token->contents] = program->types.size() - 1;
+
+                //Add a check for null method for each type
+                Function_Def *null_check = new Function_Def(true);
+                null_check->return_type_def_num = program->global->local_types["bool"];
+                null_check->is_port_of_exit = false;
+                null_check->token = new Token(Token_Type::FUN_DEF);
+
+                program->funs.push_back(null_check);
+                new_scope->local_funs["is_null"] = program->funs.size() - 1;
             }
             *scope = new_scope;
         }

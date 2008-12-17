@@ -193,6 +193,11 @@ void Codegen::codegen_method_call(Program *p, Token *t, std::ostringstream &outp
             output << ").";
             codegen_tu_typesig(p, td->contained_type_def_num, output);
         }
+        else if (child->children[0]->contents == "is_null") {
+            output << "(";
+            codegen_token(p, t->children[0], output);
+            output << " == NULL)";
+        }
         else if ((child->children[0]->contents == "to_int") && (t->children[0]->type_def_num == (signed)p->global->local_types["string"])) {
             output << "convert_s_to_i__(";
             codegen_token(p, t->children[0], output);
@@ -584,6 +589,7 @@ void Codegen::codegen_symbol(Program *p, Token *t, std::ostringstream &output) {
     }
     else if (t->contents == "<+") {
         if (t->children[0]->type_def_num == (signed)p->global->local_types["object"]) {
+            /*
             if (t->children[0]->type == Token_Type::VAR_DECL) {
                 codegen_token(p, t->children[0], output);
                 output << " = add_primary_feature__((Object_Feature__*)";
@@ -592,6 +598,22 @@ void Codegen::codegen_symbol(Program *p, Token *t, std::ostringstream &output) {
                 codegen_token(p, t->children[1], output);
                 output << ")";
 
+            }
+            else {
+                output << "add_primary_feature__((Object_Feature__*)(";
+                codegen_token(p, t->children[0], output);
+                output << "), (Object_Feature__ *)";
+                codegen_token(p, t->children[1], output);
+                output << ")";
+            }
+            */
+            if (t->children[0]->contents != "<+") {
+                codegen_token(p, t->children[0], output);
+                output << " = add_primary_feature__((Object_Feature__*)";
+                codegen_token(p, t->children[0], output);
+                output << ", (Object_Feature__ *)";
+                codegen_token(p, t->children[1], output);
+                output << ")";
             }
             else {
                 output << "add_primary_feature__((Object_Feature__*)(";
@@ -610,9 +632,7 @@ void Codegen::codegen_symbol(Program *p, Token *t, std::ostringstream &output) {
         }
     }
     else if (t->contents == "+>") {
-        output << "remove_feature__((Object_Feature__*)";
-        codegen_token(p, t->children[0], output);
-        output << ", (Object_Feature__ *)";
+        output << "remove_feature__((Object_Feature__ *)";
         codegen_token(p, t->children[1], output);
         output << ")";
     }
@@ -1225,7 +1245,7 @@ void Codegen::codegen_constructor_not_internal_decl(Program *p, Token *t, std::o
         this->current_fun = p->funs[i];
 
         if (p->funs[i]->is_constructor) {
-            //If it's internal, it's an implied constructor and doesn't need an inner call
+            //If it's not internal, it needs an inner call
             if (p->funs[i]->is_internal == false) {
                 //Find the constructed type
                 Function_Def *fd = p->funs[i];
@@ -1672,7 +1692,7 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
             copy_fn << "copy__" << i;
             if (td->token->scope->local_funs.find(copy_fn.str()) != td->token->scope->local_funs.end()) {
                 //Function_Def *delete_fd = p->funs[td->token->scope->local_funs["delete"]];
-                output << "  fun__" << td->token->scope->local_funs[copy_fn.str()] << "( (";
+                output << "  fun__" << td->token->scope->local_funs[copy_fn.str()] << "(NULL, (";
                 codegen_typesig(p, i, output);
                 output << ")ret_val__, (";
                 codegen_typesig(p, i, output);

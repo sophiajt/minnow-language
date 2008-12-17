@@ -1,4 +1,5 @@
 action main
+  ''
   "this is a string"
   print("Hello")
   "\"This is too\" "

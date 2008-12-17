@@ -108,6 +108,17 @@ public:
                     build_internal_conversion_methods(td, internal_types[j], j);
                 }
             }
+
+            if ((strcmp(internal_types[i], "string") == 0) || (strcmp(internal_types[i], "object") == 0)) {
+                //Add a check for null method for each type
+                Function_Def *null_check = new Function_Def(true);
+                null_check->return_type_def_num = global->local_types["bool"];
+                null_check->is_port_of_exit = false;
+                null_check->token = new Token(Token_Type::FUN_DEF);
+
+                funs.push_back(null_check);
+                td->token->scope->local_funs["is_null"] = funs.size() - 1;
+            }
         }
         //Handle string differently
         unsigned int td_type_def_num = this->global->local_types["string"];
@@ -115,6 +126,7 @@ public:
         td_string->container = Container_Type::ARRAY;
         td_string->contained_type_def_num = this->global->local_types["char"];
         build_internal_array_methods(td_string, td_type_def_num);
+
     }
 
     void build_internal_func(unsigned int arg_type1, unsigned int arg_type2, unsigned int ret_type, const char *op) {
