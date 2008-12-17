@@ -808,15 +808,29 @@ void Codegen::codegen_return(Program *p, Token *t, std::ostringstream &output) {
 }
 
 void Codegen::codegen_array_call(Program *p, Token *t, std::ostringstream &output) {
-    Var_Def *vd = p->vars[t->children[0]->definition_number];
-    Type_Def *td = p->types[vd->type_def_num];
+    /*
+    Var_Def *vd;
+    if (t->children[0]->definition_number >= 0) {
+        vd = p->vars[t->children[0]->definition_number];
+    }
+    else {
+        throw Compiler_Exception("Internal compiler error with array call", t->start_pos);
+    }
 
+    Type_Def *td;
+    if (vd->type_def_num >= 0) {
+        td = p->types[vd->type_def_num];
+    }
+    else {
+        throw Compiler_Exception("Internal compiler error with array call", t->start_pos);
+    }
+    */
     output << "INDEX_AT__(";
     codegen_token(p, t->children[0], output);
     output << ", ";
     codegen_token(p, t->children[1], output);
     output << ", ";
-    codegen_typesig(p, td->contained_type_def_num, output);
+    codegen_typesig(p, t->type_def_num, output);
     output << ")";
 }
 

@@ -698,6 +698,17 @@ Token *Lex_Parser::lexparse_primary(std::string::iterator &curr, std::string::it
                 if (array_args != NULL) {
                     array_call->children.push_back(array_args);
                 }
+                while (*curr == '[') {
+                    ++curr;
+                    ++p.col;
+                    array_args = lexparse_square_brackets(curr, end, p);
+                    Token *next_call = new Token(Token_Type::ARRAY_CALL, result->start_pos, p);
+                    next_call->children.push_back(array_call);
+                    if (array_args != NULL) {
+                        next_call->children.push_back(array_args);
+                    }
+                    array_call = next_call;
+                }
                 return array_call;
             }
         }
