@@ -632,9 +632,11 @@ void Codegen::codegen_symbol(Program *p, Token *t, std::ostringstream &output) {
         }
     }
     else if (t->contents == "+>") {
-        output << "remove_feature__((Object_Feature__ *)";
+        output << "(";
+        codegen_token(p, t->children[0], output);
+        output << " = remove_feature__((Object_Feature__ *)";
         codegen_token(p, t->children[1], output);
-        output << ")";
+        output << ") )";
     }
     else {
         output << "(";

@@ -8,7 +8,7 @@ feature Fred
 end
 
 action main
-  o : object <+ new Fred()// <+ new Bob()
+  o : object <+ new Fred() <+ new Bob()
   if (o.is_null()) 
     print("o is null\n")
   else
@@ -16,6 +16,7 @@ action main
   end
 
   //o <+ new Bob()
+  //o +> o.Bob
 
   if (o.Bob.is_null())
     print("Doesn't have Bob\n")
