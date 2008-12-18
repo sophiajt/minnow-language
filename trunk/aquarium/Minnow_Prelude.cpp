@@ -135,7 +135,6 @@ Typeless_Vector__ *convert_i_to_s__(int i) {
     Typeless_Vector__ *tv = create_char_string__(10);
     snprintf((char*)tv->contents, 9, "%i", i);
     tv->current_size = strlen((char*)tv->contents);
-    pop_off_char_string__(tv); //remove the trailing 0
     return tv;
 }
 
@@ -155,7 +154,6 @@ Typeless_Vector__ *convert_f_to_s__(float f) {
     Typeless_Vector__ *tv = create_char_string__(10);
     snprintf((char*)tv->contents, 9, "%f", f);
     tv->current_size = strlen((char*)tv->contents);
-    pop_off_char_string__(tv); //remove the trailing 0
     return tv;
 }
 
@@ -175,7 +173,6 @@ Typeless_Vector__ *convert_d_to_s__(double d) {
     Typeless_Vector__ *tv = create_char_string__(10);
     snprintf((char*)tv->contents, 9, "%f", d);
     tv->current_size = strlen((char*)tv->contents);
-    pop_off_char_string__(tv); //remove the trailing 0
     return tv;
 }
 
@@ -195,7 +192,6 @@ Typeless_Vector__ *convert_c_to_s__(char c) {
     Typeless_Vector__ *tv = create_char_string__(10);
     snprintf((char*)tv->contents, 9, "%c", c);
     tv->current_size = strlen((char*)tv->contents);
-    pop_off_char_string__(tv); //remove the trailing 0
     return tv;
 }
 
