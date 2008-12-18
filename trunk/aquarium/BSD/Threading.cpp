@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <cstdio>
 
+#include <sys/types.h>
 #include <sys/sysctl.h>
 #include <unistd.h>
 #include <pthread.h>
