@@ -1,0 +1,6 @@
+action main
+  s : string = "riot"
+  s.delete(1)
+  print(s)
+  Sys.exit()
+end

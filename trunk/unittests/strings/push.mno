@@ -1,0 +1,6 @@
+action main
+  s : string = "rat"
+  s.push('e')
+  print(s)
+  Sys.exit()
+end

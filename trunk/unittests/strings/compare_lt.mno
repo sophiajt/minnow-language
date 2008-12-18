@@ -1,0 +1,9 @@
+action main
+  s : string = "aba"
+  if (s < "abc")
+    print("LT")
+  else
+    print("GE")
+  end
+  Sys.exit()
+end

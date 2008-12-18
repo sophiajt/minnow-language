@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import sys
 import os
 from subprocess import *
@@ -11,6 +12,14 @@ compiler_bin = os.path.join(compiler_dir, "minnowc")
 total_test_count = 0
 failed_tests = []
 
+def tick_good():
+  sys.stdout.write(".")
+  sys.stdout.flush()
+
+def tick_bad():
+  sys.stdout.write("X")
+  sys.stdout.flush()
+
 def test_directory(d):
   global total_test_count
 
@@ -18,12 +27,14 @@ def test_directory(d):
   unittests = os.listdir(d)
   for f in unittests:
     if os.path.isdir(os.path.join(d, f)):
-      test_directory(os.path.join(d, f))
+      if (f == ".svn"):
+        pass
+      else:
+        test_directory(os.path.join(d, f))
+        print("")
     elif f[-3:] == "tst":
       pass #print("Test found: " + f)
     else:
-      sys.stdout.write(".")
-      sys.stdout.flush()
       total_test_count += 1
       s = os.path.join(d, f)
       tst = s[:-3] + "tst"
@@ -38,13 +49,17 @@ def test_directory(d):
           bin_output = Popen([out_bin], stdout=PIPE, stderr=PIPE).communicate()
           if (len(bin_output[1]) > 0):
             failed_tests.append( (s, bin_output[1]) )
+            tick_bad()
           elif (tst_cmp != bin_output[0]):
               failed_tests.append( (s, bin_output[0]) )
+              tick_bad()
+          else:
+              tick_good()
         else:
           failed_tests.append( (s, "No test file") )
+          tick_bad()
 
 test_directory(unittest_dir)
-print("")
 if (len(failed_tests) > 0):
   print("Failed tests: " + str(len(failed_tests)) + " of " + str(total_test_count))
   for i in failed_tests:

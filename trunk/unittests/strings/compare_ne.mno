@@ -1,0 +1,9 @@
+action main
+  s : string = "abd"
+  if (s != "abc")
+    print("NE")
+  else
+    print("EQ")
+  end
+  Sys.exit()
+end

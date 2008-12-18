@@ -1,0 +1,6 @@
+action main
+  s : string = "rot"
+  s.insert('i', 1)
+  print(s)
+  Sys.exit()
+end

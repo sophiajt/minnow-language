@@ -1,0 +1,4 @@
+action main
+  print("Test" + ' ' + "concatenation")
+  Sys.exit()
+end

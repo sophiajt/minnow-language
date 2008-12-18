@@ -45,7 +45,7 @@ public:
         push_name << "push__" << owner->contained_type_def_num;
         pop_name << "pop";
         size_name << "size";
-        insert_name << "insert__" << global->local_types["int"] << "__" << owner->contained_type_def_num;
+        insert_name << "insert__" << owner->contained_type_def_num << "__"  << global->local_types["int"];
         delete_name << "delete__" << global->local_types["int"];
 
         Function_Def *push_fd = new Function_Def(true);
@@ -64,8 +64,8 @@ public:
 
         Function_Def *insert_fd = new Function_Def(true);
         insert_fd->return_type_def_num = global->local_types["void"];
-        insert_fd->arg_def_nums.push_back(global->local_types["int"]);
         insert_fd->arg_def_nums.push_back(owner->contained_type_def_num);
+        insert_fd->arg_def_nums.push_back(global->local_types["int"]);
         insert_fd->token = new Token(Token_Type::FUN_DEF);
         insert_fd->is_port_of_exit = true;
 
