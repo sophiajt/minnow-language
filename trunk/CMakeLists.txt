@@ -58,6 +58,17 @@ TARGET_LINK_LIBRARIES (aquarium ${AQUARIUM_LIBS} )
 ADD_EXECUTABLE(bin/minnowc ${MINNOW_SRCS} )
 TARGET_LINK_LIBRARIES (bin/minnowc aquarium)
 
+INSTALL(TARGETS bin/minnowc aquarium
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+)
+INSTALL(FILES aquarium/Actor.hpp aquarium/Aquarium.hpp aquarium/Char_String.hpp
+ aquarium/Common.hpp aquarium/Message.hpp aquarium/Message_Channel.hpp 
+ aquarium/Object_Feature.hpp aquarium/Scheduler.hpp aquarium/Typeless_Vector.hpp
+ DESTINATION include/minnow)
+INSTALL(FILES prelude.mno DESTINATION share/minnow)
+
 ADD_EXECUTABLE (bin/tests/Test_Threading aquarium/tests/Test_Threading.cpp)
 TARGET_LINK_LIBRARIES (bin/tests/Test_Threading aquarium)
 
