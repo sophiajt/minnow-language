@@ -1,0 +1,11 @@
+action main
+  a : Array[int] = new Array[int]
+  a.push(9)
+  a.push(1)
+  a.push(3)
+  a.push(4)
+  print(a.delete(2))
+  print(a.size())
+  print(a[2])
+  Sys.exit()
+end

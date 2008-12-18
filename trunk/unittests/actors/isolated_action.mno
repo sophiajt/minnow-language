@@ -1,0 +1,11 @@
+isolated actor Test
+  action test() 
+    print("Done isolated") 
+    Sys.exit()
+  end
+end
+
+action main
+  t : Test = spawn Test()
+  t::test()
+end

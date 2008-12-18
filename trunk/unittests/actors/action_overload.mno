@@ -1,0 +1,15 @@
+actor Test
+  action test() 
+    print("Done") 
+    Sys.exit()
+  end
+  action test(i : int)
+    print("Done: " + i.to_string())
+    Sys.exit()
+  end
+end
+
+action main
+  t : Test = spawn Test()
+  t::test(5)
+end

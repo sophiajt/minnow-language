@@ -1,0 +1,13 @@
+feature Test
+  i : int
+end
+
+action main
+  t : Test = new Test()
+  t.i = 5
+
+  o : object <+ t
+
+  print(o.Test.i)
+  Sys.exit()
+end

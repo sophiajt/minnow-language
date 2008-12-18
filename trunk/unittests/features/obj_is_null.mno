@@ -1,0 +1,13 @@
+/*
+  This should probably be in another directory other than 'features', but there isn't much you can test on an object until it's melded.
+*/
+
+action main
+  o : object
+  if (o.is_null())
+    print("True")
+  else
+    print("Flase")
+  end
+  Sys.exit()
+end

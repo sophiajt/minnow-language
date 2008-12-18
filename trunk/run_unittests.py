@@ -41,6 +41,7 @@ def test_directory(d):
       output = Popen([compiler_bin, s,  "-o", out_bin], stdout=PIPE, stderr=PIPE).communicate()
       if (len(output[1]) > 0):
         failed_tests.append( (s, output[1]) )
+        tick_bad()
       else:
         if (os.path.isfile(tst)):
           tst_file = open(tst, 'r')
