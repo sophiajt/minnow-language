@@ -132,8 +132,8 @@ char convert_s_to_c__(Typeless_Vector__ *s) {
 }
 
 Typeless_Vector__ *convert_i_to_s__(int i) {
-    Typeless_Vector__ *tv = create_char_string__(10);
-    snprintf((char*)tv->contents, 9, "%i", i);
+    Typeless_Vector__ *tv = create_char_string__(15);
+    snprintf((char*)tv->contents, 14, "%i", i);
     tv->current_size = strlen((char*)tv->contents);
     return tv;
 }
@@ -151,8 +151,8 @@ char convert_i_to_c__(int i) {
 }
 
 Typeless_Vector__ *convert_f_to_s__(float f) {
-    Typeless_Vector__ *tv = create_char_string__(10);
-    snprintf((char*)tv->contents, 9, "%f", f);
+    Typeless_Vector__ *tv = create_char_string__(15);
+    snprintf((char*)tv->contents, 14, "%f", f);
     tv->current_size = strlen((char*)tv->contents);
     return tv;
 }
@@ -170,8 +170,8 @@ char convert_f_to_c__(float f) {
 }
 
 Typeless_Vector__ *convert_d_to_s__(double d) {
-    Typeless_Vector__ *tv = create_char_string__(10);
-    snprintf((char*)tv->contents, 9, "%f", d);
+    Typeless_Vector__ *tv = create_char_string__(15);
+    snprintf((char*)tv->contents, 14, "%f", d);
     tv->current_size = strlen((char*)tv->contents);
     return tv;
 }
@@ -189,8 +189,8 @@ char convert_f_to_c__(double d) {
 }
 
 Typeless_Vector__ *convert_c_to_s__(char c) {
-    Typeless_Vector__ *tv = create_char_string__(10);
-    snprintf((char*)tv->contents, 9, "%c", c);
+    Typeless_Vector__ *tv = create_char_string__(5);
+    snprintf((char*)tv->contents, 4, "%c", c);
     tv->current_size = strlen((char*)tv->contents);
     return tv;
 }
