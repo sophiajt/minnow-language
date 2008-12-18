@@ -665,7 +665,7 @@ void Analyzer::analyze_var_type_and_scope(Program *program, Token *token, Scope 
         if ((token->type == Token_Type::ACTOR_DEF) || (token->type == Token_Type::ISOLATED_ACTOR_DEF) ||
                 (token->type == Token_Type::FEATURE_DEF)) {
             //Check to make sure they don't have any var type variables as properties
-            unsigned int var_type_def_num = program->global->local_types["var"];
+            int var_type_def_num = program->global->local_types["var"];
             for (std::map<std::string, unsigned int>::iterator iter = scope->local_vars.begin(), end = scope->local_vars.end();
                 iter != end; ++iter) {
 

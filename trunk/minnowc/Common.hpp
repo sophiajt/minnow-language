@@ -165,7 +165,7 @@ public:
 class Var_Def {
 public:
     Token *token;
-    unsigned int type_def_num;
+    int type_def_num;
     bool is_property;
     bool is_removed; //todo: use proper tracing instead of the work around.  Todo: remove this.
     bool is_dependent; //if we're responsible for this variable directly.

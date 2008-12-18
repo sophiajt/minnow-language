@@ -1637,8 +1637,8 @@ void Codegen::codegen_delete_predecl(Program *p, std::ostringstream &output) {
 }
 
 void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostringstream &output) {
-    unsigned int obj_id = p->global->local_types["object"];
-    unsigned int string_id = p->global->local_types["string"];
+    int obj_id = p->global->local_types["object"];
+    int string_id = p->global->local_types["string"];
     output << "void *copy__(void *v__, unsigned int t__)" << std::endl << "{" << std::endl;
     output << "if (v__ == NULL) return NULL;" << std::endl;
 
@@ -1656,7 +1656,7 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
         output << "  case(" << i << "): {" << std::endl;
         Type_Def *td = p->types[i];
 
-        if (i == obj_id) {
+        if (i == (unsigned)obj_id) {
             output << "  Object_Feature__ *ret_val__ = (Object_Feature__*)copy__(v__, ((Object_Feature__*)v__)->feature_id);" << std::endl;
             output << "  return ret_val__;" << std::endl;
         }
@@ -1740,8 +1740,8 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
 }
 
 void Codegen::codegen_delete_decl(Program *p, std::ostringstream &output) {
-    unsigned int obj_id = p->global->local_types["object"];
-    unsigned int string_id = p->global->local_types["string"];
+    int obj_id = p->global->local_types["object"];
+    int string_id = p->global->local_types["string"];
 
     output << "void delete__(void *v__, unsigned int t__)" << std::endl << "{" << std::endl;
     output << "if (v__ == NULL) return;" << std::endl;
@@ -1756,7 +1756,7 @@ void Codegen::codegen_delete_decl(Program *p, std::ostringstream &output) {
         output << "  case(" << i << "): {" << std::endl;
         Type_Def *td = p->types[i];
 
-        if (i == obj_id) {
+        if (i == (unsigned)obj_id) {
             output << "  delete__(v__, ((Object_Feature__*)v__)->feature_id);" << std::endl;
         }
         else if (td->container == Container_Type::ARRAY) {

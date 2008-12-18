@@ -1,0 +1,12 @@
+feature Test
+  i : int
+  def Test(j : int)
+    i = j
+  end
+end
+
+action main
+  t : Test = new Test(5)
+  print(t.i)
+  Sys.exit()
+end
