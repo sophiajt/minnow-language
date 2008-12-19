@@ -139,14 +139,27 @@ int main(int argc, char *argv[]) {
     Program *p = new Program();
     Codegen c;
     char *output_file = NULL;
+    std::string current_bin = argv[0];
 
     if (argc < 2) {
         printf("Please specify the file to compile\n");
         exit(0);
     }
 
+    std::string prelude_dir = "";
+    std::string prefix_dir = "";
+    std::string lib_dir = ".";
+    std::string include_dir = "aquarium";
+
+    #ifdef INSTALLPREFIX
+        prefix_dir = INSTALLPREFIX;
+        prelude_dir = prefix_dir + "share/minnow/";
+        lib_dir = prefix_dir + "lib";
+        include_dir = prefix_dir + "include/minnow";
+    #endif
+
     try {
-        translate_file(p, "prelude.mno");
+        translate_file(p, prelude_dir + "prelude.mno");
 
         //for (int i = 1; i < argc; ++i) {
         int i = 1;
@@ -181,7 +194,8 @@ int main(int argc, char *argv[]) {
             outfile.close();
             std::ostringstream exe_cmdline;
 
-            exe_cmdline << "gcc -ggdb -O3 -o " << output_file << " tmpXXXXX.c -Werror -Iaquarium -L. -laquarium";
+            exe_cmdline << "gcc -ggdb -O3 -o " << output_file << " tmpXXXXX.c -Werror -I" << include_dir
+                << " -L" << lib_dir << " -laquarium";
 
             if (system(exe_cmdline.str().c_str()) == 0) {
                 remove("tmpXXXXX.cpp");

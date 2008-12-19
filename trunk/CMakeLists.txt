@@ -4,6 +4,10 @@ SET(CMAKE_BUILD_TYPE gprof)
 SET(CMAKE_CXX_FLAGS_GPROF " -Wall -g -pg -O3")
 SET(CMAKE_C_FLAGS_GPROF " -Wall -g -pg -O3")
 
+SET(CMAKE_BUILD_TYPE release)
+SET(CMAKE_CXX_FLAGS_RELEASE " -Wall -DINSTALLPREFIX=\\\"${CMAKE_INSTALL_PREFIX}/\\\" -O3")
+SET(CMAKE_C_FLAGS_RELEASE " -Wall -DINSTALLPREFIX=\\\"${CMAKE_INSTALL_PREFIX}/\\\" -O3")
+
 SET(CMAKE_BUILD_TYPE gdb)
 SET(CMAKE_CXX_FLAGS_GDB " -Wall -ggdb -O3")
 SET(CMAKE_C_FLAGS_GDB " -Wall -ggdb -O3")
@@ -31,7 +35,9 @@ ENDIF (WIN32)
 
 IF (UNIX) 
   IF (APPLE)
+    IF (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     SET (AQUARIUM_SRCS ${AQUARIUM_SRCS} aquarium/Mac/Threading.cpp)
+    ENDIF (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   ENDIF (APPLE)
 
   IF (CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
@@ -66,7 +72,7 @@ INSTALL(TARGETS bin/minnowc aquarium
 INSTALL(FILES aquarium/Actor.hpp aquarium/Aquarium.hpp aquarium/Char_String.hpp
  aquarium/Common.hpp aquarium/Message.hpp aquarium/Message_Channel.hpp 
  aquarium/Object_Feature.hpp aquarium/Scheduler.hpp aquarium/Typeless_Vector.hpp
- DESTINATION include/minnow)
+ aquarium/Minnow_Prelude.hpp DESTINATION include/minnow)
 INSTALL(FILES prelude.mno DESTINATION share/minnow)
 
 ADD_EXECUTABLE (bin/tests/Test_Threading aquarium/tests/Test_Threading.cpp)
