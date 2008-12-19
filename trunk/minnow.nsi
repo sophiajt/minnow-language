@@ -108,6 +108,25 @@ Section "Uninstall"
   ; Remove files and uninstaller
   Delete $INSTDIR\minnow.nsi
   Delete $INSTDIR\uninstall.exe
+  Delete $INSTDIR\bin\minnowc.exe
+  Delete $INSTDIR\bin\libaquarium.dll
+
+  Delete $INSTDIR\include\minnow\Actor.hpp
+  Delete $INSTDIR\include\minnow\Aquarium.hpp
+  Delete $INSTDIR\include\minnow\Char_String.hpp
+  Delete $INSTDIR\include\minnow\Common.hpp
+  Delete $INSTDIR\include\minnow\Message.hpp
+  Delete $INSTDIR\include\minnow\Message_Channel.hpp
+  Delete $INSTDIR\include\minnow\Minnow_Prelude.hpp
+  Delete $INSTDIR\include\minnow\Object_Feature.hpp
+  Delete $INSTDIR\include\minnow\Scheduler.hpp
+  Delete $INSTDIR\include\minnow\Typeless_Vector.hpp
+
+  Delete $INSTDIR\lib\libaquarium.dll.a
+
+  Delete $INSTDIR\share\minnow\prelude.mno
+  RMDir /R $INSTDIR
+
 
   ${un.EnvVarUpdate} $0 "PATH" "R" "HKLM" "$INSTDIR\bin"
 
