@@ -194,8 +194,8 @@ int main(int argc, char *argv[]) {
             outfile.close();
             std::ostringstream exe_cmdline;
 
-            exe_cmdline << "gcc -ggdb -O3 -o " << output_file << " tmpXXXXX.c -Werror -I" << include_dir
-                << " -L" << lib_dir << " -laquarium";
+            exe_cmdline << "gcc -ggdb -O3 -o \"" << output_file << "\" tmpXXXXX.c -Werror -I\"" << include_dir
+                << "\" -L\"" << lib_dir << "\" -laquarium";
 
             if (system(exe_cmdline.str().c_str()) == 0) {
                 remove("tmpXXXXX.cpp");
