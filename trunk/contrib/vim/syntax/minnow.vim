@@ -8,7 +8,7 @@ syn case match
 syn sync fromstart
 
 " Operators
-syn match minnowOperator '[+-<]\|<+\|+>\|<<\|:\|::\|*\|/'
+syn match minnowOperator '[+-<]\|<+\|+>\|<<\|:\|::\|*\|/\|&&\|||'
 
 " Actor declaration
 syn region minnowActorBlock transparent fold matchgroup=minnowActor start="\<actor\>" end="\<end\>" contains=ALLBUT,minnowTodo
