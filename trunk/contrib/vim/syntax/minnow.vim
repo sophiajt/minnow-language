@@ -51,10 +51,10 @@ syn match minnowNumber "\<0x\x\+\>"
 syn keyword minnowType int float double char string pointer object
 
 "Keyword
-syn keyword minnowKeyword extern var namespace
+syn keyword minnowKeyword extern var namespace true false
 
 "Built in funcs
-syn keyword minnowFunc print to_string is_null to_int to_float from_int from_string from_float
+syn keyword minnowFunc print to_string is_null to_int to_float from_int from_string from_float to_double from_double
 
 " Comments
 syn match   minnowComment          "//.*$" contains=@Spell
