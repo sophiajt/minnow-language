@@ -34,7 +34,7 @@ Scope *Analyzer::find_or_create_namespace(Program *program, Token *ns) {
     }
     //If we get here, we should be at a '.' for a deep namespace
     if (ns->contents != ".") {
-        throw Compiler_Exception("Use '.' for declaring a deep namespace", ns->start_pos);
+        throw Compiler_Exception("Use '.' for declaring a deep namespace", ns->start_pos, ns->end_pos);
     }
     else {
         if (ret_val->namespaces.find(ns->children[1]->contents) != ret_val->namespaces.end()) {
@@ -69,7 +69,7 @@ Scope *Analyzer::find_namespace(Program *program, Token *ns, bool throw_exceptio
         }
         else {
             if (throw_exceptions) {
-                throw Compiler_Exception("Namespace not found", ns->start_pos);
+                throw Compiler_Exception("Namespace not found", ns->start_pos, ns->end_pos);
             }
             else {
                 return NULL;
@@ -79,7 +79,7 @@ Scope *Analyzer::find_namespace(Program *program, Token *ns, bool throw_exceptio
     //If we get here, we should be at a '.' for a deep namespace
     if (ns->contents != ".") {
         if (throw_exceptions) {
-            throw Compiler_Exception("Use '.' for specifying a deep namespace", ns->start_pos);
+            throw Compiler_Exception("Use '.' for specifying a deep namespace", ns->start_pos, ns->end_pos);
         }
         else {
             return NULL;
@@ -91,7 +91,7 @@ Scope *Analyzer::find_namespace(Program *program, Token *ns, bool throw_exceptio
         }
         else {
             if (throw_exceptions) {
-                throw Compiler_Exception("Namespace not found", ns->start_pos);
+                throw Compiler_Exception("Namespace not found", ns->start_pos, ns->end_pos);
             }
             else {
                 return NULL;
@@ -112,15 +112,15 @@ unsigned int Analyzer::find_type(Program *program, Token *ns, Scope *scope) {
             }
             scope = scope->parent;
         }
-        throw Compiler_Exception("Can not find type '" + ns->contents + "'", ns->start_pos);
+        throw Compiler_Exception("Can not find type '" + ns->contents + "'", ns->start_pos, ns->end_pos);
     }
     else {
         if (ns->type == Token_Type::ARRAY_CALL) {
             if (ns->children.size() != 2) {
-                throw Compiler_Exception("Type incomplete", ns->start_pos);
+                throw Compiler_Exception("Type incomplete", ns->start_pos, ns->end_pos);
             }
             else if (ns->children[0]->contents != "Array") {
-                throw Compiler_Exception("Unsupported container type", ns->children[0]->start_pos);
+                throw Compiler_Exception("Unsupported container type", ns->children[0]->start_pos, ns->children[0]->end_pos);
             }
             else {
                 std::ostringstream containername;
@@ -158,7 +158,7 @@ unsigned int Analyzer::find_type(Program *program, Token *ns, Scope *scope) {
             scope = find_namespace(program, ns->children[0], true);
             if (ns->contents != ".") {
                 //todo: put this some place useful
-                throw Compiler_Exception("Use '.' for specifying a namespaced type", ns->start_pos);
+                throw Compiler_Exception("Use '.' for specifying a namespaced type", ns->start_pos, ns->end_pos);
             }
             else {
                 if (scope->local_types.find(ns->children[1]->contents) != scope->local_types.end()) {
@@ -167,12 +167,12 @@ unsigned int Analyzer::find_type(Program *program, Token *ns, Scope *scope) {
                     return ns->definition_number;
                 }
                 else {
-                    throw Compiler_Exception("Can not find type '" + ns->children[1]->contents + "'", ns->start_pos);
+                    throw Compiler_Exception("Can not find type '" + ns->children[1]->contents + "'", ns->start_pos, ns->end_pos);
                 }
             }
         }
         else {
-            throw Compiler_Exception("Can not find type", ns->start_pos);
+            throw Compiler_Exception("Can not find type", ns->start_pos, ns->end_pos);
         }
     }
     //return ret_val;
@@ -195,7 +195,7 @@ void Analyzer::find_constructor(Program *program, Token *ns, Scope *scope) {
             ns->type = Token_Type::CONSTRUCTOR_CALL;
         }
         catch (Compiler_Exception &ce){
-            throw Compiler_Exception("Can not find constructor for '" + ns->children[0]->contents + "'", ns->start_pos);
+            throw Compiler_Exception("Can not find constructor for '" + ns->children[0]->contents + "'", ns->start_pos, ns->end_pos);
         }
     }
 
@@ -203,10 +203,10 @@ void Analyzer::find_constructor(Program *program, Token *ns, Scope *scope) {
 
         if (ns->type == Token_Type::ARRAY_CALL) {
             if (ns->children.size() != 2) {
-                throw Compiler_Exception("Type incomplete", ns->start_pos);
+                throw Compiler_Exception("Type incomplete", ns->start_pos, ns->end_pos);
             }
             else if (ns->children[0]->contents != "Array") {
-                throw Compiler_Exception("Unsupported container type", ns->children[0]->start_pos);
+                throw Compiler_Exception("Unsupported container type", ns->children[0]->start_pos, ns->children[0]->end_pos);
             }
             else {
                 std::ostringstream containername;
@@ -264,16 +264,17 @@ void Analyzer::find_constructor(Program *program, Token *ns, Scope *scope) {
                     ns->children[1]->type = Token_Type::CONSTRUCTOR_CALL;
                 }
                 catch (Compiler_Exception &ce){
-                    throw Compiler_Exception("Can not find constructor for '" + ns->children[1]->children[0]->contents + "'", ns->start_pos);
+                    throw Compiler_Exception("Can not find constructor for '" + ns->children[1]->children[0]->contents + "'",
+                            ns->start_pos, ns->end_pos);
                 }
             }
             else {
-                throw Compiler_Exception("Missing constructor call", ns->start_pos);
+                throw Compiler_Exception("Missing constructor call", ns->start_pos, ns->end_pos);
             }
             //}
         }
         else {
-            throw Compiler_Exception("Constructor not given", ns->start_pos);
+            throw Compiler_Exception("Constructor not given", ns->start_pos, ns->end_pos);
         }
     }
 
@@ -310,7 +311,8 @@ void Analyzer::build_function_args(Program *program, Token *token, Scope *scope,
         //push the furthest lhs first
         if (token->children[1]->contents == "var") {
             //Workaround because functions are not allowed to have var types (yet?)
-            throw Compiler_Exception("Implied types not allowed in function header", token->children[1]->start_pos);
+            throw Compiler_Exception("Implied types not allowed in function header", token->children[1]->start_pos,
+                    token->children[1]->end_pos);
         }
         var_def_num = build_var_def(program, token, scope);
         //If this is an arg into an actor, make sure we know we're responsible for it
@@ -331,7 +333,7 @@ void Analyzer::build_function_args(Program *program, Token *token, Scope *scope,
             msg << "Redefined variable '" << token->children[0]->contents << "' (see also line "
                 << redux->token->start_pos.line << " of " << redux->token->start_pos.filename << ")";
 
-            throw Compiler_Exception(msg.str(), token->children[0]->start_pos);
+            throw Compiler_Exception(msg.str(), token->children[0]->start_pos, token->children[0]->end_pos);
         }
         scope->local_vars[token->children[0]->contents] = var_def_num;
     }
@@ -373,14 +375,15 @@ std::string Analyzer::build_function_def(Program *program, Token *token, Scope *
     unsigned int return_type = program->global->local_types["void"];
 
     if ((token->type == Token_Type::ACTION_DEF) && (token->children[1]->contents == ":")) {
-        throw Compiler_Exception("Actions do not have return types", token->start_pos);
+        throw Compiler_Exception("Actions do not have return types", token->start_pos, token->end_pos);
     }
 
     if (token->children[1]->contents == ":") {
         //We have a return type
         if (token->children[1]->children[1]->contents == "var") {
             //Workaround because functions are not allowed to have var types (yet?)
-            throw Compiler_Exception("Implied types are not allowed as function return types", token->children[1]->start_pos);
+            throw Compiler_Exception("Implied types are not allowed as function return types",
+                    token->children[1]->start_pos, token->children[1]->end_pos);
         }
 
         return_type = find_type(program, token->children[1]->children[1], scope);
@@ -416,7 +419,7 @@ void Analyzer::analyze_strays(Token *token) {
                 else {
                     if (saw_non_eol) {
                         throw Compiler_Exception("Two statements together without a separator.  Use return or semicolon",
-                                token->children[i]->start_pos);
+                                token->children[i]->start_pos, token->children[i]->end_pos);
                     }
                     else {
                         saw_non_eol = true;
@@ -458,7 +461,7 @@ void Analyzer::analyze_type_blocks(Program *program, Token *token, Scope **scope
                 std::ostringstream msg;
                 msg << "Duplicate definitions for type (see also: line: " << dupe->token->start_pos.line
                     << " of " << dupe->token->start_pos.filename << ")";
-                throw Compiler_Exception(msg.str(), token->start_pos);
+                throw Compiler_Exception(msg.str(), token->start_pos, token->end_pos);
             }
             else {
                 Type_Def *td = new Type_Def();
@@ -562,7 +565,7 @@ void Analyzer::analyze_fun_blocks(Program *program, Token *token, Scope **scope)
                 std::ostringstream msg;
                 msg << "Duplicate definitions for function/action (see also: line: " << dupe->token->start_pos.line
                     << " of " << dupe->token->start_pos.filename << ")";
-                throw Compiler_Exception(msg.str(), token->start_pos);
+                throw Compiler_Exception(msg.str(), token->start_pos, token->end_pos);
             }
             else {
                 program->funs.push_back(fd);
@@ -628,10 +631,10 @@ void Analyzer::analyze_var_type_and_scope(Program *program, Token *token, Scope 
     if ((token->type == Token_Type::SYMBOL) && (token->contents == ":")) {
         //We found a variable decl
         if (token->children.size() != 2) {
-            throw Compiler_Exception("Internal parsing error", token->start_pos);
+            throw Compiler_Exception("Internal parsing error", token->start_pos, token->end_pos);
         }
         else if (token->children[0]->type != Token_Type::ID) {
-            throw Compiler_Exception("Expected variable name", token->children[0]->start_pos);
+            throw Compiler_Exception("Expected variable name", token->children[0]->start_pos, token->children[0]->end_pos);
         }
         else {
             unsigned int var_def_num = build_var_def(program, token, scope);
@@ -643,7 +646,7 @@ void Analyzer::analyze_var_type_and_scope(Program *program, Token *token, Scope 
                 msg << "Redefined variable '" << token->children[0]->contents << "' (see also line " << dupe->start_pos.line
                     << " of " << dupe->start_pos.filename << ")";
 
-                throw Compiler_Exception(msg.str(), token->children[0]->start_pos);
+                throw Compiler_Exception(msg.str(), token->children[0]->start_pos, token->children[0]->end_pos);
             }
             else {
                 //std::cout << "Added: " << token->children[0]->contents << " to " << scope << std::endl;
@@ -672,7 +675,8 @@ void Analyzer::analyze_var_type_and_scope(Program *program, Token *token, Scope 
                 Var_Def *vd = program->vars[iter->second];
 
                 if (vd->type_def_num == var_type_def_num) {
-                    throw Compiler_Exception("Implied type not allowed in actor/feature definition", vd->token->start_pos);
+                    throw Compiler_Exception("Implied type not allowed in actor/feature definition",
+                            vd->token->start_pos, vd->token->end_pos);
                 }
             }
         }
@@ -714,7 +718,8 @@ void Analyzer::check_fun_call(Program *program, Token *token, Scope *fun_scope, 
         }
         scope = scope->parent;
     }
-    throw Compiler_Exception("Can not find usage of '" + fullname.substr(0, fullname.find("__")) + "'", token->start_pos);
+    throw Compiler_Exception("Can not find usage of '" + fullname.substr(0, fullname.find("__")) + "'",
+            token->start_pos, token->end_pos);
 
 }
 
@@ -757,7 +762,8 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
 
                         if (((dot_type->token->type == Token_Type::ACTOR_DEF) || (dot_type->token->type == Token_Type::ISOLATED_ACTOR_DEF))
                                 && (token->children[0]->type != Token_Type::THIS)) {
-                            throw Compiler_Exception("Actor methods can not be accessed directly, use actions instead", token->children[1]->start_pos);
+                            throw Compiler_Exception("Actor methods can not be accessed directly, use actions instead",
+                                    token->children[1]->start_pos, token->children[1]->end_pos);
                         }
 
                         token->contents = token->children[1]->contents;
@@ -766,7 +772,8 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
                     }
                     Function_Def *fd = program->funs[token->children[1]->definition_number];
                     if ((fd->token->type != Token_Type::FUN_DEF) && (fd->token->type != Token_Type::METHOD_CALL) && (fd->token->type != Token_Type::EXTERN_FUN_DEF)) {
-                        throw Compiler_Exception("Expected method", token->children[1]->start_pos);
+                        throw Compiler_Exception("Expected method", token->children[1]->start_pos,
+                                token->children[1]->end_pos);
                     }
 
                     return;
@@ -823,7 +830,8 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
                     //Scope *dot_scope = dot_type->token->scope;
 
                     if (((dot_type->token->type == Token_Type::ACTOR_DEF) || (dot_type->token->type == Token_Type::ACTOR_DEF)) && (token->children[0]->type != Token_Type::THIS)) {
-                        throw Compiler_Exception("Actor attributes can not be accessed directly, use actions instead", token->children[1]->start_pos);
+                        throw Compiler_Exception("Actor attributes can not be accessed directly, use actions instead",
+                                token->children[1]->start_pos, token->children[1]->end_pos);
                     }
 
                     token->type = Token_Type::ATTRIBUTE_CALL;
@@ -847,10 +855,11 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
             Function_Def *fd = program->funs[token->children[1]->definition_number];
 
             if (token->children[1]->type != Token_Type::FUN_CALL) {
-                throw Compiler_Exception("Expected action call", token->children[1]->start_pos);
+                throw Compiler_Exception("Expected action call", token->children[1]->start_pos, token->children[1]->end_pos);
             }
             else if (fd->token->type != Token_Type::ACTION_DEF) {
-                throw Compiler_Exception("Expected action not method call", token->children[1]->start_pos);
+                throw Compiler_Exception("Expected action not method call", token->children[1]->start_pos,
+                        token->children[1]->end_pos);
             }
             else {
                 token->type = Token_Type::ACTION_CALL;
@@ -923,7 +932,7 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
             }
 
             if (token->children[1]->type_def_num != (signed)program->global->local_types["bool"]) {
-                throw Compiler_Exception("If block expects boolean expression", token->start_pos);
+                throw Compiler_Exception("If block expects boolean expression", token->start_pos, token->end_pos);
             }
         }
         else if (token->type == Token_Type::ELSEIF_BLOCK) {
@@ -932,7 +941,7 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
             }
 
             if (token->children[1]->type_def_num != (signed)program->global->local_types["bool"]) {
-                throw Compiler_Exception("Elseif block expects boolean expression", token->start_pos);
+                throw Compiler_Exception("Elseif block expects boolean expression", token->start_pos, token->end_pos);
             }
         }
         else if (token->type == Token_Type::ELSE_BLOCK) {
@@ -946,7 +955,7 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
             }
 
             if (token->children[1]->type_def_num != (signed)program->global->local_types["bool"]) {
-                throw Compiler_Exception("While block expects boolean expression", token->start_pos);
+                throw Compiler_Exception("While block expects boolean expression", token->start_pos, token->end_pos);
             }
         }
         else if (token->type == Token_Type::FUN_CALL) {
@@ -986,7 +995,7 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
             }
             scope = scope->parent;
         }
-        throw Compiler_Exception("Variable '" + token->contents + "' not found", token->start_pos);
+        throw Compiler_Exception("Variable '" + token->contents + "' not found", token->start_pos, token->end_pos);
     }
     else if (token->type == Token_Type::THIS) {
         while (scope != NULL) {
@@ -997,7 +1006,7 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
             }
             scope = scope->parent;
         }
-        throw Compiler_Exception("'this' could not be matched to an actor or feature", token->start_pos);
+        throw Compiler_Exception("'this' could not be matched to an actor or feature", token->start_pos, token->end_pos);
     }
     else if (token->type == Token_Type::FLOAT) {
         token->type_def_num = program->global->local_types["double"];
@@ -1034,13 +1043,13 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
                     return;
                 }
                 else {
-                    throw Compiler_Exception("Mismatched types in equation", token->start_pos);
+                    throw Compiler_Exception("Mismatched types in equation", token->start_pos, token->end_pos);
                 }
             }
             else {
                 //std::cout << "ERROR: " << token->children[0]->type_def_num << " " << token->children[1]->type_def_num << std::endl;
 
-                throw Compiler_Exception("Mismatched types in equation", token->start_pos);
+                throw Compiler_Exception("Mismatched types in equation", token->start_pos, token->end_pos);
             }
         }
         else if (token->contents == "<+") {
@@ -1048,12 +1057,14 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
             if ((token->children[0]->type_def_num < (signed)program->global->local_types["object"]) ||
                     (program->types[token->children[0]->type_def_num]->token->type == Token_Type::ACTOR_DEF) ||
                     (program->types[token->children[0]->type_def_num]->token->type == Token_Type::ISOLATED_ACTOR_DEF)){
-                throw Compiler_Exception("Object expected on left hand side of meld operator", token->children[0]->start_pos);
+                throw Compiler_Exception("Object expected on left hand side of meld operator", token->children[0]->start_pos,
+                        token->children[0]->end_pos);
             }
             if ((token->children[1]->type_def_num < (signed)program->global->local_types["object"]) ||
                     (program->types[token->children[1]->type_def_num]->token->type == Token_Type::ACTOR_DEF) ||
                     (program->types[token->children[0]->type_def_num]->token->type == Token_Type::ISOLATED_ACTOR_DEF)) {
-                throw Compiler_Exception("Object or feature expected on right hand side of meld operator", token->children[1]->start_pos);
+                throw Compiler_Exception("Object or feature expected on right hand side of meld operator", token->children[1]->start_pos,
+                        token->children[1]->end_pos);
             }
             token->type_def_num = token->children[0]->type_def_num;
             return;
@@ -1063,12 +1074,14 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
             if ((token->children[0]->type_def_num < (signed)program->global->local_types["object"]) ||
                     (program->types[token->children[0]->type_def_num]->token->type == Token_Type::ACTOR_DEF) ||
                     (program->types[token->children[0]->type_def_num]->token->type == Token_Type::ISOLATED_ACTOR_DEF)){
-                throw Compiler_Exception("Object expected on left hand side of extraction operator", token->children[0]->start_pos);
+                throw Compiler_Exception("Object expected on left hand side of extraction operator",
+                        token->children[0]->start_pos, token->children[0]->end_pos);
             }
             if ((token->children[1]->type_def_num < (signed)program->global->local_types["object"]) ||
                     (program->types[token->children[1]->type_def_num]->token->type == Token_Type::ACTOR_DEF) ||
                     (program->types[token->children[0]->type_def_num]->token->type == Token_Type::ISOLATED_ACTOR_DEF)) {
-                throw Compiler_Exception("Object or feature expected on right hand side of extraction operator", token->children[1]->start_pos);
+                throw Compiler_Exception("Object or feature expected on right hand side of extraction operator",
+                        token->children[1]->start_pos, token->children[1]->end_pos);
             }
             token->type_def_num = token->children[1]->type_def_num;
             return;
@@ -1115,7 +1128,8 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
                 scope = scope->parent;
             }
         }
-        throw Compiler_Exception("Can not understand usage of '" + token->contents + "'", token->start_pos);
+        throw Compiler_Exception("Can not understand usage of '" + token->contents + "'", token->start_pos,
+                token->end_pos);
     }
     else if (token->type == Token_Type::SINGLE_QUOTED_STRING) {
         token->type_def_num = program->global->local_types["char"];
@@ -1203,7 +1217,7 @@ void Analyzer::analyze_implied_this(Program *program, Token *token, Scope *scope
                 }
                 scope = scope->parent;
             }
-            throw Compiler_Exception("Internal error involving implied 'this'", token->start_pos);
+            throw Compiler_Exception("Internal error involving implied 'this'", token->start_pos, token->end_pos);
         }
     }
     else if ((token->type == Token_Type::ACTION_DEF) || (token->type == Token_Type::FUN_DEF)) {
@@ -1235,7 +1249,8 @@ Token *Analyzer::extract_function(Program *program, Token *token, Scope *var_sco
                 unsigned int type_def_num = token->children[i]->type_def_num;
 
                 if (type_def_num == program->global->local_types["void"]) {
-                    throw Compiler_Exception("Unexpected void return type", token->children[i]->start_pos);
+                    throw Compiler_Exception("Unexpected void return type", token->children[i]->start_pos,
+                            token->children[i]->end_pos);
                 }
 
                 vd->token = token->children[i];
@@ -1269,7 +1284,8 @@ Token *Analyzer::extract_function(Program *program, Token *token, Scope *var_sco
                 unsigned int type_def_num = token->children[i]->type_def_num;
 
                 if (type_def_num == program->global->local_types["void"]) {
-                    throw Compiler_Exception("Unexpected void return type", token->children[i]->start_pos);
+                    throw Compiler_Exception("Unexpected void return type", token->children[i]->start_pos,
+                            token->children[i]->end_pos);
                 }
 
                 vd->token = token->children[i];
@@ -1304,7 +1320,8 @@ Token *Analyzer::extract_function(Program *program, Token *token, Scope *var_sco
                 unsigned int type_def_num = token->children[i]->type_def_num;
 
                 if (type_def_num == program->global->local_types["void"]) {
-                    throw Compiler_Exception("Unexpected void return type", token->children[i]->start_pos);
+                    throw Compiler_Exception("Unexpected void return type", token->children[i]->start_pos,
+                            token->children[i]->end_pos);
                 }
 
                 vd->token = token->children[i];
@@ -1338,7 +1355,8 @@ Token *Analyzer::extract_function(Program *program, Token *token, Scope *var_sco
                 unsigned int type_def_num = token->children[i]->type_def_num;
 
                 if (type_def_num == program->global->local_types["void"]) {
-                    throw Compiler_Exception("Unexpected void return type", token->children[i]->start_pos);
+                    throw Compiler_Exception("Unexpected void return type", token->children[i]->start_pos,
+                            token->children[i]->end_pos);
                 }
 
                 vd->token = token->children[i];
@@ -1373,7 +1391,8 @@ Token *Analyzer::extract_function(Program *program, Token *token, Scope *var_sco
                 unsigned int type_def_num = token->children[i]->type_def_num;
 
                 if (type_def_num == program->global->local_types["void"]) {
-                    throw Compiler_Exception("Unexpected void return type", token->children[i]->start_pos);
+                    throw Compiler_Exception("Unexpected void return type", token->children[i]->start_pos,
+                            token->children[i]->end_pos);
                 }
 
                 vd->token = token->children[i];
@@ -1497,12 +1516,13 @@ void Analyzer::analyze_return_calls(Program *program, Token *token, unsigned int
     else if (token->type == Token_Type::RETURN_CALL) {
         if (token->children.size() == 1) {
             if (allowed_return_type != program->global->local_types["void"]) {
-                throw Compiler_Exception("Void return in non-void function", token->start_pos);
+                throw Compiler_Exception("Void return in non-void function", token->start_pos, token->end_pos);
             }
         }
         else {
             if (allowed_return_type != (unsigned)token->type_def_num) {
-                throw Compiler_Exception("Return type does not match function return type", token->children[1]->start_pos);
+                throw Compiler_Exception("Return type does not match function return type", token->children[1]->start_pos,
+                        token->children[1]->end_pos);
             }
         }
     }
@@ -1638,7 +1658,7 @@ Token *Analyzer::create_temp_replacement(Program *program, Token *token, Scope *
     Var_Def *vd = new Var_Def();
 
     if (type_def_num == program->global->local_types["void"]) {
-        throw Compiler_Exception("Unexpected void return type", token->start_pos);
+        throw Compiler_Exception("Unexpected void return type", token->start_pos, token->end_pos);
     }
 
     vd->token = new Token(token->type);
@@ -1756,7 +1776,7 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Scope *s
 
                 if (token->type_def_num != (int)program->global->local_types["void"]) {
                     if (token->definition_number == -1) {
-                        throw Compiler_Exception("Internal definition number error", token->start_pos);
+                        throw Compiler_Exception("Internal definition number error", token->start_pos, token->end_pos);
                     }
                     Function_Def *fd = program->funs[token->definition_number];
                     bool is_dependent;
@@ -1790,7 +1810,7 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Scope *s
 
                 if (token->type_def_num != (int)program->global->local_types["void"]) {
                     if (token->children[1]->definition_number == -1) {
-                        throw Compiler_Exception("Internal definition number error", token->start_pos);
+                        throw Compiler_Exception("Internal definition number error", token->start_pos, token->end_pos);
                     }
                     Function_Def *fd = program->funs[token->children[1]->definition_number];
                     bool is_dependent;

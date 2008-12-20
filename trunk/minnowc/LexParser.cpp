@@ -114,7 +114,7 @@ bool Lex_Parser::lexparse_comment(std::string::iterator &curr, std::string::iter
                     prev = *curr;
                 }
             }
-            throw Compiler_Exception("Multi-line comment not closed", orig_p);
+            throw Compiler_Exception("Multi-line comment not closed", orig_p, p);
         }
         else {
             curr = orig_iter;
@@ -210,7 +210,7 @@ Token *Lex_Parser::lexparse_parens(std::string::iterator &curr, std::string::ite
     lexparse_whitespace(curr, end, p);
 
     if ((curr == end) || (*curr != ')')) {
-        throw Compiler_Exception("Unclosed parentheses", p);
+        throw Compiler_Exception("Unclosed parentheses", p, p);
     }
     else {
         ++p.col;
@@ -226,7 +226,7 @@ Token *Lex_Parser::lexparse_square_brackets(std::string::iterator &curr, std::st
     lexparse_whitespace(curr, end, p);
 
     if ((curr == end) || (*curr != ']')) {
-        throw Compiler_Exception("Unclosed square brackets", p);
+        throw Compiler_Exception("Unclosed square brackets", p, p);
     }
     else {
         ++p.col;
@@ -244,7 +244,7 @@ Token *Lex_Parser::lexparse_quoted_string(std::string::iterator &curr, std::stri
         if (*curr == '\\') {
             contents.append(1, *curr);
             if (curr == end) {
-                throw Compiler_Exception("Unclosed quotation", p);
+                throw Compiler_Exception("Unclosed quotation", start, p);
             }
             ++curr;
             ++p.col;
@@ -254,14 +254,14 @@ Token *Lex_Parser::lexparse_quoted_string(std::string::iterator &curr, std::stri
         ++p.col;
     }
     if (curr == end) {
-        throw Compiler_Exception("Unclosed quotation", p);
+        throw Compiler_Exception("Unclosed quotation", start, p);
     }
     else {
         ++curr;
         ++p.col;
     }
     if (contents.length() == 0) {
-        throw Compiler_Exception("Empty quoted string not allowed", p);
+        throw Compiler_Exception("Empty quoted string not allowed", start, p);
     }
 
     Token *t = new Token(Token_Type::QUOTED_STRING_CONST, contents, start, p);
@@ -275,7 +275,7 @@ Token *Lex_Parser::lexparse_single_quoted_string(std::string::iterator &curr, st
         if (*curr == '\\') {
             contents.append(1, *curr);
             if (curr == end) {
-                throw Compiler_Exception("Unclosed single quote", p);
+                throw Compiler_Exception("Unclosed single quote", start, p);
             }
             ++curr;
             ++p.col;
@@ -287,7 +287,7 @@ Token *Lex_Parser::lexparse_single_quoted_string(std::string::iterator &curr, st
         ++p.col;
     }
     if (curr == end) {
-        throw Compiler_Exception("Unclosed single quote", p);
+        throw Compiler_Exception("Unclosed single quote", start, p);
     }
     else {
         ++curr;
@@ -295,7 +295,7 @@ Token *Lex_Parser::lexparse_single_quoted_string(std::string::iterator &curr, st
     }
 
     if (contents.length() == 0) {
-        throw Compiler_Exception("Empty single quoted string not allowed", p);
+        throw Compiler_Exception("Empty single quoted string not allowed", start, p);
     }
 
     Token *t = new Token(Token_Type::SINGLE_QUOTED_STRING, contents, start, p);
@@ -303,6 +303,7 @@ Token *Lex_Parser::lexparse_single_quoted_string(std::string::iterator &curr, st
 }
 
 Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
+    Position start = p;
     if (id->contents == "def") {
         Token *t = lexparse_expression(curr, end, p);
         switch (t->type) {
@@ -327,14 +328,14 @@ Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::i
             }
             break;
             default:
-                throw Compiler_Exception("'def' not followed by function heading", p);
+                throw Compiler_Exception("'def' not followed by function heading", start, p);
         }
     }
     else if (id->contents == "extern") {
         delete id;
         Token *id = lexparse_id(curr, end, p);
         if (id->contents != "def") {
-            throw Compiler_Exception("Extern not followed by 'def' keyword", id->start_pos);
+            throw Compiler_Exception("Extern not followed by 'def' keyword", id->start_pos, id->end_pos);
         }
         else {
             Token *t = lexparse_expression(curr, end, p);
@@ -357,7 +358,7 @@ Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::i
                 }
                 break;
                 default:
-                    throw Compiler_Exception("'def' not followed by function heading", p);
+                    throw Compiler_Exception("'def' not followed by function heading", start, p);
             }
 
         }
@@ -386,7 +387,7 @@ Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::i
             }
             break;
             default:
-                throw Compiler_Exception("'action' not followed by action heading", p);
+                throw Compiler_Exception("'action' not followed by action heading", start, p);
         }
     }
     else if (id->contents == "isolated") {
@@ -394,7 +395,7 @@ Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::i
         Token *action_def = lexparse_primary(curr, end, p);
         if (action_def->type != Token_Type::ACTOR_DEF) {
             std::cout << "TYPE: " << action_def->type << std::endl;
-            throw Compiler_Exception("Isolated not followed by action definition", action_def->start_pos);
+            throw Compiler_Exception("Isolated not followed by action definition", action_def->start_pos, action_def->end_pos);
         }
         action_def->type = Token_Type::ISOLATED_ACTOR_DEF;
 
@@ -427,7 +428,7 @@ Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::i
             }
             break;
             default:
-                throw Compiler_Exception("'new' not followed by feature or container", p);
+                throw Compiler_Exception("'new' not followed by feature or container", start, p);
         }
     }
     else if (id->contents == "spawn") {
@@ -444,7 +445,7 @@ Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::i
             }
             break;
             default:
-                throw Compiler_Exception("'new' not followed by feature or container", p);
+                throw Compiler_Exception("'new' not followed by feature or container", start, p);
         }
     }
     else if (id->contents == "namespace") {
@@ -460,7 +461,7 @@ Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::i
             }
             break;
             default:
-                throw Compiler_Exception("'namespace' not followed by name", p);
+                throw Compiler_Exception("'namespace' not followed by name", start, p);
         }
     }
     else if (id->contents == "use") {
@@ -473,7 +474,7 @@ Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::i
             return use_call;
         }
         else {
-            throw Compiler_Exception("'use' not followed by file reference", p);
+            throw Compiler_Exception("'use' not followed by file reference", start, p);
         }
     }
     else if (id->contents == "actor") {
@@ -498,7 +499,7 @@ Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::i
             }
             break;
             default:
-                throw Compiler_Exception("'actor' not followed by actor name", p);
+                throw Compiler_Exception("'actor' not followed by actor name", start, p);
         }
     }
     else if (id->contents == "feature") {
@@ -523,7 +524,7 @@ Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::i
             }
             break;
             default:
-                throw Compiler_Exception("'feature' not followed by feature name", p);
+                throw Compiler_Exception("'feature' not followed by feature name", start, p);
         }
     }
     else if (id->contents == "return") {
@@ -628,7 +629,7 @@ Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::i
             }
             break;
             default:
-                throw Compiler_Exception("'if' not followed by condition", p);
+                throw Compiler_Exception("'if' not followed by condition", start, p);
         }
     }
     else if (id->contents == "while") {
@@ -659,7 +660,7 @@ Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::i
             }
             break;
             default:
-                throw Compiler_Exception("'while' not followed by condition", p);
+                throw Compiler_Exception("'while' not followed by condition",start, p);
         }
     }
 
@@ -796,7 +797,7 @@ Token *Lex_Parser::lexparse_binop(std::string::iterator &curr, std::string::iter
         Token *rhs = lexparse_primary(curr, end, p);
 
         if (rhs == NULL) {
-            throw Compiler_Exception("Incomplete expression", p);
+            throw Compiler_Exception("Incomplete expression", prev_pos, p);
         }
 
         prev_pos = p;
@@ -908,7 +909,7 @@ Token *Lex_Parser::lexparse_block(std::string::iterator &curr, std::string::iter
             continue;
         }
 
-        throw Compiler_Exception("Can not parse element", p);
+        throw Compiler_Exception("Can not parse element", p, p);
     }
 
     block->end_pos = p;
@@ -950,7 +951,7 @@ Token *Lex_Parser::lexparse_ifblock(std::string::iterator &curr, std::string::it
             continue;
         }
 
-        throw Compiler_Exception("Can not parse element", p);
+        throw Compiler_Exception("Can not parse element", p, p);
     }
 
     block->end_pos = p;

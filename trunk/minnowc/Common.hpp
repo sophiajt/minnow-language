@@ -110,9 +110,11 @@ public:
 class Compiler_Exception {
 public:
     std::string reason;
-    Position where;
+    Position where_begin;
+    Position where_end;
 
-    Compiler_Exception(std::string reason_, Position &where_) : reason(reason_), where(where_) { }
+    Compiler_Exception(std::string reason_, Position &where_begin_, Position &where_end_) :
+        reason(reason_), where_begin(where_begin_), where_end(where_end_) { }
 };
 
 class Function_Def {

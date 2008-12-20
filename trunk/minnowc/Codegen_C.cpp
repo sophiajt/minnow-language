@@ -1864,7 +1864,7 @@ void Codegen::codegen_main_action(Program *p, std::ostringstream &output) {
         std::map<std::string, unsigned int>::iterator iter_t = p->global->local_types.find(typename_t.str());
 
         if (iter_t == p->global->local_types.end()) {
-            throw Compiler_Exception("Main action not found or incorrect main action", pos);
+            throw Compiler_Exception("Main action not found or incorrect main action", pos, pos);
         }
 
         std::ostringstream mainname;
@@ -1872,7 +1872,7 @@ void Codegen::codegen_main_action(Program *p, std::ostringstream &output) {
         iter = p->global->local_funs.find(mainname.str());
 
         if (iter == p->global->local_funs.end()) {
-            throw Compiler_Exception("Main action not found or incorrect main action", pos);
+            throw Compiler_Exception("Main action not found or incorrect main action", pos, pos);
         }
         else {
             use_cmdline = true;
@@ -1881,7 +1881,7 @@ void Codegen::codegen_main_action(Program *p, std::ostringstream &output) {
     Function_Def *main_action = p->funs[iter->second];
     if (main_action->token->type != Token_Type::ACTION_DEF) {
         throw Compiler_Exception("Main action not found.  Use 'action main' to define a starting point in your application",
-                main_action->token->start_pos);
+                main_action->token->start_pos, main_action->token->end_pos);
     }
 
 

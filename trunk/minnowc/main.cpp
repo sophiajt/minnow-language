@@ -81,108 +81,67 @@ void debug_print_def(Program *p, Token *token, std::string prepend) {
     }
 }
 
-std::string load_file(const char *filename) {
-    std::ifstream infile (filename, std::ios::in | std::ios::ate);
-    if (!infile.is_open()) {
-        std::cerr << "Can not open " << filename << std::endl;
-        exit(0);
-    }
-
-    std::streampos size = infile.tellg();
-    infile.seekg(0, std::ios::beg);
-
-    std::vector<char> v(size);
-    infile.read(&v[0], size);
-
-    std::string ret_val (v.empty() ? std::string() : std::string (v.begin(), v.end()).c_str());
-
-    return ret_val;
-}
-
-void translate_file(Program *p, std::string filename) {
-    Token *t;
-
+class Compiler {
     Analyzer an;
     Lex_Parser lp;
-
-    std::string contents = load_file(filename.c_str());
-    t = lp.lexparse_file(filename, contents);
-    an.analyze_strays(t);
-
-    //Start building app
-    Scope *start = p->global;
-    an.analyze_type_blocks(p, t, &start);
-    start = p->global;
-    an.analyze_fun_blocks(p, t, &start);
-    an.add_implied_constructors(p);
-    an.analyze_var_type_and_scope(p, t, p->global);
-    an.analyze_token_types(p, t, p->global);
-
-    an.analyze_ports_of_entry(p, t, p->global, false);
-    an.analyze_implied_this(p, t, p->global);
-    an.analyze_return_calls(p, t, 0);
-    an.analyze_var_visibility(p, t);
-    an.analyze_freeze_resume(p, t, p->global);
-    an.analyze_copy_delete(p, t, p->global);
-
-    //debug_print_def(p, t, "");
-    //debug_print_vars(p, t);
-    //debug_print(p, "");
-
-    p->files.push_back(t);
-
-    return;
-}
-
-int main(int argc, char *argv[]) {
-
-    Program *p = new Program();
     Codegen c;
-    char *output_file = NULL;
-    std::string current_bin = argv[0];
 
-    if (argc < 2) {
-        printf("Please specify the file to compile\n");
-        exit(0);
+public:
+    std::string load_file(const char *filename) {
+        std::ifstream infile (filename, std::ios::in | std::ios::ate);
+        if (!infile.is_open()) {
+            std::cerr << "Can not open " << filename << std::endl;
+            exit(0);
+        }
+
+        std::streampos size = infile.tellg();
+        infile.seekg(0, std::ios::beg);
+
+        std::vector<char> v(size);
+        infile.read(&v[0], size);
+
+        std::string ret_val (v.empty() ? std::string() : std::string (v.begin(), v.end()).c_str());
+
+        return ret_val;
     }
 
-    std::string prelude_dir = "";
-    std::string prefix_dir = "";
-    std::string lib_dir = ".";
-    std::string include_dir = "aquarium";
+    void translate_file(Program *p, std::string filename) {
+        Token *t;
 
-    #ifdef INSTALLPREFIX
-        prefix_dir = INSTALLPREFIX;
-        prelude_dir = prefix_dir + "share/minnow/";
-        lib_dir = prefix_dir + "lib";
-        include_dir = prefix_dir + "include/minnow";
-    #endif
+        std::string contents = load_file(filename.c_str());
+        t = lp.lexparse_file(filename, contents);
+        an.analyze_strays(t);
 
-    try {
-        translate_file(p, prelude_dir + "prelude.mno");
+        //Start building app
+        Scope *start = p->global;
+        an.analyze_type_blocks(p, t, &start);
+        start = p->global;
+        an.analyze_fun_blocks(p, t, &start);
+        an.add_implied_constructors(p);
+        an.analyze_var_type_and_scope(p, t, p->global);
+        an.analyze_token_types(p, t, p->global);
 
-        //for (int i = 1; i < argc; ++i) {
-        int i = 1;
-        while (i < argc) {
-            if (strcmp(argv[i], "-o") == 0) {
-                //grab output file
-                if ((i+1) < argc) {
-                    output_file = argv[i+1];
-                    i = i + 2;
-                }
-                else {
-                    printf("Missing output filename:  Use -o <filename> to output a binary\n");
-                    exit(0);
-                }
-            }
-            else {
-                translate_file(p, argv[i]);
-                ++i;
-            }
-        }
-        //Start outputting code
+        an.analyze_ports_of_entry(p, t, p->global, false);
+        an.analyze_implied_this(p, t, p->global);
+        an.analyze_return_calls(p, t, 0);
+        an.analyze_var_visibility(p, t);
+        an.analyze_freeze_resume(p, t, p->global);
+        an.analyze_copy_delete(p, t, p->global);
+
+        //debug_print_def(p, t, "");
+        //debug_print_vars(p, t);
+        //debug_print(p, "");
+
+        p->files.push_back(t);
+
+        return;
+    }
+
+    void compile_program(Program *p, int argc, char *argv[], char *output_file, std::string include_dir,
+            std::string lib_dir) {
 
         std::ostringstream output;
+
         c.codegen(p, p->files[0], output);
         if (output_file == NULL) {
             std::cout << output.str();
@@ -213,16 +172,132 @@ int main(int argc, char *argv[]) {
         }
 
     }
-    catch (Compiler_Exception &ce) {
-        //debug_print_def(p, t, "");
-        //debug_print_vars(p, t);
-        //debug_print(p, "");
-        if (ce.where.line > 0) {
-            std::cerr << "Error: " << ce.reason << " at line " << ce.where.line << " col " << ce.where.col << " in " << ce.where.filename << std::endl;
+
+    void print_positions(std::string &contents, Position &start_pos, Position &end_pos) {
+        unsigned int line, col;
+        line = 1; col = 1;
+
+        //std::cout << "Start: " << start_pos.line << " " << start_pos.col << " and " << end_pos.line << " " << end_pos.col << std::endl;
+
+        std::string::iterator p = contents.begin();
+
+        while (line < start_pos.line) {
+            if (*p == '\n') {
+                ++line;
+            }
+            ++p;
+        }
+
+        std::string::iterator reset = p;
+
+        //while we're in the right area, print the line, then print the highlight
+        while (line <= end_pos.line) {
+            col = 1;
+
+            //First pass, print the line:
+            reset = p;
+            while (*p != '\n') {
+                std::cout << *p;
+                ++p;
+            }
+            std::cout << std::endl;
+
+            //Second pass, print the highlight:
+            p = reset;
+            while (*p != '\n') {
+                if ((start_pos.line == end_pos.line) && (col >= start_pos.col) && (col < end_pos.col)) {
+                    std::cout << '^';
+                }
+                else if ((start_pos.line != end_pos.line) && (((line == start_pos.line) && (col >= start_pos.col))
+                        || ((line > start_pos.line) && (line < end_pos.line))
+                        || ((line == end_pos.line) && (col < end_pos.col)))) {
+                    std::cout << '^';
+                }
+                else {
+                    std::cout << ' ';
+                }
+                if (*p != '\n') {
+                    ++col;
+                }
+                ++p;
+            }
+            ++line;
+        }
+        std::cout << std::endl;
+    }
+
+    void print_error(Compiler_Exception &ce) {
+        //Reload file to see the error
+        if ((ce.where_begin.filename != NULL) && (ce.where_begin.line > 0)) {
+            std::string contents = load_file(ce.where_begin.filename);
+
+            print_positions(contents, ce.where_begin, ce.where_end);
+
+            std::cerr << "Error: " << ce.reason << " at line " << ce.where_begin.line << " col "
+                << ce.where_begin.col << " in " << ce.where_begin.filename << std::endl;
         }
         else {
             std::cerr << "Error: " << ce.reason << std::endl;
         }
+    }
+};
+
+
+int main(int argc, char *argv[]) {
+    Compiler compiler;
+    Program *p = new Program();
+
+    char *output_file = NULL;
+    std::string current_bin = argv[0];
+
+    if (argc < 2) {
+        printf("Please specify the file to compile\n");
+        exit(0);
+    }
+
+    std::string prelude_dir = "";
+    std::string prefix_dir = "";
+    std::string lib_dir = ".";
+    std::string include_dir = "aquarium";
+
+    #ifdef INSTALLPREFIX
+        prefix_dir = INSTALLPREFIX;
+        prelude_dir = prefix_dir + "share/minnow/";
+        lib_dir = prefix_dir + "lib";
+        include_dir = prefix_dir + "include/minnow";
+    #endif
+
+    try {
+        compiler.translate_file(p, prelude_dir + "prelude.mno");
+
+        //for (int i = 1; i < argc; ++i) {
+        int i = 1;
+        while (i < argc) {
+            if (strcmp(argv[i], "-o") == 0) {
+                //grab output file
+                if ((i+1) < argc) {
+                    output_file = argv[i+1];
+                    i = i + 2;
+                }
+                else {
+                    printf("Missing output filename:  Use -o <filename> to output a binary\n");
+                    exit(0);
+                }
+            }
+            else {
+                compiler.translate_file(p, argv[i]);
+                ++i;
+            }
+        }
+        //Start outputting code
+        compiler.compile_program(p, argc, argv, output_file, include_dir, lib_dir);
+
+    }
+    catch (Compiler_Exception &ce) {
+        //debug_print_def(p, t, "");
+        //debug_print_vars(p, t);
+        //debug_print(p, "");
+        compiler.print_error(ce);
         exit(0);
     }
 }
