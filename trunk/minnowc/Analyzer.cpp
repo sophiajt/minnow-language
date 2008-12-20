@@ -1164,11 +1164,21 @@ void Analyzer::analyze_implied_this(Program *program, Token *token, Scope *scope
                         (scope->owner->type == Token_Type::ISOLATED_ACTOR_DEF) ||
                         (scope->owner->type == Token_Type::FEATURE_DEF))) {
 
+                    Function_Def *fd = program->funs[scope->local_funs[fullname]];
+
                     Token *new_fun_call = new Token(Token_Type::FUN_CALL);
                     *new_fun_call = *token;
                     Token *this_ptr = new Token(Token_Type::THIS);
 
                     token->contents = new_fun_call->contents;
+                    if (fd->token->type == Token_Type::ACTION_DEF) {
+                        token->type = Token_Type::ACTION_CALL;
+                        token->type_def_num = program->global->local_types["error"];
+                    }
+                    else {
+                        token->type = Token_Type::METHOD_CALL;
+                    }
+                    /*
                     if (scope->owner->type == Token_Type::FEATURE_DEF) {
                         token->type = Token_Type::METHOD_CALL;
                     }
@@ -1177,6 +1187,7 @@ void Analyzer::analyze_implied_this(Program *program, Token *token, Scope *scope
                         token->type = Token_Type::ACTION_CALL;
                         token->type_def_num = program->global->local_types["error"];
                     }
+                    */
 
                     token->children.clear();
                     token->children.push_back(this_ptr);
