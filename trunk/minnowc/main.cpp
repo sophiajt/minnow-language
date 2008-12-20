@@ -177,7 +177,7 @@ public:
         unsigned int line, col;
         line = 1; col = 1;
 
-        //std::cout << "Start: " << start_pos.line << " " << start_pos.col << " and " << end_pos.line << " " << end_pos.col << std::endl;
+        std::cout << "Start: " << start_pos.line << " " << start_pos.col << " and " << end_pos.line << " " << end_pos.col << std::endl;
 
         std::string::iterator p = contents.begin();
 
@@ -196,7 +196,7 @@ public:
 
             //First pass, print the line:
             reset = p;
-            while (*p != '\n') {
+            while ((*p != '\n') && (p != contents.end())) {
                 std::cout << *p;
                 ++p;
             }
@@ -204,13 +204,16 @@ public:
 
             //Second pass, print the highlight:
             p = reset;
-            while (*p != '\n') {
+            while ((*p != '\n') && (p != contents.end())) {
                 if ((start_pos.line == end_pos.line) && (col >= start_pos.col) && (col < end_pos.col)) {
                     std::cout << '^';
                 }
                 else if ((start_pos.line != end_pos.line) && (((line == start_pos.line) && (col >= start_pos.col))
                         || ((line > start_pos.line) && (line < end_pos.line))
                         || ((line == end_pos.line) && (col < end_pos.col)))) {
+                    std::cout << '^';
+                }
+                else if ((start_pos == end_pos) && (line == start_pos.line) && (col == start_pos.col)) {
                     std::cout << '^';
                 }
                 else {
@@ -222,8 +225,10 @@ public:
                 ++p;
             }
             ++line;
+            ++p;
+            std::cout << std::endl;
         }
-        std::cout << std::endl;
+
     }
 
     void print_error(Compiler_Exception &ce) {

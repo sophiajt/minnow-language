@@ -114,7 +114,7 @@ bool Lex_Parser::lexparse_comment(std::string::iterator &curr, std::string::iter
                     prev = *curr;
                 }
             }
-            throw Compiler_Exception("Multi-line comment not closed", orig_p, p);
+            throw Compiler_Exception("Multi-line comment not closed", orig_p, orig_p);
         }
         else {
             curr = orig_iter;
@@ -239,22 +239,35 @@ Token *Lex_Parser::lexparse_square_brackets(std::string::iterator &curr, std::st
 Token *Lex_Parser::lexparse_quoted_string(std::string::iterator &curr, std::string::iterator &end, Position &p) {
     std::string contents = "";
     Position start = p;
-    while ((curr != end) && (*curr != '\"')) {
+    while ((curr != end) && (*curr != '\"') && (*curr != '\n')) {
 
         if (*curr == '\\') {
-            contents.append(1, *curr);
+
+            //contents.append(1, *curr);
+            ++curr;
+            ++p.col;
             if (curr == end) {
                 throw Compiler_Exception("Unclosed quotation", start, p);
             }
-            ++curr;
+            else if (*curr != '\n') {
+                contents.append(1, '\\');
+            }
+        }
+        if (*curr == '\n') {
+            ++p.line;
+            p.col = 1;
+        }
+        else {
+            contents.append(1, *curr);
             ++p.col;
         }
-        contents.append(1, *curr);
         ++curr;
-        ++p.col;
     }
     if (curr == end) {
         throw Compiler_Exception("Unclosed quotation", start, p);
+    }
+    else if (*curr == '\n') {
+        throw Compiler_Exception("Unclosed quotation.  Use \\ to at the end of each line of a multiline quotation", start, p);
     }
     else {
         ++curr;
