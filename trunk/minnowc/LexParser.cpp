@@ -53,11 +53,11 @@ unsigned int get_precedence(Token *token) {
     else if ((token->contents == "<+") || (token->contents == "+>")) {
         return 50;
     }
-    else if ((token->contents == "==") || (token->contents == ">=") || (token->contents == "<=") || (token->contents == "!=") ||
-            (token->contents == ">") || (token->contents == "<")) {
+    else if ((token->contents == "&&") || (token->contents == "||")) {
         return 60;
     }
-    else if ((token->contents == "&&") || (token->contents == "||")) {
+    else if ((token->contents == "==") || (token->contents == ">=") || (token->contents == "<=") || (token->contents == "!=") ||
+            (token->contents == ">") || (token->contents == "<")) {
         return 70;
     }
     else if ((token->contents == "+") || (token->contents == "-")) {
