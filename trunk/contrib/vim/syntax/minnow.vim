@@ -48,7 +48,7 @@ syn match minnowFloat  "\<\d\+e[-+]\=\d\+\>"
 syn match minnowNumber "\<0x\x\+\>"
 
 "Types
-syn keyword minnowType int float double char string pointer object
+syn keyword minnowType int float double char string pointer object bool
 
 "Keyword
 syn keyword minnowKeyword extern var namespace true false
