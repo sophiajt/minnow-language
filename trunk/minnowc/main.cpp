@@ -134,7 +134,7 @@ public:
         an.analyze_var_type_and_scope(p, t, p->global);
         an.analyze_token_types(p, t, p->global);
 
-        an.analyze_ports_of_entry(p, t, NULL, p->global, false);
+        an.analyze_ports_of_entry(p, t, NULL, p->global, false, false);
         an.analyze_implied_this(p, t, p->global);
         an.analyze_return_calls(p, t, 0);
         an.analyze_var_visibility(p, t);

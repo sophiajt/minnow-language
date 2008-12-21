@@ -69,7 +69,7 @@ public:
 
     Token *create_temp_replacement(Program *program, Token *token, Token *bounds, Scope *var_scope,
             unsigned int type_def_num, bool is_dependent);
-    Token *analyze_ports_of_entry(Program *program, Token *token, Token *bounds, Scope *scope, bool is_lhs);
+    Token *analyze_ports_of_entry(Program *program, Token *token, Token *bounds, Scope *scope, bool is_lhs, bool is_block_bound);
 
     std::vector<int> build_delete_list(Program *program, Scope *scope, Position &position);
     std::vector<int> build_delete_remaining_list(Program *program, Scope *scope);
