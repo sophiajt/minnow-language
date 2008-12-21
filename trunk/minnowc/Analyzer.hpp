@@ -73,6 +73,8 @@ public:
     std::vector<int> build_delete_list(Program *program, Scope *scope, Position &position);
     std::vector<int> build_delete_remaining_list(Program *program, Scope *scope);
 
+    void examine_port_of_exit(Program *program, Token *token);
+    void examine_equation_for_copy_delete(Program *program, Token *block, Token *token, unsigned int &i);
     void analyze_copy_delete(Program *program, Token *token, Scope *scope);
 
     Analyzer() : next_continuation(0), next_deletion(0) { }
