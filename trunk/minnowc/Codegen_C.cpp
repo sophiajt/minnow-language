@@ -931,9 +931,18 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
     ++this->cont_id;
 
     if ((t->children.size() > 0) && (t->children[0]->type != Token_Type::DELETION_SITE)) {
+        Function_Def *fun_call = p->funs[t->children[0]->definition_number];
+        bool is_deep_continuation = false;
+
+        if (fun_call->continuation_sites.size() > 1) {
+            is_deep_continuation = true;
+        }
+
         output << "((Actor__*)m__->recipient)->timeslice_remaining = timeslice__;" << std::endl;
-        output << "case(" << this->cont_id << "):" << std::endl;
-        ++this->cont_id;
+        if (is_deep_continuation) {
+            output << "case(" << this->cont_id << "):" << std::endl;
+            ++this->cont_id;
+        }
         codegen_token(p, t->children[0], output);
         output << ";" << std::endl;
 
@@ -950,12 +959,19 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
                 output << "push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &var__" << p->var_sites[t->definition_number][i] << ");" << std::endl;
             }
         }
-        output << "if (((Actor__*)m__->recipient)->continuation_stack->current_size == 0) {" << std::endl;
-        output << "cont_id__ = " << this->cont_id << ";" << std::endl;
-        output << "} else {" << std::endl;
-        output << "cont_id__ = " << this->cont_id - 1 << ";" << std::endl;
-        output << "}" << std::endl;
-        output << "push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &cont_id__);" << std::endl;
+
+        //figure out what is getting called, and if we need to worry about resuming inside it
+        if (is_deep_continuation) {
+            output << "if (((Actor__*)m__->recipient)->continuation_stack->current_size == 0) {" << std::endl;
+            output << "cont_id__ = " << this->cont_id << ";" << std::endl;
+            output << "} else {" << std::endl;
+            output << "cont_id__ = " << this->cont_id - 1 << ";" << std::endl;
+            output << "}" << std::endl;
+            output << "push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &cont_id__);" << std::endl;
+        }
+        else {
+            output << "cont_id__ = " << this->cont_id << ";" << std::endl;
+        }
 
         if (owner->token->type == Token_Type::ACTION_DEF) {
             output << "((Actor__*)m__->recipient)->actor_state = ACTOR_STATE_ACTIVE__;" << std::endl;

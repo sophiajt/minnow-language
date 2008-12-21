@@ -1938,6 +1938,8 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Token *b
 }
 
 void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scope) {
+    bool is_deep_continuation = false;
+
 
     if ((token->type == Token_Type::ACTION_DEF) || (token->type == Token_Type::FUN_DEF)) {
         //scope = token->scope;
@@ -1968,6 +1970,7 @@ void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scop
             }
             else if (token->type == Token_Type::METHOD_CALL) {
                 fun_call = program->funs[token->children[1]->definition_number];
+                token->definition_number = token->children[1]->definition_number;
                 //fun_call = program->funs[token->definition_number];
             }
             else {
@@ -1977,6 +1980,11 @@ void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scop
             if ((fun_call->external_name == "") && (fun_call->is_internal == false)) {
                 Token *continuation = new Token(Token_Type::CONTINUATION_SITE);
 
+                Function_Def *fun_call = program->funs[token->definition_number];
+                if (fun_call->continuation_sites.size() > 1) {
+                    is_deep_continuation = true;
+                }
+
                 Token *copy = new Token(Token_Type::BOOL);
                 *copy = *token;
                 continuation->children.push_back(copy);
@@ -1985,15 +1993,15 @@ void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scop
 
                 std::vector<int> push_pop = build_push_pop_list(program, scope, token->start_pos, token->end_pos);
 
-
                 if (scope->owner->definition_number < 0) {
                     throw Compiler_Exception("Internal error finding resume function", token->start_pos, token->end_pos);
                 }
 
-
                 Function_Def *owner = program->funs[scope->owner->definition_number];
                 program->var_sites.push_back(push_pop);
-                owner->continuation_sites.push_back(program->var_sites.size() - 1);
+                if (is_deep_continuation) {
+                    owner->continuation_sites.push_back(program->var_sites.size() - 1);
+                }
                 owner->continuation_sites.push_back(program->var_sites.size() - 1);
                 continuation->definition_number = program->var_sites.size() - 1;
 
@@ -2007,9 +2015,11 @@ void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scop
             Function_Def *fun_call;
             if (token->children[1]->type == Token_Type::FUN_CALL) {
                 fun_call = program->funs[token->children[1]->definition_number];
+                token->definition_number = token->children[1]->definition_number;
             }
             else if (token->children[1]->type == Token_Type::METHOD_CALL) {
                 fun_call = program->funs[token->children[1]->children[1]->definition_number];
+                token->definition_number = token->children[1]->children[1]->definition_number;
                 //fun_call = program->funs[token->children[1]->definition_number];
             }
             else {
@@ -2017,6 +2027,11 @@ void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scop
             }
             if ((fun_call->external_name == "") && (fun_call->is_internal == false)) {
                 Token *continuation = new Token(Token_Type::CONTINUATION_SITE);
+
+                Function_Def *fun_call = program->funs[token->definition_number];
+                if (fun_call->continuation_sites.size() > 1) {
+                    is_deep_continuation = true;
+                }
 
                 Token *copy = new Token(Token_Type::BOOL);
                 *copy = *token;
@@ -2030,7 +2045,9 @@ void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scop
                 }
                 Function_Def *owner = program->funs[scope->owner->definition_number];
                 program->var_sites.push_back(push_pop);
-                owner->continuation_sites.push_back(program->var_sites.size() - 1);
+                if (is_deep_continuation) {
+                    owner->continuation_sites.push_back(program->var_sites.size() - 1);
+                }
                 owner->continuation_sites.push_back(program->var_sites.size() - 1);
                 continuation->definition_number = program->var_sites.size() - 1;
 
