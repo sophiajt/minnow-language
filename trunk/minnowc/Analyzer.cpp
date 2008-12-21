@@ -1994,6 +1994,7 @@ void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scop
                 Function_Def *owner = program->funs[scope->owner->definition_number];
                 program->var_sites.push_back(push_pop);
                 owner->continuation_sites.push_back(program->var_sites.size() - 1);
+                owner->continuation_sites.push_back(program->var_sites.size() - 1);
                 continuation->definition_number = program->var_sites.size() - 1;
 
                 *token = *continuation;
@@ -2029,6 +2030,7 @@ void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scop
                 }
                 Function_Def *owner = program->funs[scope->owner->definition_number];
                 program->var_sites.push_back(push_pop);
+                owner->continuation_sites.push_back(program->var_sites.size() - 1);
                 owner->continuation_sites.push_back(program->var_sites.size() - 1);
                 continuation->definition_number = program->var_sites.size() - 1;
 

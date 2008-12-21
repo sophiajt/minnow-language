@@ -190,8 +190,6 @@ public:
         unsigned int line, col;
         line = 1; col = 1;
 
-        std::cout << "Start: " << start_pos.line << " " << start_pos.col << " and " << end_pos.line << " " << end_pos.col << std::endl;
-
         std::string::iterator p = contents.begin();
 
         while (line < start_pos.line) {
