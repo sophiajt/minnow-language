@@ -56,13 +56,13 @@ actor PPMWriter
     m_y:int = 0
 
     print( "P3\n" )
-//    print( t_width.to_string() + " " + t_height.to_string() + "\n" )
+    print( t_width.to_string() + " " + t_height.to_string() + "\n" )
     print( "255\n" )
   end
 
   action AddPixel(p:Pixel)
 //    print("Got Pixel\n")
-    print((p.color.r * 255.0).to_int().to_string() + " " + (p.color.g * 255.0).to_int().to_string() + " " + (p.color.b * 255.0).to_int().to_string())
+    print((p.color.r * 255.0).to_int().to_string() + " " + (p.color.g * 255.0).to_int().to_string() + " " + (p.color.b * 255.0).to_int().to_string() + " " )
 
     m_x += 1
 
@@ -70,6 +70,9 @@ actor PPMWriter
       m_y += 1
       m_x = 0
       print("\n")
+      if (m_y == m_height)
+        Sys.exit()
+      end
     end
   end
 end
@@ -103,20 +106,32 @@ actor PixelSorter
   end
 
   action AddPixel(t_p:Pixel)
-    InsertPixel(t_p, m_pixels)
-
     cont:bool = true
+
+    /*
+    //No reason to even search if the most recent
+    //pixel is not the one we need... because we already searched
+    //for the currently needed pixel the last time AddPixel was
+    //called
+    if ((t_p.point.x == m_x) && (t_p.point.y == m_y))
+      cont = true
+    else
+      cont = false
+    end
+*/
+
+    InsertPixel(t_p, m_pixels)
 
     while (cont)
 
       pos:int = 0
 
       findcont:bool = true
-      print("Array SIze" + m_pixels.size().to_string()+ "\n")
+//      print("Array SIze" + m_pixels.size().to_string()+ "\n")
       while ((pos < m_pixels.size()) && (findcont))
-        print("Searching: " + m_pixels[pos].point.x.to_string() + " " + m_pixels[pos].point.y.to_string() + " for: " + m_x.to_string() + " "  + m_y.to_string() + "\n")
+//        print("Searching: " + m_pixels[pos].point.x.to_string() + " " + m_pixels[pos].point.y.to_string() + " for: " + m_x.to_string() + " "  + m_y.to_string() + "\n")
         if ((m_pixels[pos].point.x == m_x) && (m_pixels[pos].point.y == m_y))
-          print("found\n")
+//          print("found\n")
           
           m_ppm::AddPixel(m_pixels[pos])
           m_pixels.delete(pos)
@@ -176,7 +191,7 @@ action main(args : Array[string])
   x:int = 0
   y:int = 0
 
-  div:int = 1
+  div:int = 2
 
   while (x < w)
     y = 0
