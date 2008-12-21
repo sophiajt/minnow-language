@@ -1,0 +1,53 @@
+feature Pixel
+  x : int
+  y : int
+  def Pixel(myX : int, myY : int)
+    x = myX
+    y = myY
+  end
+end
+
+actor Collector
+  m_pixels : Array[Pixel]
+  total : int
+
+  def Collector()
+    m_pixels = new Array[Pixel]
+    total = 0
+  end
+
+  def print(p : Pixel)
+    print(p.x) 
+    print(" ")
+    print(p.y)
+    print(" ")
+  end
+
+  action receive(p : Pixel)
+    print("Received: ")
+
+    m_pixels.push(p)
+
+    print(m_pixels[m_pixels.size() - 1])
+    total += 1
+    if (total == 5000)
+      Sys.exit()
+    end
+
+  end
+end
+
+action main
+  x : int = 0
+  y : int = 0
+  c : var = spawn Collector()
+
+  while (x < 100)
+    y = 0
+    while (y < 50)
+      c::receive(new Pixel(x, y))
+      y += 1
+    end
+    x += 1
+  end
+end

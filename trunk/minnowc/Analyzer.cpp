@@ -1938,7 +1938,7 @@ void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scop
         }
 
 
-        else if (token->type == Token_Type::FUN_CALL) {
+        else if ((token->type == Token_Type::FUN_CALL) || (token->type == Token_Type::METHOD_CALL)) {
             Token *continuation = new Token(Token_Type::CONTINUATION_SITE);
 
             Token *copy = new Token(Token_Type::BOOL);
@@ -1964,7 +1964,7 @@ void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scop
 
         }
         else if ((token->children.size() > 1) &&
-                ((token->type == Token_Type::SYMBOL) || (token->type == Token_Type::METHOD_CALL)) &&
+                ((token->type == Token_Type::SYMBOL)) &&
                 ((token->children[1]->type == Token_Type::FUN_CALL) || (token->children[1]->type == Token_Type::METHOD_CALL)) ) {
 
             Token *continuation = new Token(Token_Type::CONTINUATION_SITE);
@@ -1972,9 +1972,9 @@ void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scop
             Token *copy = new Token(Token_Type::BOOL);
             *copy = *token;
             continuation->children.push_back(copy);
-            continuation->start_pos = token->start_pos;
-            continuation->end_pos = token->end_pos;
-            std::vector<int> push_pop = build_push_pop_list(program, scope, token->start_pos, token->end_pos);
+            continuation->start_pos = token->children[1]->start_pos;
+            continuation->end_pos = token->children[1]->end_pos;
+            std::vector<int> push_pop = build_push_pop_list(program, scope, token->children[1]->start_pos, token->children[1]->end_pos);
 
             if (scope->owner->definition_number < 0) {
                 throw Compiler_Exception("Internal error finding resume function", token->start_pos, token->end_pos);

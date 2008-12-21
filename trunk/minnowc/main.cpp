@@ -28,7 +28,11 @@ void debug_print(Program *p, Scope *ns, std::string prepend) {
         std::cout << prepend << " type: " << iter->first << " " << iter->second << std::endl;
     }
     for (std::map<std::string, unsigned int>::iterator iter = ns->local_vars.begin(), end = ns->local_vars.end(); iter != end; ++iter) {
-        std::cout << prepend << " var: " << iter->first << " def: " << iter->second << " type: " << p->vars[iter->second]->type_def_num << std::endl;
+        std::cout << prepend << " var: " << iter->first << " def: " << iter->second << " type: " << p->vars[iter->second]->type_def_num << " Usage: "
+            << p->vars[iter->second]->usage_start.line
+            << " " << p->vars[iter->second]->usage_start.col
+            << ", " << p->vars[iter->second]->usage_end.line
+            << " " << p->vars[iter->second]->usage_end.col  << std::endl;
     }
     for (std::map<std::string, Scope*>::iterator iter = ns->namespaces.begin(), end = ns->namespaces.end(); iter != end; ++iter) {
         std::cout << prepend << " child: " << iter->first;
@@ -43,6 +47,14 @@ void debug_print(Program *p, std::string prepend) {
         for (unsigned int j = 0; j < p->var_sites[i].size(); ++j) {
             std::cout << prepend << p->var_sites[i][j] << std::endl;
         }
+    }
+    //for (std::vector<Var_Def*>::iterator iter = p->vars.begin(), end = p->vars.end(); iter != end; ++iter) {
+    for (unsigned int i = 0; i < p->vars.size(); ++i) {
+        std::cout << prepend << " var: " << i << " def: " << p->vars[i] << " type: " << p->vars[i]->type_def_num << " Usage: "
+            << p->vars[i]->usage_start.line
+            << " " << p->vars[i]->usage_start.col
+            << ", " << p->vars[i]->usage_end.line
+            << " " << p->vars[i]->usage_end.col  << std::endl;
     }
 
     debug_print(p, p->global, prepend);
@@ -65,11 +77,12 @@ void debug_print_vars(Program *p, Token *token) {
 void debug_print_def(Program *p, Token *token, std::string prepend) {
     if (token->contents == "") {
         std::cout << prepend << "(" << token->type << " def:" << token->definition_number << " type:" << token->type_def_num << " "
-        << token->scope << " " << token->start_pos.line << " " << token->start_pos.col << ")" << std::endl;
+            << token->scope << " " << token->start_pos.line << " " << token->start_pos.col << " to " << token->end_pos.line << " " << token->end_pos.col << ")" << std::endl;
     }
     else {
         std::cout << prepend << token->contents << " (" << token->type << " def:" << token->definition_number
-            << " type:" << token->type_def_num << " " << token->scope << " " << token->start_pos.line << " " << token->start_pos.col<< ")" << std::endl;
+            << " type:" << token->type_def_num << " " << token->scope << " " << token->start_pos.line << " " << token->start_pos.col << " to "
+            << token->end_pos.line << " " << token->end_pos.col << ")" << std::endl;
     }
 
     if (token->scope != NULL) {
