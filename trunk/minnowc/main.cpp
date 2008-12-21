@@ -16,10 +16,10 @@
 
 void debug_print(Program *p, Scope *ns, std::string prepend) {
     if (ns->parent == NULL) {
-        std::cout << prepend << "scope: " << ns << " " << ns->parent << std::endl;
+        std::cout << prepend << "scope: " << ns << " Owner: " << ns->owner << std::endl;
     }
     else {
-        std::cout << prepend << " " << ns << " " << ns->parent << std::endl;
+        std::cout << prepend << " " << ns << " Parent: " << ns->parent << " Owner: " << ns->owner << std::endl;
     }
     for (std::map<std::string, unsigned int>::iterator iter = ns->local_funs.begin(), end = ns->local_funs.end(); iter != end; ++iter) {
         std::cout << prepend << " fun: " << iter->first << " " << iter->second << std::endl;

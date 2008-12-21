@@ -542,6 +542,7 @@ void Analyzer::analyze_fun_blocks(Program *program, Token *token, Scope **scope)
 
             Scope *new_scope_block = new Scope();
             new_scope_block->parent = new_scope;
+            new_scope_block->owner = token;
 
             Function_Def *fd = new Function_Def();
             fd->token = token;
@@ -1917,6 +1918,123 @@ void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scop
 
     if ((token->type == Token_Type::ACTION_DEF) || (token->type == Token_Type::FUN_DEF)) {
         //scope = token->scope;
+
+        if (token->children.size() > 1) {
+            scope = token->children[2]->scope;
+
+            analyze_freeze_resume(program, token->children[2], scope);
+        }
+    }
+    else if ((token->type == Token_Type::FEATURE_DEF) || (token->type == Token_Type::ACTOR_DEF) ||
+            (token->type == Token_Type::ISOLATED_ACTOR_DEF)) {
+
+        if (token->children.size() > 1) {
+            analyze_freeze_resume(program, token->children[2], scope);
+        }
+    }
+    else {
+        if ((token->type == Token_Type::EXTERN_FUN_DEF) || (token->type == Token_Type::ACTION_CALL)) {
+
+        }
+
+
+        else if (token->type == Token_Type::FUN_CALL) {
+            Token *continuation = new Token(Token_Type::CONTINUATION_SITE);
+
+            Token *copy = new Token(Token_Type::BOOL);
+            *copy = *token;
+            continuation->children.push_back(copy);
+            continuation->start_pos = token->start_pos;
+            continuation->end_pos = token->end_pos;
+
+            std::vector<int> push_pop = build_push_pop_list(program, scope, token->start_pos, token->end_pos);
+
+
+            if (scope->owner->definition_number < 0) {
+                throw Compiler_Exception("Internal error finding resume function", token->start_pos, token->end_pos);
+            }
+
+
+            Function_Def *owner = program->funs[scope->owner->definition_number];
+            program->var_sites.push_back(push_pop);
+            owner->continuation_sites.push_back(program->var_sites.size() - 1);
+            continuation->definition_number = program->var_sites.size() - 1;
+
+            *token = *continuation;
+
+        }
+        else if ((token->children.size() > 1) &&
+                ((token->type == Token_Type::SYMBOL) || (token->type == Token_Type::METHOD_CALL)) &&
+                ((token->children[1]->type == Token_Type::FUN_CALL) || (token->children[1]->type == Token_Type::METHOD_CALL)) ) {
+
+            Token *continuation = new Token(Token_Type::CONTINUATION_SITE);
+
+            Token *copy = new Token(Token_Type::BOOL);
+            *copy = *token;
+            continuation->children.push_back(copy);
+            continuation->start_pos = token->start_pos;
+            continuation->end_pos = token->end_pos;
+            std::vector<int> push_pop = build_push_pop_list(program, scope, token->start_pos, token->end_pos);
+
+            if (scope->owner->definition_number < 0) {
+                throw Compiler_Exception("Internal error finding resume function", token->start_pos, token->end_pos);
+            }
+            Function_Def *owner = program->funs[scope->owner->definition_number];
+            program->var_sites.push_back(push_pop);
+            owner->continuation_sites.push_back(program->var_sites.size() - 1);
+            continuation->definition_number = program->var_sites.size() - 1;
+
+            *token = *continuation;
+        }
+
+        else {
+            for (unsigned int i = 0; i < token->children.size(); ++i) {
+                if (token->children[i]->type != Token_Type::CONTINUATION_SITE) {
+                    analyze_freeze_resume(program, token->children[i], scope);
+                }
+            }
+        }
+
+
+        if (token->type == Token_Type::WHILE_BLOCK) {
+            bool found_continuation = false;
+            for (unsigned int i = 0; i < token->children.size(); ++i) {
+                for (unsigned int j = 0; j < token->children[i]->children.size(); ++j) {
+                    if (token->children[i]->children[j]->type == Token_Type::CONTINUATION_SITE) {
+                        found_continuation = true;
+                    }
+                }
+            }
+
+            if (!found_continuation) {
+                Token *continuation = new Token(Token_Type::CONTINUATION_SITE);
+
+                continuation->start_pos = token->start_pos;
+                continuation->end_pos = token->end_pos;
+                std::vector<int> push_pop = build_push_pop_list(program, scope, token->start_pos, token->end_pos);
+
+                if (scope->owner->definition_number < 0) {
+                    throw Compiler_Exception("Internal error finding resume function", token->start_pos, token->end_pos);
+                }
+                Function_Def *owner = program->funs[scope->owner->definition_number];
+                program->var_sites.push_back(push_pop);
+                owner->continuation_sites.push_back(program->var_sites.size() - 1);
+                continuation->definition_number = program->var_sites.size() - 1;
+
+                // *token = *continuation;
+
+                //token->children[1]->children.insert(token->children[1]->children.begin(), continuation);
+                token->children[2]->children.push_back(continuation);
+            }
+
+        }
+    }
+}
+/*
+void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scope) {
+
+    if ((token->type == Token_Type::ACTION_DEF) || (token->type == Token_Type::FUN_DEF)) {
+        //scope = token->scope;
         scope = token->children[2]->scope;
 
         analyze_freeze_resume(program, token->children[2], scope);
@@ -1926,12 +2044,6 @@ void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scop
         analyze_freeze_resume(program, token->children[2], scope);
     }
     else {
-        for (unsigned int i = 0; i < token->children.size(); ++i) {
-            if (token->children[i]->type != Token_Type::CONTINUATION_SITE) {
-                analyze_freeze_resume(program, token->children[i], scope);
-            }
-        }
-
         if (token->type == Token_Type::BLOCK) {
             unsigned int i = 0;
             while (i < token->children.size()) {
@@ -1945,15 +2057,7 @@ void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scop
                         continuation->start_pos = child->start_pos;
                         continuation->end_pos = child->end_pos;
                         std::vector<int> push_pop = build_push_pop_list(program, scope, child->start_pos, child->end_pos);
-                        /*
-                        if (push_pop.size() > 0) {
-                            program->var_sites.push_back(push_pop);
-                            continuation->definition_number = program->var_sites.size() - 1;
-                        }
-                        else {
-                            continuation->definition_number = -1;
-                        }
-                        */
+
                         Scope *prev = scope;
                         while (scope != NULL) {
                             if ((scope->owner != NULL) && ((scope->owner->type == Token_Type::ACTION_DEF) ||
@@ -1982,15 +2086,7 @@ void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scop
                         continuation->start_pos = child->start_pos;
                         continuation->end_pos = child->end_pos;
                         std::vector<int> push_pop = build_push_pop_list(program, scope, child->start_pos, child->end_pos);
-                        /*
-                        if (push_pop.size() > 0) {
-                            program->var_sites.push_back(push_pop);
-                            continuation->definition_number = program->var_sites.size() - 1;
-                        }
-                        else {
-                            continuation->definition_number = -1;
-                        }
-                        */
+
                         Scope *prev = scope;
                         while (scope != NULL) {
                             if ((scope->owner != NULL) && ((scope->owner->type == Token_Type::ACTION_DEF) ||
@@ -2013,6 +2109,13 @@ void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scop
             }
         }
 
+        for (unsigned int i = 0; i < token->children.size(); ++i) {
+            if (token->children[i]->type != Token_Type::CONTINUATION_SITE) {
+                analyze_freeze_resume(program, token->children[i], scope);
+            }
+        }
+
+
         if (token->type == Token_Type::WHILE_BLOCK) {
             bool found_continuation = false;
             for (unsigned int i = 0; i < token->children.size(); ++i) {
@@ -2028,15 +2131,6 @@ void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scop
                 continuation->start_pos = token->start_pos;
                 continuation->end_pos = token->end_pos;
 
-                /*
-                if (push_pop.size() > 0) {
-                    program->var_sites.push_back(push_pop);
-                    continuation->definition_number = program->var_sites.size() - 1;
-                }
-                else {
-                    continuation->definition_number = -1;
-                }
-                */
                 Scope *prev = scope;
                 while (scope != NULL) {
                     if ((scope->owner != NULL) && ((scope->owner->type == Token_Type::ACTION_DEF) ||
@@ -2058,6 +2152,7 @@ void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scop
         }
     }
 }
+*/
 
 std::vector<int> Analyzer::build_delete_list(Program *program, Scope *scope, Position &position) {
     std::vector<int> ret_val;
