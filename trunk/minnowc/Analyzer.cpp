@@ -1665,7 +1665,7 @@ std::vector<int> Analyzer::build_push_pop_list(Program *program, Scope *scope, P
     return ret_val;
 }
 
-Token *Analyzer::create_temp_replacement(Program *program, Token *token, Scope *var_scope,
+Token *Analyzer::create_temp_replacement(Program *program, Token *token, Token *bounds, Scope *var_scope,
         unsigned int type_def_num, bool is_dependent) {
     Var_Def *vd = new Var_Def();
 
@@ -1689,8 +1689,8 @@ Token *Analyzer::create_temp_replacement(Program *program, Token *token, Scope *
     //build a replacement variable reference to replace where the function had been
     Token *var_ref = new Token(Token_Type::VAR_CALL);
     var_ref->contents = varname.str();
-    var_ref->start_pos = vd->token->start_pos;
-    var_ref->end_pos = vd->token->end_pos;
+    var_ref->start_pos = bounds->start_pos;
+    var_ref->end_pos = bounds->end_pos;
     var_ref->definition_number = definition_number;
     var_ref->type_def_num = type_def_num;
 
@@ -1699,16 +1699,16 @@ Token *Analyzer::create_temp_replacement(Program *program, Token *token, Scope *
     return var_ref;
 }
 
-Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Scope *scope, bool is_lhs) {
+Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Token *bounds, Scope *scope, bool is_lhs) {
     if ((token->type == Token_Type::ACTION_DEF) || (token->type == Token_Type::FUN_DEF)) {
         //scope = token->scope;
         scope = token->children[2]->scope;
 
-        analyze_ports_of_entry(program, token->children[2], scope, false);
+        analyze_ports_of_entry(program, token->children[2], bounds, scope, false);
     }
     else if ((token->type == Token_Type::FEATURE_DEF) || (token->type == Token_Type::ACTOR_DEF) ||
             (token->type == Token_Type::ISOLATED_ACTOR_DEF)) {
-        analyze_ports_of_entry(program, token->children[2], scope, false);
+        analyze_ports_of_entry(program, token->children[2], bounds, scope, false);
     }
     else if (token->type == Token_Type::EXTERN_FUN_DEF) {
         //do nothing
@@ -1717,7 +1717,8 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Scope *s
         if (token->type == Token_Type::BLOCK) {
             unsigned int i = 0;
             while (i < token->children.size()) {
-                Token *ret_val = analyze_ports_of_entry(program, token->children[i], scope, is_lhs);
+                bounds = token->children[i];
+                Token *ret_val = analyze_ports_of_entry(program, token->children[i], bounds, scope, is_lhs);
                 if (ret_val != NULL) {
                     Var_Def *vd = program->vars[program->vars.size() - 1];
                     Token *equation = new Token(Token_Type::SYMBOL);
@@ -1740,12 +1741,12 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Scope *s
         }
         else {
             if (token->contents == "=") {
-                Token *child = analyze_ports_of_entry(program, token->children[0], scope, true);
+                Token *child = analyze_ports_of_entry(program, token->children[0], bounds, scope, true);
                 if (child != NULL) {
                     return child;
                 }
 
-                child = analyze_ports_of_entry(program, token->children[1], scope, false);
+                child = analyze_ports_of_entry(program, token->children[1], bounds, scope, false);
                 if (child != NULL) {
                     return child;
                 }
@@ -1758,7 +1759,7 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Scope *s
             }
             else if (token->type == Token_Type::ARRAY_CALL) {
                 for (unsigned int j = 0; j < token->children.size(); ++j) {
-                    Token *child = analyze_ports_of_entry(program, token->children[j], scope, is_lhs);
+                    Token *child = analyze_ports_of_entry(program, token->children[j], bounds, scope, is_lhs);
                     if (child != NULL) {
                         return child;
                     }
@@ -1766,7 +1767,7 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Scope *s
 
                 if (is_lhs == false) {
                     if (token->type_def_num != (int)program->global->local_types["void"]) {
-                        Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num, false);
+                        Token *replacement = create_temp_replacement(program, token, bounds, scope, token->type_def_num, false);
                         *token = *replacement;
                         return program->vars[token->definition_number]->token;
                     }
@@ -1780,7 +1781,7 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Scope *s
             }
             else if (token->type == Token_Type::FUN_CALL) {
                 for (unsigned int j = 0; j < token->children.size(); ++j) {
-                    Token *child = analyze_ports_of_entry(program, token->children[j], scope, is_lhs);
+                    Token *child = analyze_ports_of_entry(program, token->children[j], bounds, scope, is_lhs);
                     if (child != NULL) {
                         return child;
                     }
@@ -1799,7 +1800,7 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Scope *s
                         is_dependent = false;
                     }
 
-                    Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num, is_dependent);
+                    Token *replacement = create_temp_replacement(program, token, bounds, scope, token->type_def_num, is_dependent);
                     *token = *replacement;
                     return program->vars[token->definition_number]->token;
                 }
@@ -1808,13 +1809,13 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Scope *s
                 }
             }
             else if (token->type == Token_Type::METHOD_CALL) {
-                Token *child = analyze_ports_of_entry(program, token->children[0], scope, is_lhs);
+                Token *child = analyze_ports_of_entry(program, token->children[0], bounds, scope, is_lhs);
                 if (child != NULL) {
                     return child;
                 }
 
                 for (unsigned int j = 0; j < token->children[1]->children.size(); ++j) {
-                    Token *child = analyze_ports_of_entry(program, token->children[1]->children[j], scope, is_lhs);
+                    Token *child = analyze_ports_of_entry(program, token->children[1]->children[j], bounds, scope, is_lhs);
                     if (child != NULL) {
                         return child;
                     }
@@ -1832,7 +1833,7 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Scope *s
                     else {
                         is_dependent = false;
                     }
-                    Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num, is_dependent);
+                    Token *replacement = create_temp_replacement(program, token, bounds, scope, token->type_def_num, is_dependent);
                     *token = *replacement;
                     return program->vars[token->definition_number]->token;
                 }
@@ -1842,20 +1843,20 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Scope *s
             }
             else if (token->type == Token_Type::REFERENCE_FEATURE) {
                 for (unsigned int j = 0; j < token->children[0]->children.size(); ++j) {
-                    Token *child = analyze_ports_of_entry(program, token->children[0]->children[j], scope, is_lhs);
+                    Token *child = analyze_ports_of_entry(program, token->children[0]->children[j], bounds, scope, is_lhs);
                     if (child != NULL) {
                         return child;
                     }
                 }
                 for (unsigned int j = 0; j < token->children[1]->children.size(); ++j) {
-                    Token *child = analyze_ports_of_entry(program, token->children[1]->children[j], scope, is_lhs);
+                    Token *child = analyze_ports_of_entry(program, token->children[1]->children[j], bounds, scope, is_lhs);
                     if (child != NULL) {
                         return child;
                     }
                 }
 
                 if (token->type_def_num != (int)program->global->local_types["void"]) {
-                    Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num, false);
+                    Token *replacement = create_temp_replacement(program, token, bounds, scope, token->type_def_num, false);
                     *token = *replacement;
                     return program->vars[token->definition_number]->token;
                 }
@@ -1866,43 +1867,43 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Scope *s
             else if (token->type == Token_Type::NEW_ALLOC) {
                 if (token->children[1]->type != Token_Type::ARRAY_CALL) {
                     for (unsigned int j = 0; j < token->children[1]->children.size(); ++j) {
-                        Token *child = analyze_ports_of_entry(program, token->children[1]->children[j], scope, is_lhs);
+                        Token *child = analyze_ports_of_entry(program, token->children[1]->children[j], bounds, scope, is_lhs);
                         if (child != NULL) {
                             return child;
                         }
                     }
                 }
-                Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num, true);
+                Token *replacement = create_temp_replacement(program, token, bounds, scope, token->type_def_num, true);
                 *token = *replacement;
                 return program->vars[token->definition_number]->token;
             }
             else if (token->type == Token_Type::SPAWN_ACTOR) {
                 for (unsigned int j = 0; j < token->children[1]->children.size(); ++j) {
-                    Token *child = analyze_ports_of_entry(program, token->children[1]->children[j], scope, is_lhs);
+                    Token *child = analyze_ports_of_entry(program, token->children[1]->children[j], bounds, scope, is_lhs);
                     if (child != NULL) {
                         return child;
                     }
                 }
 
-                Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num, true);
+                Token *replacement = create_temp_replacement(program, token, bounds, scope, token->type_def_num, true);
                 *token = *replacement;
                 return program->vars[token->definition_number]->token;
             }
             else if (token->type == Token_Type::CONCATENATE) {
                 for (unsigned int j = 0; j < token->children.size(); ++j) {
-                    Token *child = analyze_ports_of_entry(program, token->children[j], scope, is_lhs);
+                    Token *child = analyze_ports_of_entry(program, token->children[j], bounds, scope, is_lhs);
                     if (child != NULL) {
                         return child;
                     }
                 }
 
-                Token *replacement = create_temp_replacement(program, token, scope, token->type_def_num, true);
+                Token *replacement = create_temp_replacement(program, token, bounds, scope, token->type_def_num, true);
                 *token = *replacement;
                 return program->vars[token->definition_number]->token;
             }
             else {
                 for (unsigned int j = 0; j < token->children.size(); ++j) {
-                    Token *child = analyze_ports_of_entry(program, token->children[j], scope, is_lhs);
+                    Token *child = analyze_ports_of_entry(program, token->children[j], bounds, scope, is_lhs);
                     if (child != NULL) {
                         return child;
                     }
