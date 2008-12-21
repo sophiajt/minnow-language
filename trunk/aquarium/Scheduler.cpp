@@ -5,7 +5,7 @@
 #include "Aquarium.hpp"
 #include "Threading.hpp"
 
-const unsigned int TIMESLICE_QUANTUM__= 20;
+const unsigned int TIMESLICE_QUANTUM__= 2000;
 const unsigned int MSG_CACHE_MAX__ = 1000;
 
 /**
