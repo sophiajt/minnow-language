@@ -49,7 +49,6 @@ BOOL Work_Actor_do_work__(Message__ *m) {
         case (1) :
             while (pos < NUM_ITERS) {
                 ++pos;
-
                 if (--timeslice__ == 0) {
                     //printf("[%i]", pos); fflush(stdout);
                     cont_id__ = 1;

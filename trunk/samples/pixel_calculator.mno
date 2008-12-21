@@ -108,7 +108,6 @@ actor PixelSorter
   action AddPixel(t_p:Pixel)
     cont:bool = true
 
-    /*
     //No reason to even search if the most recent
     //pixel is not the one we need... because we already searched
     //for the currently needed pixel the last time AddPixel was
@@ -118,7 +117,7 @@ actor PixelSorter
     else
       cont = false
     end
-*/
+
 
     InsertPixel(t_p, m_pixels)
 
