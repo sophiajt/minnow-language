@@ -51,7 +51,7 @@ syn match minnowNumber "\<0x\x\+\>"
 syn keyword minnowType int float double char string pointer object bool
 
 "Keyword
-syn keyword minnowKeyword extern var namespace true false
+syn keyword minnowKeyword extern var namespace true false return
 
 "Built in funcs
 syn keyword minnowFunc print to_string is_null to_int to_float from_int from_string from_float to_double from_double
