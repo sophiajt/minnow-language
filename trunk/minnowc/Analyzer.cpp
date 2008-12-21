@@ -1940,52 +1940,78 @@ void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scop
 
 
         else if ((token->type == Token_Type::FUN_CALL) || (token->type == Token_Type::METHOD_CALL)) {
-            Token *continuation = new Token(Token_Type::CONTINUATION_SITE);
-
-            Token *copy = new Token(Token_Type::BOOL);
-            *copy = *token;
-            continuation->children.push_back(copy);
-            continuation->start_pos = token->start_pos;
-            continuation->end_pos = token->end_pos;
-
-            std::vector<int> push_pop = build_push_pop_list(program, scope, token->start_pos, token->end_pos);
-
-
-            if (scope->owner->definition_number < 0) {
-                throw Compiler_Exception("Internal error finding resume function", token->start_pos, token->end_pos);
+            Function_Def *fun_call;
+            if (token->type == Token_Type::FUN_CALL) {
+                fun_call = program->funs[token->definition_number];
+            }
+            else if (token->type == Token_Type::METHOD_CALL) {
+                fun_call = program->funs[token->children[1]->definition_number];
+                //fun_call = program->funs[token->definition_number];
+            }
+            else {
+                throw Compiler_Exception("Internal error in freeze resume symbol analysis", token->start_pos, token->end_pos);
             }
 
+            if ((fun_call->external_name == "") && (fun_call->is_internal == false)) {
+                Token *continuation = new Token(Token_Type::CONTINUATION_SITE);
 
-            Function_Def *owner = program->funs[scope->owner->definition_number];
-            program->var_sites.push_back(push_pop);
-            owner->continuation_sites.push_back(program->var_sites.size() - 1);
-            continuation->definition_number = program->var_sites.size() - 1;
+                Token *copy = new Token(Token_Type::BOOL);
+                *copy = *token;
+                continuation->children.push_back(copy);
+                continuation->start_pos = token->start_pos;
+                continuation->end_pos = token->end_pos;
 
-            *token = *continuation;
+                std::vector<int> push_pop = build_push_pop_list(program, scope, token->start_pos, token->end_pos);
 
+
+                if (scope->owner->definition_number < 0) {
+                    throw Compiler_Exception("Internal error finding resume function", token->start_pos, token->end_pos);
+                }
+
+
+                Function_Def *owner = program->funs[scope->owner->definition_number];
+                program->var_sites.push_back(push_pop);
+                owner->continuation_sites.push_back(program->var_sites.size() - 1);
+                continuation->definition_number = program->var_sites.size() - 1;
+
+                *token = *continuation;
+            }
         }
         else if ((token->children.size() > 1) &&
                 ((token->type == Token_Type::SYMBOL)) &&
                 ((token->children[1]->type == Token_Type::FUN_CALL) || (token->children[1]->type == Token_Type::METHOD_CALL)) ) {
 
-            Token *continuation = new Token(Token_Type::CONTINUATION_SITE);
-
-            Token *copy = new Token(Token_Type::BOOL);
-            *copy = *token;
-            continuation->children.push_back(copy);
-            continuation->start_pos = token->children[1]->start_pos;
-            continuation->end_pos = token->children[1]->end_pos;
-            std::vector<int> push_pop = build_push_pop_list(program, scope, token->children[1]->start_pos, token->children[1]->end_pos);
-
-            if (scope->owner->definition_number < 0) {
-                throw Compiler_Exception("Internal error finding resume function", token->start_pos, token->end_pos);
+            Function_Def *fun_call;
+            if (token->children[1]->type == Token_Type::FUN_CALL) {
+                fun_call = program->funs[token->children[1]->definition_number];
             }
-            Function_Def *owner = program->funs[scope->owner->definition_number];
-            program->var_sites.push_back(push_pop);
-            owner->continuation_sites.push_back(program->var_sites.size() - 1);
-            continuation->definition_number = program->var_sites.size() - 1;
+            else if (token->children[1]->type == Token_Type::METHOD_CALL) {
+                fun_call = program->funs[token->children[1]->children[1]->definition_number];
+                //fun_call = program->funs[token->children[1]->definition_number];
+            }
+            else {
+                throw Compiler_Exception("Internal error in freeze resume symbol analysis", token->start_pos, token->end_pos);
+            }
+            if ((fun_call->external_name == "") && (fun_call->is_internal == false)) {
+                Token *continuation = new Token(Token_Type::CONTINUATION_SITE);
 
-            *token = *continuation;
+                Token *copy = new Token(Token_Type::BOOL);
+                *copy = *token;
+                continuation->children.push_back(copy);
+                continuation->start_pos = token->children[1]->start_pos;
+                continuation->end_pos = token->children[1]->end_pos;
+                std::vector<int> push_pop = build_push_pop_list(program, scope, token->children[1]->start_pos, token->children[1]->end_pos);
+
+                if (scope->owner->definition_number < 0) {
+                    throw Compiler_Exception("Internal error finding resume function", token->start_pos, token->end_pos);
+                }
+                Function_Def *owner = program->funs[scope->owner->definition_number];
+                program->var_sites.push_back(push_pop);
+                owner->continuation_sites.push_back(program->var_sites.size() - 1);
+                continuation->definition_number = program->var_sites.size() - 1;
+
+                *token = *continuation;
+            }
         }
 
         else {
