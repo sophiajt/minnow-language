@@ -21,15 +21,15 @@ actor Collector
     print(" ")
     print(p.y)
     print(" ")
+    print("\n")
   end
 
   action receive(p : Pixel)
-    print("Received: ")
-
     m_pixels.push(p)
-
+//m_pixels[m_pixels.size() - 1]
     print(m_pixels[m_pixels.size() - 1])
     total += 1
+    print(total); print("\n")
     if (total == 5000)
       Sys.exit()
     end

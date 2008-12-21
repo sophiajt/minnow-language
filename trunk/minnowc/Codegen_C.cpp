@@ -932,6 +932,8 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
 
     if ((t->children.size() > 0) && (t->children[0]->type != Token_Type::DELETION_SITE)) {
         output << "((Actor__*)m__->recipient)->timeslice_remaining = timeslice__;" << std::endl;
+        output << "case(" << this->cont_id << "):" << std::endl;
+        ++this->cont_id;
         codegen_token(p, t->children[0], output);
         output << ";" << std::endl;
 
@@ -948,8 +950,13 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
                 output << "push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &var__" << p->var_sites[t->definition_number][i] << ");" << std::endl;
             }
         }
+        output << "if (((Actor__*)m__->recipient)->continuation_stack->current_size == 0) {" << std::endl;
         output << "cont_id__ = " << this->cont_id << ";" << std::endl;
+        output << "} else {" << std::endl;
+        output << "cont_id__ = " << this->cont_id - 1 << ";" << std::endl;
+        output << "}" << std::endl;
         output << "push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &cont_id__);" << std::endl;
+
         if (owner->token->type == Token_Type::ACTION_DEF) {
             output << "((Actor__*)m__->recipient)->actor_state = ACTOR_STATE_ACTIVE__;" << std::endl;
             output << "return TRUE; } " << std::endl;
