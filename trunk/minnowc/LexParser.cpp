@@ -568,6 +568,7 @@ Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::i
         switch (t->type) {
             case (Token_Type::SYMBOL) : //for return types
             case (Token_Type::BOOL) :
+            case (Token_Type::FUN_CALL) :
             case (Token_Type::ID) : {
                 Token *if_block = new Token(Token_Type::IF_BLOCK, id->start_pos, t->end_pos);
                 if_block->children.push_back(id);
@@ -650,6 +651,7 @@ Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::i
         switch (t->type) {
             case (Token_Type::SYMBOL) : //for return types
             case (Token_Type::BOOL) :
+            case (Token_Type::FUN_CALL) :
             case (Token_Type::ID) : {
                 Token *while_block = new Token(Token_Type::WHILE_BLOCK, id->start_pos, t->end_pos);
                 while_block->children.push_back(id);
