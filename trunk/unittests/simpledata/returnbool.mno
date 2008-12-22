@@ -1,0 +1,12 @@
+def returnbool : bool
+  return true
+end
+
+action main
+  if (returnbool())
+    print("Good")
+  else
+    print("Bad")
+  end
+  Sys.exit()
+end
