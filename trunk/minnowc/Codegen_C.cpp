@@ -456,7 +456,7 @@ void Codegen::codegen_action_call(Program *p, Token *t, std::ostringstream &outp
             }
         }
     }
-    output << "mail_to_actor__(msg__, (Actor__*)(msg__->recipient));}" << std::endl;
+    output << "mail_to_actor__(msg__, (Actor__*)(m__->recipient));}" << std::endl;
 }
 
 void Codegen::codegen_symbol(Program *p, Token *t, std::ostringstream &output) {
