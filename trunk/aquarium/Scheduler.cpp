@@ -271,6 +271,7 @@ BOOL maint_loop__(Message__ *msg) {
             recycle_this_msg = true;
         }
     }
+    flush_message_queue__(s->outgoing_channel);
 
     a->actor_state = ACTOR_STATE_WAITING_FOR_ACTION__;
     return TRUE;
@@ -426,7 +427,8 @@ void mail_to_actor__(Message__ *msg, Actor__ *sender) {
     }
 
     msg->next = NULL;
-    send_messages__(s->outgoing_channel, msg);
+    //send_messages__(s->outgoing_channel, msg);
+    queue_messages__(s->outgoing_channel, msg);
 }
 
 /**

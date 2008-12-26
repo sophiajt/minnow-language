@@ -75,7 +75,8 @@ BOOL kernel_loop__(Message__ *m) {
 
                             found = true;
 
-                            send_messages__(actor__->outgoing_channels[actor__->thread_pool_ids[i]], next_msg);
+                            //send_messages__(actor__->outgoing_channels[actor__->thread_pool_ids[i]], next_msg);
+                            queue_messages__(actor__->outgoing_channels[actor__->thread_pool_ids[i]], next_msg);
                         }
                     }
                     if (!found) {
@@ -102,7 +103,8 @@ BOOL kernel_loop__(Message__ *m) {
 
                         found = true;
 
-                        send_messages__(new_s->incoming_channel, next_msg);
+                        //send_messages__(new_s->incoming_channel, next_msg);
+                        queue_messages__(new_s->incoming_channel, next_msg);
                     }
                 }
                 break;
@@ -137,7 +139,8 @@ BOOL kernel_loop__(Message__ *m) {
 
                         new_mail = new_mail->next;
                         outbound->next = NULL;
-                        send_messages__(actor__->outgoing_channels[finder->second], outbound);
+                        //send_messages__(actor__->outgoing_channels[finder->second], outbound);
+                        queue_messages__(actor__->outgoing_channels[finder->second], outbound);
                     }
                     else {
                         Message__ *outbound = new_mail;
@@ -146,6 +149,7 @@ BOOL kernel_loop__(Message__ *m) {
                         new_mail = new_mail->next;
                         outbound->next = NULL;
                         send_messages__(actor__->incoming_channels[0], outbound); //try again later
+                        //queue_messages__(actor__->incoming_channels[0], outbound); //try again later
                     }
                 }
                 break;
@@ -244,12 +248,15 @@ BOOL kernel_loop__(Message__ *m) {
             msg->args[0].Int32 = amount;
             msg->args[1].VoidPtr = actor__->outgoing_channels[lightest_pos];
             msg->next = NULL;
-            send_messages__(actor__->outgoing_channels[heaviest_pos], msg);
+            //send_messages__(actor__->outgoing_channels[heaviest_pos], msg);
+            queue_messages__(actor__->outgoing_channels[heaviest_pos], msg);
 
             //actor__->schedule_weights[heaviest_pos] -= amount;
         }
     }
-
+    for (int current_pos = 0, end_pos = actor__->incoming_channels.size(); current_pos < end_pos; ++current_pos) {
+        flush_message_queue__(actor__->outgoing_channels[current_pos]);
+    }
     actor__->base__.actor_state = ACTOR_STATE_WAITING_FOR_ACTION__;
     return TRUE;
 }
@@ -257,6 +264,98 @@ BOOL kernel_loop__(Message__ *m) {
 /**
  * The main entry point into aquarium.  Starts all schedulers and begins the main action
  */
+/*
+int aquarium_main__(int argc, char *argv[], BOOL(*task)(Message__ *), BOOL pass_cmd_line) {
+    Thread__ t;
+
+    //FIXME: traditionally something like num_hw_threads would be a static
+    int num_sched_threads = t.num_hw_threads();
+    Message_Channel__ *actor_updates = create_message_channel__();
+
+    Scheduler__ *schedulers[num_sched_threads+1];
+
+    for (int i = 0; i < num_sched_threads+1; ++i) {
+        schedulers[i] = create_scheduler__(SCHEDULER_NORMAL__);
+        schedulers[i]->actor_updates = actor_updates;
+        schedulers[i]->scheduler_id = i;
+    }
+
+    //special case: the kernel is new'd here because it's one of the only things that has to be C++ managed
+    Kernel_Actor__ *kernel = new Kernel_Actor__();
+    initialize_actor__(&kernel->base__);
+    kernel->actor_updates = actor_updates;
+    kernel->num_hw_threads = num_sched_threads;
+
+    //connect up channels
+    for (int i = 0; i < num_sched_threads+1; ++i) {
+        //printf("<%i>", i);
+        kernel->incoming_channels.push_back(schedulers[i]->outgoing_channel);
+        kernel->outgoing_channels.push_back(schedulers[i]->incoming_channel);
+        kernel->schedule_weights.push_back(0);
+    }
+
+    //Schedule the main actor (like the main function in the program)
+    Actor__ *main_actor = create_actor__(sizeof(Actor__));
+    add_actor_to_sched__(schedulers[0+1], main_actor);
+    add_actor_to_sched__(schedulers[0+1], &kernel->base__);
+
+    //Set up the action that will fire off our kernel event
+    Message__ *kernel_action = get_msg_from_cache__(schedulers[0]);
+    kernel_action->act_data.task = kernel_loop__;
+    kernel_action->recipient = kernel;
+    kernel_action->sched = schedulers[0];
+    kernel_action->message_type = MESSAGE_TYPE_ACTION;
+    mail_to_actor__(kernel_action, &kernel->base__);
+
+    if (pass_cmd_line) {
+        //package up the commandline for the first actor
+        Typeless_Vector__ *commandline_args = create_typeless_vector__(sizeof(Typeless_Vector__*),0);
+
+        //Grab commandline args
+        for (int i = 1; i < argc; ++i) {
+            Typeless_Vector__ *cmd_arg = create_char_string_from_char_ptr__(argv[i]);
+
+            push_onto_typeless_vector__(commandline_args, &cmd_arg);
+        }
+
+        //And send it the first message
+        Message__ *main_action = get_msg_from_cache__(schedulers[1]);
+        main_action->act_data.task = task;
+        main_action->recipient = main_actor;
+        main_action->sched = schedulers[1];
+        main_action->args[0].VoidPtr = commandline_args;
+        main_action->message_type = MESSAGE_TYPE_ACTION;
+
+        mail_to_actor__(main_action, main_actor);
+    }
+    else {
+        Message__ *main_action = get_msg_from_cache__(schedulers[1]);
+        main_action->act_data.task = task;
+        main_action->recipient = main_actor;
+        main_action->sched = schedulers[1];
+        main_action->message_type = MESSAGE_TYPE_ACTION;
+
+        mail_to_actor__(main_action, main_actor);
+    }
+
+    Thread__ *threads[num_sched_threads+1];
+    for (int i = 1; i < num_sched_threads+1; ++i) {
+        threads[i] = new Thread__();
+        threads[i]->create(scheduler_loop__, schedulers[i]);
+    }
+
+    //printf("Scheduler loop\n");
+    scheduler_loop__(schedulers[0]);
+
+    //join the threads here.
+
+    //for (int i = 1; i < num_sched_threads; ++i) {
+    //    threads[i]->join();
+    //}
+
+    return 0;
+}
+*/
 int aquarium_main__(int argc, char *argv[], BOOL(*task)(Message__ *), BOOL pass_cmd_line) {
     Thread__ t;
 
@@ -340,10 +439,10 @@ int aquarium_main__(int argc, char *argv[], BOOL(*task)(Message__ *), BOOL pass_
     scheduler_loop__(schedulers[0]);
 
     //join the threads here.
-    /*
-    for (int i = 1; i < num_sched_threads; ++i) {
-        threads[i]->join();
-    }
-    */
+
+    //for (int i = 1; i < num_sched_threads; ++i) {
+    //    threads[i]->join();
+    //}
+
     return 0;
 }

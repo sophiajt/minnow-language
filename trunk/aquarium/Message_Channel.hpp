@@ -18,6 +18,8 @@ extern "C" {
 typedef struct  {
     volatile Message__ *base; /**< The base of the linked list, used to detect new incoming messages */
     volatile Message__ *write_head; /**< The point where new outgoing messages will be attached */
+    Message__ *buffer_base; /**< The write queue for buffered messages */
+    Message__ *buffer_write_head; /**< The write head for buffered messages */
     volatile void *mutex; /**< The protection mutex used to atomically lock the channel when in use */
 } Message_Channel__;
 
@@ -26,6 +28,8 @@ typedef struct  {
  */
 /*@{*/
 void send_messages__(Message_Channel__ *channel, Message__ *message);
+void queue_messages__(Message_Channel__ *channel, Message__ *message);
+void flush_message_queue__(Message_Channel__ *channel);
 Message__ *recv_messages__(Message_Channel__ *channel);
 Message_Channel__ *create_message_channel__();
 void delete_message_channel__(Message_Channel__ *channel);
