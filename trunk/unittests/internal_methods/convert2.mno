@@ -1,0 +1,10 @@
+action main
+  f : float
+  i : int = 4
+  i.to_float()
+  f.from_int(i)
+  print(f)
+  print("\n")
+  print("10".to_int() + 5)
+  Sys.exit()
+end
