@@ -1,0 +1,9 @@
+action main
+  x : var = 0
+  while (x < 10)
+    x += 1
+  end
+  print(x)
+  Sys.exit()
+end
+

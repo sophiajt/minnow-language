@@ -1,0 +1,11 @@
+feature Greeter
+  def greet
+    print("Hello")
+  end
+end
+
+action main
+  g : Greeter = new Greeter()
+  g.greet()
+  Sys.exit()
+end
