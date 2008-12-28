@@ -93,7 +93,7 @@ if (len(failed_tests) > 0):
   for i in failed_tests:
     print i
 else:
-  print("All tests pass")
+  print("All tests (" + str(total_test_count) + " of " + str(total_test_count) + ") pass")
 
 #output = Popen(["ls", "-l"], stdout=PIPE).communicate()[0]
 #print output

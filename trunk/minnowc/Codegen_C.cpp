@@ -1515,6 +1515,7 @@ void Codegen::codegen_action_decl(Program *p, Token *t, std::ostringstream &outp
                 else {
                     output << "((Actor__*)m__->recipient)->actor_state = ACTOR_STATE_WAITING_FOR_ACTION__;" << std::endl;
                 }
+                output << "((Actor__*)m__->recipient)->timeslice_remaining = timeslice__;" << std::endl;
                 output << "return FALSE;" << std::endl << "}" << std::endl;
 
             }
