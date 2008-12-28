@@ -60,16 +60,6 @@ if [ $OUT -ne 0 ]; then
   kill 0
 fi
 
-echo "Running threadring_obj..."
-./bin/minnowc samples/threadring_obj.mno -o tmp/threadring_obj
-
-echo "10000000"
-time ./tmp/threadring_obj 10000000
-OUT=$?
-if [ $OUT -ne 0 ]; then
-  kill 0
-fi
-
 echo "Running rebalance..."
 ./bin/minnowc samples/rebalance.mno -o tmp/rebalance
 echo "1000 1000000"
