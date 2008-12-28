@@ -1,0 +1,8 @@
+action main(args : Array[string])
+  end_i : int = args[0].to_int()
+  i : int = 0
+  while (i < end_i)
+    i += 1
+  end
+  Sys.exit()
+end
