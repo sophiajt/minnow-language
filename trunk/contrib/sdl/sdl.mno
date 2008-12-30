@@ -1,6 +1,8 @@
 namespace SDL.Externals
 extern def create_sdl_window_(width : int, height : int, depth : int) : pointer
 extern def draw_pixel_(screen_v : pointer, r : int, g : int, b : int, x : int, y : int)
+extern def delay_(milliseconds : int)
+extern def clear_events_()
 
 namespace SDL
 
@@ -18,4 +20,11 @@ def draw_pixel(s : Screen, r : int, g : int, b : int, x : int, y : int)
   SDL.Externals.draw_pixel_(s.screen, r, g, b, x, y)
 end
 
+def delay(milliseconds : int)
+  SDL.Externals.delay_(milliseconds)
+end
+
+def clear_events()
+  SDL.Externals.clear_events_()
+end
 

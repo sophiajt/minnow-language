@@ -70,6 +70,19 @@ void draw_pixel_(void *screen_v, int R, int G, int B, int x, int y)
   SDL_Flip(screen);
 }
 
+void delay_(int milliseconds) {
+  SDL_Delay(milliseconds);
+}
+
+void clear_events_() {
+  SDL_Event event;
+  SDL_PollEvent(&event);
+
+  if (event.type == SDL_QUIT) {
+    exit(0);
+  }
+}
+ 
 /*
 int main(int argc, char *argv[]) {
      SDL_Surface *screen;
