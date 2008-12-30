@@ -112,12 +112,14 @@ actor PixelSorter
     //pixel is not the one we need... because we already searched
     //for the currently needed pixel the last time AddPixel was
     //called
+    
+    /*
     if ((t_p.point.x == m_x) && (t_p.point.y == m_y))
       cont = true
     else
       cont = false
     end
-
+*/
 
     InsertPixel(t_p, m_pixels)
 
@@ -166,13 +168,44 @@ actor PixelCalc
     m_ps = ps
   end
 
+  def GetColor(xcoord:int, ycoord:int) : Color
+    xscaled:double = xcoord.to_double()/(256.0/3.0) - 2.0
+    yscaled:double = ycoord.to_double()/(256.0/3.0) - 1.5
+//w    print("x: " + xscaled.to_string() + " y: " + yscaled.to_string()+"\n")
+    x:double = xscaled
+    y:double = yscaled
+
+    iteration:int = 0
+    max_iteration:int = 2000
+
+    while ( (x*x) + (y*y) <= (2.0*2.0) && iteration < max_iteration )
+      xtemp:double = (x*x) - (y*y) + xscaled
+      y = (2.0*x*y) + yscaled
+      x = xtemp
+      iteration += 1
+    end
+
+    if (iteration == max_iteration)
+      return new Color(0.0,0.0,0.0)
+    else
+      red:double = 0.0
+      green:double = 0.0
+      blue:double = 0.0
+      if (iteration < 256)
+        red = iteration.to_double()/256.0
+      end
+
+      return new Color(red, green, blue)
+    end
+
+  end
+
   action calc()
     y:int = m_tl.y
     while (y < m_br.y)
       x:int = m_tl.x
       while (x < m_br.x)
-        color : Color = new Color(x.to_double() / 255.0, y.to_double() / 255.0, 0.0)
-        m_ps::AddPixel(new Pixel(new Point(x, y), color))
+        m_ps::AddPixel(new Pixel(new Point(x, y), GetColor(x,y)))
         x += 1
       end
       y += 1
@@ -190,7 +223,7 @@ action main(args : Array[string])
   x:int = 0
   y:int = 0
 
-  div:int = 2
+  div:int = 1
 
   while (x < w)
     y = 0
