@@ -1,0 +1,21 @@
+namespace SDL.Externals
+extern def create_sdl_window_(width : int, height : int, depth : int) : pointer
+extern def draw_pixel_(screen_v : pointer, r : int, g : int, b : int, x : int, y : int)
+
+namespace SDL
+
+feature Screen
+  screen : pointer
+end
+
+def create_sdl_window(width : int, height : int, depth : int) : Screen
+  s : Screen = new Screen()
+  s.screen = SDL.Externals.create_sdl_window_(width, height, depth)
+  return s
+end
+
+def draw_pixel(s : Screen, r : int, g : int, b : int, x : int, y : int)
+  SDL.Externals.draw_pixel_(s.screen, r, g, b, x, y)
+end
+
+

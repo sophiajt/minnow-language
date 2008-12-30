@@ -151,7 +151,7 @@ public:
     }
 
     void compile_program(Program *p, int argc, char *argv[], char *output_file, std::string include_dir,
-            std::string lib_dir) {
+            const std::vector<std::string> &lib_dirs, const std::vector<std::string> &libs) {
 
         std::ostringstream output;
 
@@ -167,7 +167,15 @@ public:
             std::ostringstream exe_cmdline;
 
             exe_cmdline << "gcc -ggdb -O3 -o \"" << output_file << "\" tmpXXXXX.c -Werror -I\"" << include_dir
-                << "\" -L\"" << lib_dir << "\" -laquarium";
+                << "\" ";
+
+            for (unsigned int i = 0; i < lib_dirs.size(); ++i) {
+                exe_cmdline << "-L\"" << lib_dirs[i] << "\" ";
+            }
+
+            for (unsigned int i = 0; i < libs.size(); ++i) {
+                exe_cmdline << "-l" << libs[i] << " ";
+            }
 
             if (system(exe_cmdline.str().c_str()) == 0) {
                 remove("tmpXXXXX.cpp");
@@ -181,9 +189,7 @@ public:
                 std::cout << "Used compile line: " << exe_cmdline.str() << std::endl;
                 exit(-1);
             }
-
         }
-
     }
 
     void print_positions(std::string &contents, Position &start_pos, Position &end_pos) {
@@ -271,6 +277,9 @@ int main(int argc, char *argv[]) {
         exit(0);
     }
 
+    std::vector<std::string> libs;
+    libs.push_back("aquarium");
+
     std::string prelude_dir = "";
     std::string prefix_dir = "";
     std::string lib_dir = ".";
@@ -282,6 +291,9 @@ int main(int argc, char *argv[]) {
         lib_dir = prefix_dir + "lib";
         include_dir = prefix_dir + "include/minnow";
     #endif
+
+    std::vector<std::string> lib_dirs;
+    lib_dirs.push_back(lib_dir);
 
     try {
         compiler.translate_file(p, prelude_dir + "prelude.mno");
@@ -300,13 +312,37 @@ int main(int argc, char *argv[]) {
                     exit(0);
                 }
             }
+            else if (strcmp(argv[i], "-L") == 0) {
+                //grab output file
+                if ((i+1) < argc) {
+                    std::string libdir = argv[i+1];
+                    lib_dirs.push_back(libdir);
+                    i = i + 2;
+                }
+                else {
+                    printf("Missing library directory:  Use -L <director> to add a library directory\n");
+                    exit(0);
+                }
+            }
+            else if (strcmp(argv[i], "-l") == 0) {
+                //grab output file
+                if ((i+1) < argc) {
+                    std::string libname = argv[i+1];
+                    libs.push_back(libname);
+                    i = i + 2;
+                }
+                else {
+                    printf("Missing library filename:  Use -l <filename> to add a library\n");
+                    exit(0);
+                }
+            }
             else {
                 compiler.translate_file(p, argv[i]);
                 ++i;
             }
         }
         //Start outputting code
-        compiler.compile_program(p, argc, argv, output_file, include_dir, lib_dir);
+        compiler.compile_program(p, argc, argv, output_file, include_dir, lib_dirs, libs);
 
     }
     catch (Compiler_Exception &ce) {

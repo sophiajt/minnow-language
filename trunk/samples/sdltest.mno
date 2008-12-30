@@ -1,0 +1,3 @@
+action main
+  SDL.create_sdl_window(640, 480, 32)
+end
