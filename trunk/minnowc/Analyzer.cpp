@@ -1814,11 +1814,16 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Token *b
                         throw Compiler_Exception("Internal definition number error", token->start_pos, token->end_pos);
                     }
                     Function_Def *fd = program->funs[token->definition_number];
+
                     bool is_dependent;
                     if (fd->is_port_of_entry) {
                         is_dependent = true;
                     }
                     else {
+                        is_dependent = false;
+                    }
+
+                    if ((is_dependent) && (is_lhs == false)) {
                         is_dependent = false;
                     }
 

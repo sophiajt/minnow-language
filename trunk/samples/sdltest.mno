@@ -1,3 +1,4 @@
 action main
-  SDL.create_sdl_window(640, 480, 32)
+  s : var = SDL.create_sdl_window(640, 480, 32)
+  SDL.draw_pixel(s, 255, 0, 0, 10, 20)
 end
