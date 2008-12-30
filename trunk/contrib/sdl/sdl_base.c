@@ -17,10 +17,28 @@ void *create_sdl_window_(int width, int height, int depth) {
   return screen;
 }
 
+void *create_sdl_surface_(int width, int height, int depth) {
+  SDL_Surface *surface;
+  
+  surface = SDL_CreateRGBSurface(SDL_SWSURFACE, width, height, depth, 0, 0, 0, 0);
+  if (surface == NULL) {
+    //TODO: Throw exception here instead
+    fprintf(stderr, "Unable to create surface of %ix%i - %s\n", width, height, SDL_GetError());
+    exit(1);
+  }
+  
+  return surface;
+}
+
+void blit_surface_(void *screen_v, void *surface_v) {
+  SDL_BlitSurface(surface_v, NULL, screen_v, NULL);
+  SDL_Flip(screen_v);
+}
+
 //Taken from: http://www.libsdl.org/intro.en/usingvideo.html
-void draw_pixel_(void *screen_v, int R, int G, int B, int x, int y)
+void draw_pixel_(void *surface_v, int R, int G, int B, int x, int y)
 {
-  SDL_Surface *screen = (SDL_Surface*) screen_v;
+  SDL_Surface *screen = (SDL_Surface*) surface_v;
   Uint32 color = SDL_MapRGB(screen->format, R, G, B);
 
   if ( SDL_MUSTLOCK(screen) ) {
@@ -67,7 +85,7 @@ void draw_pixel_(void *screen_v, int R, int G, int B, int x, int y)
       SDL_UnlockSurface(screen);
   }
   SDL_UpdateRect(screen, x, y, 1, 1);
-  SDL_Flip(screen);
+  //SDL_Flip(screen);
 }
 
 void delay_(int milliseconds) {
@@ -76,10 +94,10 @@ void delay_(int milliseconds) {
 
 void clear_events_() {
   SDL_Event event;
-  SDL_PollEvent(&event);
-
-  if (event.type == SDL_QUIT) {
-    exit(0);
+  while (SDL_PollEvent(&event)) {
+    if (event.type == SDL_QUIT) {
+      exit(0);
+    }
   }
 }
  

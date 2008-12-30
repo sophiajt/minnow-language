@@ -3,8 +3,9 @@
 */
 isolated actor SDL_Test
   action do_sdl
-    s : var = SDL.create_sdl_window(640, 480, 32)
-    SDL.draw_pixel(s, 255, 0, 0, 10, 20)
+    s : var = new SDL.Surface()
+    s.create_main_window(640, 480, 32)
+    s.draw_pixel(255, 0, 0, 10, 20)
     while (true)
       SDL.delay(100)
       SDL.clear_events()

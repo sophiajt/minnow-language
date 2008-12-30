@@ -1,23 +1,32 @@
 namespace SDL.Externals
 extern def create_sdl_window_(width : int, height : int, depth : int) : pointer
-extern def draw_pixel_(screen_v : pointer, r : int, g : int, b : int, x : int, y : int)
+extern def create_sdl_surface_(width : int, height : int, depth : int) : pointer
+extern def draw_pixel_(surface_v : pointer, r : int, g : int, b : int, x : int, y : int)
+extern def blit_surface_(screen_v : pointer, surface_v : pointer)
 extern def delay_(milliseconds : int)
 extern def clear_events_()
 
 namespace SDL
 
-feature Screen
-  screen : pointer
-end
+feature Surface
+  surface : pointer
+ 
+  def create_main_window(width : int, height : int, depth : int)
+    surface = SDL.Externals.create_sdl_window_(width, height, depth)
+  end
+  
+  def create_surface(width : int, height : int, depth : int) 
+    surface = SDL.Externals.create_sdl_surface_(width, height, depth)
+  end
+  
+  def draw_pixel(r : int, g : int, b : int, x : int, y : int)
+    SDL.Externals.draw_pixel_(surface, r, g, b, x, y)
+  end
+  
+  def blit_surface(src : Surface)
+    SDL.Externals.blit_surface_(surface, src.surface)
+  end
 
-def create_sdl_window(width : int, height : int, depth : int) : Screen
-  s : Screen = new Screen()
-  s.screen = SDL.Externals.create_sdl_window_(width, height, depth)
-  return s
-end
-
-def draw_pixel(s : Screen, r : int, g : int, b : int, x : int, y : int)
-  SDL.Externals.draw_pixel_(s.screen, r, g, b, x, y)
 end
 
 def delay(milliseconds : int)

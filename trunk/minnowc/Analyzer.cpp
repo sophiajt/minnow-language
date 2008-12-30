@@ -1239,6 +1239,7 @@ void Analyzer::analyze_implied_this(Program *program, Token *token, Scope *scope
     }
     else if ((token->type == Token_Type::METHOD_CALL) || (token->type == Token_Type::ACTION_CALL) || (token->contents == ".")) {
         analyze_implied_this(program, token->children[0], scope);
+        //analyze_implied_this(program, token->children[1], scope);
     }
     else if ((token->type == Token_Type::EXTERN_FUN_DEF)) {
         //do nothing
