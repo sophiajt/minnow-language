@@ -942,14 +942,20 @@ Token *Lex_Parser::lexparse_ifblock(std::string::iterator &curr, std::string::it
         Token *child = lexparse_expression(curr, end, p);
         if (child != NULL) {
             if (child->contents == "end") {
+                //todo: FIX THIS!!!
+                block->end_pos = p;
                 delete child;
                 return block;
             }
             else if (child->contents == "elseif") {
+                //todo: FIX THIS!!!
+                block->end_pos = p;
                 *continuation = child;
                 return block;
             }
             else if (child->contents == "else") {
+                //todo: FIX THIS!!!
+                block->end_pos = p;
                 *continuation = child;
                 return block;
             }

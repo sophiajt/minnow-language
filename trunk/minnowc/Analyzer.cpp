@@ -1687,7 +1687,6 @@ Token *Analyzer::create_temp_replacement(Program *program, Token *token, Token *
     vd->token = new Token(token->type);
     *(vd->token) = *token;
     vd->type_def_num = type_def_num;
-    vd->usage_start = token->start_pos;
     vd->is_dependent = is_dependent;
     vd->usage_start = bounds->start_pos;
     vd->usage_end = bounds->end_pos;
@@ -1704,6 +1703,8 @@ Token *Analyzer::create_temp_replacement(Program *program, Token *token, Token *
     var_ref->contents = varname.str();
     var_ref->definition_number = definition_number;
     var_ref->type_def_num = type_def_num;
+    var_ref->start_pos = token->start_pos;
+    var_ref->end_pos = token->end_pos;
 
     var_scope->local_vars[varname.str()] = definition_number;
     /*
@@ -1733,10 +1734,11 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Token *b
 
             while (i < token->children.size()) {
                 Token *ret_val;
+
                 if (!is_block_bound) {
                     if (token->children[i]->type == Token_Type::WHILE_BLOCK) {
                         bounds = token->children[i];
-                        is_block_bound = true;
+                        ret_val = analyze_ports_of_entry(program, token->children[i], bounds, scope, is_lhs, true);
                     }
                 }
                 if (is_block_bound) {
@@ -1745,15 +1747,20 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Token *b
                 else {
                     ret_val = analyze_ports_of_entry(program, token->children[i], token->children[i], scope, is_lhs, is_block_bound);
                 }
+
                 if (ret_val != NULL) {
                     Var_Def *vd = program->vars[program->vars.size() - 1];
                     Token *equation = new Token(Token_Type::SYMBOL);
                     equation->contents = "=";
                     equation->type_def_num = ret_val->type_def_num;
+                    equation->start_pos = ret_val->start_pos;
+                    equation->end_pos = ret_val->end_pos;
 
                     Token *var_ref = new Token(Token_Type::VAR_DECL);
                     var_ref->definition_number = program->vars.size() - 1;
                     var_ref->type_def_num = ret_val->type_def_num;
+                    var_ref->start_pos = ret_val->start_pos;
+                    var_ref->end_pos = ret_val->end_pos;
 
                     equation->children.push_back(var_ref);
                     equation->children.push_back(ret_val);
@@ -2237,6 +2244,7 @@ std::vector<int> Analyzer::build_delete_list(Program *program, Scope *scope, Pos
     return ret_val;
 }
 
+/*
 std::vector<int> Analyzer::build_delete_remaining_list(Program *program, Scope *scope) {
     std::vector<int> ret_val;
 
@@ -2247,7 +2255,7 @@ std::vector<int> Analyzer::build_delete_remaining_list(Program *program, Scope *
             Var_Def *vd = program->vars[iter->second];
 
             if ((vd->is_property == false) && (vd->is_dependent == true) && (vd->is_removed == false) &&
-                    (is_complex_var(program, iter->second))) {
+                    (is_complex_var(program, iter->second)) ) {
 
                 vd->is_removed = true;
                 ret_val.push_back(iter->second);
@@ -2258,6 +2266,7 @@ std::vector<int> Analyzer::build_delete_remaining_list(Program *program, Scope *
 
     return ret_val;
 }
+*/
 
 void Analyzer::examine_port_of_exit(Program *program, Token *token) {
     Function_Def *fd;
@@ -2508,10 +2517,12 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope)
                 else if (child->type == Token_Type::RETURN_CALL) {
                     if (child->children.size() > 1) {
                         if (child->children[1]->type == Token_Type::VAR_CALL) {
+
                             Var_Def *vd = program->vars[child->children[1]->definition_number];
                             if (vd->is_dependent == true) {
                                 vd->is_removed = true;
-                                std::vector<int> delete_site = build_delete_remaining_list(program, scope);
+                                //std::vector<int> delete_site = build_delete_remaining_list(program, scope);
+                                std::vector<int> delete_site = build_delete_list(program, scope, child->end_pos);
                                 if (delete_site.size() > 0) {
                                     Token *deletion = new Token(Token_Type::DELETION_SITE);
                                     program->var_sites.push_back(delete_site);
@@ -2523,7 +2534,13 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope)
                                 else {
                                     ++i;
                                 }
-                                vd->is_removed = false;
+
+                                if (vd->usage_end == child->end_pos) {
+                                    vd->is_removed = true;
+                                }
+                                else {
+                                    vd->is_removed = false;
+                                }
                             }
                             else {
                                 if (is_complex_type(program, child->children[1]->type_def_num)) {
@@ -2535,7 +2552,9 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope)
 
                                     child->children[1] = copy_t;
                                 }
-                                std::vector<int> delete_site = build_delete_remaining_list(program, scope);
+                                //std::vector<int> delete_site = build_delete_remaining_list(program, scope);
+                                std::vector<int> delete_site = build_delete_list(program, scope, child->end_pos);
+
                                 if (delete_site.size() > 0) {
                                     Token *deletion = new Token(Token_Type::DELETION_SITE);
                                     program->var_sites.push_back(delete_site);
@@ -2554,7 +2573,8 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope)
                         }
                     }
                     else {
-                        std::vector<int> delete_site = build_delete_remaining_list(program, scope);
+                        //std::vector<int> delete_site = build_delete_remaining_list(program, scope);
+                        std::vector<int> delete_site = build_delete_list(program, scope, child->end_pos);
                         if (delete_site.size() > 0) {
                             Token *deletion = new Token(Token_Type::DELETION_SITE);
                             program->var_sites.push_back(delete_site);
