@@ -1,4 +1,5 @@
-
+extern def log(x : double) : double
+extern def fabs(x : double) : double
 
 feature Color
   r : double
@@ -45,8 +46,6 @@ isolated actor SDLWriter
   m_width : int
   m_height : int
 
-  m_x : int
-  m_y : int
   m_pixels : int
   screen : SDL.Surface
   surface : SDL.Surface
@@ -55,8 +54,6 @@ isolated actor SDLWriter
     m_width = t_width
     m_height = t_height
 
-    m_x = 0
-    m_y = 0
     m_pixels = 0
 
     screen = new SDL.Surface()
@@ -102,41 +99,58 @@ actor PixelCalc
     m_sdl = sdl
     m_width = t_width
     m_height = t_height
+
+    print ("(" + tl.x.to_string() + ", " + tl.y.to_string() + "), (" + br.x.to_string() + ", " + br.y.to_string() + ")\n")
   end
 
   def GetColor(xcoord:int, ycoord:int) : Color
     xscaled:double = xcoord.to_double()/(m_width.to_double()/3.0) - 2.0
-    yscaled:double = ycoord.to_double()/(m_height.to_double()/3.0) - 1.5
+    yscaled:double = ycoord.to_double()/(m_height.to_double()/3.0) - 1.6
 
     x:double = xscaled
     y:double = yscaled
 
     iteration:int = 0
-    max_iteration:int = 768
+    max_iteration:int = 4000
 
-    while ( (x*x) + (y*y) <= (2.0*2.0) && iteration < max_iteration )
+    stop_iteration:int = max_iteration
+
+    while ( iteration < stop_iteration )
+      if ((x*x) + (y*y) > (2.0*2.0) && stop_iteration == max_iteration)
+        stop_iteration = iteration + 4
+      end
+
       xtemp:double = (x*x) - (y*y) + xscaled
       y = (2.0*x*y) + yscaled
       x = xtemp
       iteration += 1
+
     end
 
     if (iteration == max_iteration)
       return new Color(0.0,0.0,0.0)
     else
+      value:double = ((iteration + 1).to_double() - (log(log(fabs(x * y))))/log(2.0)) 
       red:double = 0.0
       green:double = 0.0
       blue:double = 0.0
-      iteration += 32
-      if (iteration < 256)
-        red = (iteration.to_double())/256.0
-      elseif (iteration < 512)
+
+    if (ycoord == 32)
+      print (xcoord.to_string() + ", " + ycoord.to_string() + ": " + value.to_string() + "\n")
+    end
+
+    
+      colorval:int = (value * 10.0).to_int()
+
+      if (colorval < 256)
+        red = (colorval.to_double())/256.0
+      elseif (colorval < 512)
         red = 1.0
-        green = (iteration - 255).to_double()/256.0
+        green = (colorval - 255).to_double()/256.0
       else
         red = 1.0
         green = 1.0
-        blue = (iteration - 511).to_double()/256.0
+        blue = (colorval - 511).to_double()/256.0
       end
 
       return new Color(red, green, blue)
@@ -159,8 +173,8 @@ end
 
 
 action main(args : Array[string])
-  w:int = 1024
-  h:int = 1024
+  w:int = 512
+  h:int = 512
   sdlwriter:var = spawn SDLWriter(w, h)
   calcs:var = new Array[PixelCalc]
   x:int = 0
