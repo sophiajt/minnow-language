@@ -69,19 +69,16 @@ isolated actor SDLWriter
     m_pixels += 1
     SDL.clear_events()
 
-    if (p.point.x == m_width - 1)
+    if ((m_pixels/32)*32 == m_pixels)
       screen.blit_surface(surface)
     end
 
-
     if (m_pixels == (m_width * m_height))
-      //Sys.exit()
-
+      screen.blit_surface(surface)
       while(true)
         SDL.delay(100)
         SDL.clear_events()
       end
-
     end
   end
 end
@@ -135,10 +132,6 @@ actor PixelCalc
       green:double = 0.0
       blue:double = 0.0
 
-    if (ycoord == 32)
-      print (xcoord.to_string() + ", " + ycoord.to_string() + ": " + value.to_string() + "\n")
-    end
-
     
       colorval:int = (value * 10.0).to_int()
 
@@ -180,7 +173,7 @@ action main(args : Array[string])
   x:int = 0
   y:int = 0
 
-  div:int = 2
+  div:int = 8
 
   while (x < w)
     y = 0
