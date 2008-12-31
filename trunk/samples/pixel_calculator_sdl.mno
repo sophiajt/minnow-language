@@ -40,134 +40,49 @@ feature Pixel
 end
 
 //technically this should be an 'isolated actor' because of the use of SDL.delay
-isolated actor PPMWriter
+isolated actor SDLWriter
 
   m_width : int
   m_height : int
 
   m_x : int
   m_y : int
+  m_pixels : int
   screen : SDL.Surface
   surface : SDL.Surface
 
-  def PPMWriter(t_width:int, t_height:int)
+  def SDLWriter(t_width:int, t_height:int)
     m_width = t_width
     m_height = t_height
 
-    m_x:int = 0
-    m_y:int = 0
+    m_x = 0
+    m_y = 0
+    m_pixels = 0
 
     screen = new SDL.Surface()
     surface = new SDL.Surface()
 
     screen.create_main_window(t_width, t_height, 32)
     surface.create_surface(t_width, t_height, 32)
-
-    //print( "P3\n" )
-    //print( t_width.to_string() + " " + t_height.to_string() + "\n" )
-    //print( "255\n" )
   end
 
   action AddPixel(p:Pixel)
-//    print("Got Pixel\n")
-    //print((p.color.r * 255.0).to_int().to_string() + " " + (p.color.g * 255.0).to_int().to_string() + " " + (p.color.b * 255.0).to_int().to_string() + " " + p.point.x.to_string() + " " + p.point.y.to_string())
     surface.draw_pixel((p.color.r * 255.0).to_int(), (p.color.g * 255.0).to_int(), (p.color.b * 255.0).to_int(), p.point.x, p.point.y)
 
-    m_x += 1
+    m_pixels += 1
     SDL.clear_events()
 
-    if (m_x == m_width)
+    if (p.point.x == m_width - 1)
       screen.blit_surface(surface)
-      m_y += 1
-      m_x = 0
-      //print("\n")
-      if (m_y == m_height)
-        //Sys.exit()
-        
-        while(true)
-          SDL.delay(100)
-          SDL.clear_events()
-        end
-        
-      end
     end
-  end
-end
 
-// Recieves a stream of unsorted Pixels and passes them
-// on to the PPMWriter as the pixels become available
-// in sorted order
-actor PixelSorter
-  m_width : int
-  m_height : int
 
-  m_ppm : PPMWriter
+    if (m_pixels == (m_width * m_height))
+      //Sys.exit()
 
-  m_pixels : Array[Pixel]
-
-  m_x : int
-  m_y : int
-
-  def PixelSorter(width:int, height:int, ppm:PPMWriter)
-    m_width = width
-    m_height = height
-    m_ppm = ppm
-    m_pixels = new Array[Pixel]
-
-    m_x = 0
-    m_y = 0
-  end
-
-  def InsertPixel(t_p:Pixel, t_pixels:Array[Pixel])
-    t_pixels.push(t_p)
-  end
-
-  action AddPixel(t_p:Pixel)
-    cont:bool = true
-
-    //No reason to even search if the most recent
-    //pixel is not the one we need... because we already searched
-    //for the currently needed pixel the last time AddPixel was
-    //called
-    
-    /*
-    if ((t_p.point.x == m_x) && (t_p.point.y == m_y))
-      cont = true
-    else
-      cont = false
-    end
-*/
-
-    InsertPixel(t_p, m_pixels)
-
-    while (cont)
-
-      pos:int = 0
-
-      findcont:bool = true
-//      print("Array SIze" + m_pixels.size().to_string()+ "\n")
-      while ((pos < m_pixels.size()) && (findcont))
-//        print("Searching: " + m_pixels[pos].point.x.to_string() + " " + m_pixels[pos].point.y.to_string() + " for: " + m_x.to_string() + " "  + m_y.to_string() + "\n")
-        if ((m_pixels[pos].point.x == m_x) && (m_pixels[pos].point.y == m_y))
-//          print("found\n")
-          
-          m_ppm::AddPixel(m_pixels[pos])
-          m_pixels.delete(pos)
-
-          m_x += 1
-
-          if (m_x == m_width)
-            m_x = 0
-            m_y += 1
-          end
-
-          findcont = false
-        end
-        pos += 1
-      end
-
-      if (findcont)
-        cont = false
+      while(true)
+        SDL.delay(100)
+        SDL.clear_events()
       end
 
     end
@@ -177,23 +92,27 @@ end
 actor PixelCalc
   m_tl : Point
   m_br : Point
-  m_ps : PixelSorter 
+  m_sdl : SDLWriter
+  m_width : int
+  m_height : int
 
-  def PixelCalc(tl:Point, br:Point, ps:PixelSorter)
+  def PixelCalc(tl:Point, br:Point, sdl:SDLWriter, t_width:int, t_height:int)
     m_tl = tl
     m_br = br
-    m_ps = ps
+    m_sdl = sdl
+    m_width = t_width
+    m_height = t_height
   end
 
   def GetColor(xcoord:int, ycoord:int) : Color
-    xscaled:double = xcoord.to_double()/(256.0/3.0) - 2.0
-    yscaled:double = ycoord.to_double()/(256.0/3.0) - 1.5
-//w    print("x: " + xscaled.to_string() + " y: " + yscaled.to_string()+"\n")
+    xscaled:double = xcoord.to_double()/(m_width.to_double()/3.0) - 2.0
+    yscaled:double = ycoord.to_double()/(m_height.to_double()/3.0) - 1.5
+
     x:double = xscaled
     y:double = yscaled
 
     iteration:int = 0
-    max_iteration:int = 2000
+    max_iteration:int = 768
 
     while ( (x*x) + (y*y) <= (2.0*2.0) && iteration < max_iteration )
       xtemp:double = (x*x) - (y*y) + xscaled
@@ -208,8 +127,16 @@ actor PixelCalc
       red:double = 0.0
       green:double = 0.0
       blue:double = 0.0
+      iteration += 32
       if (iteration < 256)
-        red = iteration.to_double()/256.0
+        red = (iteration.to_double())/256.0
+      elseif (iteration < 512)
+        red = 1.0
+        green = (iteration - 255).to_double()/256.0
+      else
+        red = 1.0
+        green = 1.0
+        blue = (iteration - 511).to_double()/256.0
       end
 
       return new Color(red, green, blue)
@@ -222,7 +149,7 @@ actor PixelCalc
     while (y < m_br.y)
       x:int = m_tl.x
       while (x < m_br.x)
-        m_ps::AddPixel(new Pixel(new Point(x, y), GetColor(x,y)))
+        m_sdl::AddPixel(new Pixel(new Point(x, y), GetColor(x,y)))
         x += 1
       end
       y += 1
@@ -232,20 +159,19 @@ end
 
 
 action main(args : Array[string])
-  w:int = 256
-  h:int = 256
-  ppmwriter:var = spawn PPMWriter(w, h)
-  pixelsorter:var = spawn PixelSorter(w, h, ppmwriter)
+  w:int = 1024
+  h:int = 1024
+  sdlwriter:var = spawn SDLWriter(w, h)
   calcs:var = new Array[PixelCalc]
   x:int = 0
   y:int = 0
 
-  div:int = 1
+  div:int = 2
 
   while (x < w)
     y = 0
     while (y < h)
-      p:var = spawn PixelCalc(new Point(x, y), new Point(x+(w/div), y+(h/div)), pixelsorter)
+      p:var = spawn PixelCalc(new Point(x, y), new Point(x+(w/div), y+(h/div)), sdlwriter, w, h)
       p::calc()
       calcs.push(p)
       y += h/div
