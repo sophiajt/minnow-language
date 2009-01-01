@@ -2288,7 +2288,8 @@ void Analyzer::examine_port_of_exit(Program *program, Token *token) {
                     Token *rhs = parm->children[1];
                     Token *lhs = parm->children[0];
 
-                    if (rhs->contents == ".") {
+                    if ((rhs->contents == ".") && (is_complex_type(program, rhs->type_def_num))) {
+
                         Token *copy_t = new Token(Token_Type::COPY);
                         copy_t->start_pos = rhs->start_pos;
                         copy_t->end_pos = rhs->end_pos;
@@ -2316,7 +2317,7 @@ void Analyzer::examine_port_of_exit(Program *program, Token *token) {
                         }
                     }
 
-                    if (lhs->contents == ".") {
+                    if ((lhs->contents == ".") && (is_complex_type(program, lhs->type_def_num))) {
                         Token *copy_t = new Token(Token_Type::COPY);
                         copy_t->start_pos = lhs->start_pos;
                         copy_t->end_pos = lhs->end_pos;

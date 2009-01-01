@@ -41,7 +41,7 @@ feature Pixel
 end
 
 //technically this should be an 'isolated actor' because of the use of SDL.delay
-isolated actor SDLWriter
+actor SDLWriter
 
   m_width : int
   m_height : int
@@ -69,12 +69,13 @@ isolated actor SDLWriter
     m_pixels += 1
     SDL.clear_events()
 
-    if ((m_pixels/32)*32 == m_pixels)
+    if ((m_pixels/1024)*1024 == m_pixels)
       screen.blit_surface(surface)
     end
 
     if (m_pixels == (m_width * m_height))
       screen.blit_surface(surface)
+      Sys.exit()
       while(true)
         SDL.delay(100)
         SDL.clear_events()
@@ -188,7 +189,7 @@ action main(args : Array[string])
   x:int = 0
   y:int = 0
 
-  div:int = 2
+  div:int = 1
 
   while (x < w)
     y = 0

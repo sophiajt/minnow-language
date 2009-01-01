@@ -188,14 +188,14 @@ BOOL maint_loop__(Message__ *msg) {
                 //Step #1: find an active actor
                 i = 0;
 
-                unsigned int current_queue_rev_id = s->actor_queue_rev_id;
+                //unsigned int current_queue_rev_id = s->actor_queue_rev_id;
 
                 while (i < s->local_actors->current_size) {
                     Actor__ *actor = INDEX_AT__(s->local_actors, i, Actor__*);
 
                     //Move if it's an active actor and hasn't been sending messages
-                    if ((actor->actor_state == ACTOR_STATE_ACTIVE__) && (actor->cache_id != current_queue_rev_id)) {
-                    //if (actor->actor_state == ACTOR_STATE_ACTIVE__) {
+                    //if ((actor->actor_state == ACTOR_STATE_ACTIVE__) && (actor->cache_id != current_queue_rev_id)) {
+                    if (actor->actor_state == ACTOR_STATE_ACTIVE__) {
                         Message__ *out_queue = remove_indexed_actor_from_sched__(s, i);
                         Message__ *next_msg = get_msg_from_cache__(s);
                         next_msg->message_type = MESSAGE_TYPE_RECV_ACTOR;

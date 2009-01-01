@@ -225,7 +225,7 @@ action main(args : Array[string])
   x:int = 0
   y:int = 0
 
-  div:int = 1
+  div:int = 2
 
   while (x < w)
     y = 0

@@ -35,6 +35,20 @@ void blit_surface_(void *screen_v, void *surface_v) {
   SDL_Flip(screen_v);
 }
 
+void blit_surface_at_(void *screen_v, void *surface_v, int x, int y) {
+  SDL_Surface *screen = (SDL_Surface *)screen_v;
+  SDL_Surface *surface = (SDL_Surface *)surface_v;
+  SDL_Rect rect;
+  rect.x = x;
+  rect.y = y;
+  rect.w = surface->w;
+  rect.h = surface->h;
+
+  SDL_BlitSurface(surface_v, NULL, screen_v, &rect);
+  SDL_UpdateRect(screen_v, rect.x, rect.y, rect.w, rect.h);
+  //SDL_Flip(screen_v);
+}
+
 //Taken from: http://www.libsdl.org/intro.en/usingvideo.html
 void draw_pixel_(void *surface_v, int R, int G, int B, int x, int y)
 {
