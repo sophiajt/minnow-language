@@ -48,7 +48,6 @@ actor SDLWriter
 
   m_pixels : int
   screen : SDL.Surface
-  surface : SDL.Surface
 
   m_blocks : int
   m_total_blocks : int
@@ -62,34 +61,17 @@ actor SDLWriter
     m_total_blocks = total_blocks
 
     screen = new SDL.Surface()
-    surface = new SDL.Surface()
 
     screen.create_main_window(t_width, t_height, 32)
-    surface.create_surface(t_width, t_height, 32)
   end
 
   action AddBlock(block : SDL.Surface, x : int, y : int)
     i:int = 0
-    /*
-    y:int = tl.y
-    while (y < br.y)
-      x:int = tl.x
-      while (x < br.x)
-        //m_sdl::AddPixel(new Pixel(new Point(x, y), GetColor(x,y)))
-        c : Color = arr[i]
-        surface.draw_pixel((c.r * 255.0).to_int(), (c.g * 255.0).to_int(), (c.b * 255.0).to_int(), x, y)
-        x += 1
-        i += 1
-      end
-      y += 1
-    end
-    */
+
     screen.blit_surface(block, x, y);
-    //screen.blit_surface(surface)
     SDL.clear_events()
     m_blocks += 1
     if (m_blocks == m_total_blocks)
-      //screen.blit_surface(surface)
       Sys.exit()
       /*
       while(true)
@@ -186,7 +168,6 @@ actor PixelCalc
   end
 
   action calc()
-    //arr : var = new Array[Color]
     surface : var = new SDL.Surface()
     surface.create_surface(m_br.x - m_tl.x, m_br.y - m_tl.y, 32)
 
@@ -194,16 +175,12 @@ actor PixelCalc
     while (y < m_br.y)
       x:int = m_tl.x
       while (x < m_br.x)
-        //m_sdl::AddPixel(new Pixel(new Point(x, y), GetColor(x,y)))
-        //print("Done: " + x.to_string() + " " + y.to_string() + "\n")
-        //arr.push(GetColor(x,y))
         c : Color = GetColor(x,y)
         surface.draw_pixel((c.r * 255.0).to_int(), (c.g * 255.0).to_int(), (c.b * 255.0).to_int(), x - m_tl.x, y - m_tl.y)
         x += 1
       end
       y += 1
     end
-    //m_sdl::AddBlock(arr, m_tl, m_br)
     m_sdl::AddBlock(surface, m_tl.x, m_tl.y)
   end
 end
