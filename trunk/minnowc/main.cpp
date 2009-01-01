@@ -139,18 +139,31 @@ public:
     }
 
     void analyze_files() {
+        Scope *start;
+
         for (unsigned int i = 0; i < p->files.size(); ++i) {
             Token *t = p->files[i];
 
             an.analyze_strays(t);
 
             //Start building app
-            Scope *start = p->global;
+            start = p->global;
             an.analyze_type_blocks(p, t, &start);
+        }
+
+
+        for (unsigned int i = 0; i < p->files.size(); ++i) {
+            Token *t = p->files[i];
+
             start = p->global;
             an.analyze_fun_blocks(p, t, &start);
         }
+
+
         Token *t = app;
+
+        //start = p->global;
+
         an.add_implied_constructors(p);
         an.analyze_var_type_and_scope(p, t, p->global);
         an.analyze_token_types(p, t, p->global);
