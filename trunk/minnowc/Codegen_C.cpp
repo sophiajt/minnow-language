@@ -803,6 +803,8 @@ void Codegen::codegen_while(Program *p, Token *t, std::ostringstream &output) {
 }
 
 void Codegen::codegen_return(Program *p, Token *t, std::ostringstream &output) {
+    output << "((Actor__*)m__->recipient)->timeslice_remaining = timeslice__;" << std::endl;
+
     if (current_fun->token->type == Token_Type::ACTION_DEF) {
         bool has_actor = false;
         Scope *scope = current_fun->token->scope;
