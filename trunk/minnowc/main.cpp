@@ -98,8 +98,16 @@ class Compiler {
     Analyzer an;
     Lex_Parser lp;
     Codegen c;
+    Program *p;
+
+    Token *app;
 
 public:
+    Compiler() {
+        app = new Token(Token_Type::APPLICATION);
+        p = new Program();
+    }
+
     std::string load_file(const char *filename) {
         std::ifstream infile (filename, std::ios::in | std::ios::ate);
         if (!infile.is_open()) {
@@ -118,18 +126,31 @@ public:
         return ret_val;
     }
 
-    void translate_file(Program *p, std::string filename) {
+    void translate_file(std::string filename) {
         Token *t;
 
         std::string contents = load_file(filename.c_str());
         t = lp.lexparse_file(filename, contents);
-        an.analyze_strays(t);
 
-        //Start building app
-        Scope *start = p->global;
-        an.analyze_type_blocks(p, t, &start);
-        start = p->global;
-        an.analyze_fun_blocks(p, t, &start);
+        app->children.push_back(t);
+        p->files.push_back(t);
+
+        return;
+    }
+
+    void analyze_files() {
+        for (unsigned int i = 0; i < p->files.size(); ++i) {
+            Token *t = p->files[i];
+
+            an.analyze_strays(t);
+
+            //Start building app
+            Scope *start = p->global;
+            an.analyze_type_blocks(p, t, &start);
+            start = p->global;
+            an.analyze_fun_blocks(p, t, &start);
+        }
+        Token *t = app;
         an.add_implied_constructors(p);
         an.analyze_var_type_and_scope(p, t, p->global);
         an.analyze_token_types(p, t, p->global);
@@ -145,12 +166,8 @@ public:
         //debug_print_vars(p, t);
         //debug_print(p, "");
 
-        p->files.push_back(t);
-
-        return;
     }
-
-    void compile_program(Program *p, int argc, char *argv[], char *output_file, std::string include_dir,
+    void compile_program(int argc, char *argv[], char *output_file, std::string include_dir,
             const std::vector<std::string> &lib_dirs, const std::vector<std::string> &libs) {
 
         std::ostringstream output;
@@ -166,7 +183,7 @@ public:
             outfile.close();
             std::ostringstream exe_cmdline;
 
-            exe_cmdline << "gcc -ggdb -O3 -o \"" << output_file << "\" tmpXXXXX.c -Werror -I\"" << include_dir
+            exe_cmdline << "gcc -ggdb -o \"" << output_file << "\" tmpXXXXX.c -Werror -I\"" << include_dir
                 << "\" ";
 
             for (unsigned int i = 0; i < lib_dirs.size(); ++i) {
@@ -267,7 +284,6 @@ public:
 
 int main(int argc, char *argv[]) {
     Compiler compiler;
-    Program *p = new Program();
 
     char *output_file = NULL;
     std::string current_bin = argv[0];
@@ -296,7 +312,7 @@ int main(int argc, char *argv[]) {
     lib_dirs.push_back(lib_dir);
 
     try {
-        compiler.translate_file(p, prelude_dir + "prelude.mno");
+        compiler.translate_file(prelude_dir + "prelude.mno");
 
         //for (int i = 1; i < argc; ++i) {
         int i = 1;
@@ -337,12 +353,15 @@ int main(int argc, char *argv[]) {
                 }
             }
             else {
-                compiler.translate_file(p, argv[i]);
+                compiler.translate_file(argv[i]);
                 ++i;
             }
         }
-        //Start outputting code
-        compiler.compile_program(p, argc, argv, output_file, include_dir, lib_dirs, libs);
+        //Once we're parsed and ready, analyze what we have
+        compiler.analyze_files();
+
+        //Then, start outputting code
+        compiler.compile_program(argc, argv, output_file, include_dir, lib_dirs, libs);
 
     }
     catch (Compiler_Exception &ce) {
