@@ -1438,28 +1438,6 @@ void Codegen::codegen_action_decl(Program *p, Token *t, std::ostringstream &outp
 
                 if (fd->continuation_sites.size() > 1) {
 
-                    //JDT TEMPORARY REFACTOR
-
-                    if (fd->token->children.size() > 2) {
-                        for (std::map<std::string, unsigned int>::iterator iter = fd->token->children[2]->scope->local_vars.begin(),
-                                end = fd->token->children[2]->scope->local_vars.end(); iter != end; ++iter) {
-                            Var_Def *vd = p->vars[iter->second];
-                            output << "var__" << iter->second << " = ";
-                            codegen_default_value(p, vd->type_def_num, output);
-                            output << ";" << std::endl;
-                        }
-                        for (unsigned int j = 0; j < argsize; ++j) {
-                            output << " var__" << fd->arg_def_nums[j] << " = ";
-                            output << "(";
-                            codegen_typesig(p, p->vars[fd->arg_def_nums[j]]->type_def_num, output);
-                            output << ")m__->args[" << j << "].";
-                            codegen_tu_typesig(p, p->vars[fd->arg_def_nums[j]]->type_def_num, output);
-                            output << ";" << std::endl;
-                        }
-
-                    }
-
-
                     output << "if (((Actor__*)m__->recipient)->continuation_stack->current_size > 0) {" << std::endl;
                     output << "  cont_id__ = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack, ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, unsigned int);" << std::endl;
                     output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
@@ -1511,6 +1489,28 @@ void Codegen::codegen_action_decl(Program *p, Token *t, std::ostringstream &outp
                     this->cont_id = 0;
                     output << "switch(cont_id__) {" << std::endl;
                     output << "case(0):" << std::endl;
+                    if (fd->token->children.size() > 2) {
+                        for (std::map<std::string, unsigned int>::iterator iter = fd->token->children[2]->scope->local_vars.begin(),
+                                end = fd->token->children[2]->scope->local_vars.end(); iter != end; ++iter) {
+
+                            if (is_complex_var(p, iter->second)) {
+                                Var_Def *vd = p->vars[iter->second];
+                                output << "var__" << iter->second << " = ";
+                                codegen_default_value(p, vd->type_def_num, output);
+                                output << ";" << std::endl;
+                            }
+                        }
+
+                        for (unsigned int j = 0; j < argsize; ++j) {
+                            output << " var__" << fd->arg_def_nums[j] << " = ";
+                            output << "(";
+                            codegen_typesig(p, p->vars[fd->arg_def_nums[j]]->type_def_num, output);
+                            output << ")m__->args[" << j << "].";
+                            codegen_tu_typesig(p, p->vars[fd->arg_def_nums[j]]->type_def_num, output);
+                            output << ";" << std::endl;
+                        }
+
+                    }
                     codegen_block(p, fd->token->children[2], output);
                     output << "break; }" << std::endl;
                 }
@@ -1518,10 +1518,13 @@ void Codegen::codegen_action_decl(Program *p, Token *t, std::ostringstream &outp
                     if (fd->token->children.size() > 2) {
                         for (std::map<std::string, unsigned int>::iterator iter = fd->token->children[2]->scope->local_vars.begin(),
                                 end = fd->token->children[2]->scope->local_vars.end(); iter != end; ++iter) {
-                            Var_Def *vd = p->vars[iter->second];
-                            output << "var__" << iter->second << " = ";
-                            codegen_default_value(p, vd->type_def_num, output);
-                            output << ";" << std::endl;
+
+                            if (is_complex_var(p, iter->second)) {
+                                Var_Def *vd = p->vars[iter->second];
+                                output << "var__" << iter->second << " = ";
+                                codegen_default_value(p, vd->type_def_num, output);
+                                output << ";" << std::endl;
+                            }
                         }
                         for (unsigned int j = 0; j < argsize; ++j) {
                             output << " var__" << fd->arg_def_nums[j] << " = ";
@@ -1622,19 +1625,6 @@ void Codegen::codegen_fun_decl(Program *p, Token *t, std::ostringstream &output)
                     }
                 }
 
-                //JDT TEMPORARY REFACTOR
-
-                if (fd->token->children.size() > 2) {
-                    for (std::map<std::string, unsigned int>::iterator iter = fd->token->children[2]->scope->local_vars.begin(),
-                            end = fd->token->children[2]->scope->local_vars.end(); iter != end; ++iter) {
-                        Var_Def *vd = p->vars[iter->second];
-                        output << "var__" << iter->second << " = ";
-                        codegen_default_value(p, vd->type_def_num, output);
-                        output << ";" << std::endl;
-                    }
-                }
-
-
                 if (fd->continuation_sites.size() > 1) {
                     output << "if (((Actor__*)m__->recipient)->continuation_stack->current_size > 0) {" << std::endl;
                     output << "  cont_id__ = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack, ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, unsigned int);" << std::endl;
@@ -1654,6 +1644,7 @@ void Codegen::codegen_fun_decl(Program *p, Token *t, std::ostringstream &output)
                                     output << ");" << std::endl;
                                     output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
                                 }
+
                                 output << "  break;" << std::endl;
                             }
                         }
@@ -1676,6 +1667,19 @@ void Codegen::codegen_fun_decl(Program *p, Token *t, std::ostringstream &output)
                     this->cont_id = 0;
                     output << "switch(cont_id__) {" << std::endl;
                     output << "case(0):" << std::endl;
+                    if (fd->token->children.size() > 2) {
+                        for (std::map<std::string, unsigned int>::iterator iter = fd->token->children[2]->scope->local_vars.begin(),
+                                end = fd->token->children[2]->scope->local_vars.end(); iter != end; ++iter) {
+
+                            if (is_complex_var(p, iter->second)) {
+                                Var_Def *vd = p->vars[iter->second];
+                                output << "var__" << iter->second << " = ";
+                                codegen_default_value(p, vd->type_def_num, output);
+                                output << ";" << std::endl;
+                            }
+                        }
+                    }
+
 
                     codegen_block(p, fd->token->children[2], output);
                     output << "}" << std::endl;

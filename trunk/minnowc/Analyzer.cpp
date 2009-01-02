@@ -10,6 +10,27 @@
 #include <map>
 #include <sstream>
 
+bool is_complex_type(Program *program, unsigned int type_def_num) {
+    Type_Def *td = program->types[type_def_num];
+
+    if (((type_def_num >= program->global->local_types["object"]) ||
+            (type_def_num == program->global->local_types["string"])) &&
+        (td->token->type != Token_Type::ACTOR_DEF) &&
+        (td->token->type != Token_Type::ISOLATED_ACTOR_DEF)) {
+        return true;
+    }
+    else {
+        return false;
+    }
+
+}
+bool is_complex_var(Program *program, unsigned int definition_number) {
+    Var_Def *vd = program->vars[definition_number];
+
+    return is_complex_type(program, vd->type_def_num);
+}
+
+
 Scope *Analyzer::find_or_create_namespace(Program *program, Token *ns) {
     Scope *ret_val;
     //First, recurse left
@@ -1665,7 +1686,7 @@ std::vector<int> Analyzer::build_push_pop_list(Program *program, Scope *scope, P
                 tok_end.line << " " << tok_end.col << " vs " << vd->usage_start.line << " " << vd->usage_start.col << " to " <<
                 vd->usage_end.line << " " << vd->usage_end.col << std::endl;
             */
-            if ((vd->usage_start <= tok_end) && (vd->usage_end >= tok_start) && (vd->is_property == false)) {
+            if (/*(vd->usage_start <= tok_end) && */ (vd->usage_end >= tok_start) && (vd->is_property == false)) {
                 //std::cout << "Pushing" << std::endl;
                 ret_val.push_back(iter->second);
             }
@@ -1750,6 +1771,7 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Token *b
 
                 if (ret_val != NULL) {
                     Var_Def *vd = program->vars[program->vars.size() - 1];
+
                     Token *equation = new Token(Token_Type::SYMBOL);
                     equation->contents = "=";
                     equation->type_def_num = ret_val->type_def_num;
@@ -1834,9 +1856,11 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Token *b
                         is_dependent = false;
                     }
 
+                    /*
                     if ((is_dependent) && (is_lhs == false)) {
                         is_dependent = false;
                     }
+                    */
 
                     Token *replacement = create_temp_replacement(program, token, bounds, scope, token->type_def_num, is_dependent);
                     *token = *replacement;
@@ -2389,7 +2413,14 @@ void Analyzer::examine_equation_for_copy_delete(Program *program, Token *block, 
     if ((token->children[0]->type == Token_Type::VAR_CALL) || (token->children[0]->type == Token_Type::VAR_DECL)) {
         Var_Def *vd = program->vars[token->children[0]->definition_number];
 
-        if ((vd->is_removed == false) && (vd->is_dependent == true) &&
+        /*
+        if (token->children[0]->definition_number == 148) {
+            std::cout << "CHECKING 148" << std::endl;
+            std::cout << vd->is_removed << " " << vd->is_dependent << " " << is_complex_var(program, token->children[0]->definition_number) << std::endl;
+        }
+        */
+
+        if (/*(vd->is_removed == false) &&*/ (vd->is_dependent == true) &&
                 (is_complex_var(program, token->children[0]->definition_number))) {
 
             Token *delete_t = new Token(Token_Type::DELETE);

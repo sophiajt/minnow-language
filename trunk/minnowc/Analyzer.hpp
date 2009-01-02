@@ -47,26 +47,6 @@ public:
     std::vector<int> build_push_pop_list(Program *program, Scope *scope, Position &tok_start, Position &tok_end);
     void analyze_freeze_resume(Program *program, Token *token, Scope *scope);
 
-    bool is_complex_type(Program *program, unsigned int type_def_num) {
-        Type_Def *td = program->types[type_def_num];
-
-        if (((type_def_num >= program->global->local_types["object"]) ||
-                (type_def_num == program->global->local_types["string"])) &&
-            (td->token->type != Token_Type::ACTOR_DEF) &&
-            (td->token->type != Token_Type::ISOLATED_ACTOR_DEF)) {
-            return true;
-        }
-        else {
-            return false;
-        }
-
-    }
-    bool is_complex_var(Program *program, unsigned int definition_number) {
-        Var_Def *vd = program->vars[definition_number];
-
-        return is_complex_type(program, vd->type_def_num);
-    }
-
     Token *create_temp_replacement(Program *program, Token *token, Token *bounds, Scope *var_scope,
             unsigned int type_def_num, bool is_dependent);
     Token *analyze_ports_of_entry(Program *program, Token *token, Token *bounds, Scope *scope, bool is_lhs, bool is_block_bound);
@@ -80,4 +60,8 @@ public:
 
     Analyzer() : next_continuation(0), next_deletion(0) { }
 };
+
+bool is_complex_type(Program *program, unsigned int type_def_num);
+bool is_complex_var(Program *program, unsigned int definition_number) ;
+
 #endif /* ANALYZER_HPP_ */
