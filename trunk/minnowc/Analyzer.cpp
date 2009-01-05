@@ -2410,15 +2410,9 @@ void Analyzer::examine_port_of_exit(Program *program, Token *token) {
 
 void Analyzer::examine_equation_for_copy_delete(Program *program, Token *block, Token *token, unsigned int &i) {
     //Don't allow any deletion of references
+
     if ((token->children[0]->type == Token_Type::VAR_CALL) || (token->children[0]->type == Token_Type::VAR_DECL)) {
         Var_Def *vd = program->vars[token->children[0]->definition_number];
-
-        /*
-        if (token->children[0]->definition_number == 148) {
-            std::cout << "CHECKING 148" << std::endl;
-            std::cout << vd->is_removed << " " << vd->is_dependent << " " << is_complex_var(program, token->children[0]->definition_number) << std::endl;
-        }
-        */
 
         if (/*(vd->is_removed == false) &&*/ (vd->is_dependent == true) &&
                 (is_complex_var(program, token->children[0]->definition_number))) {
@@ -2448,6 +2442,7 @@ void Analyzer::examine_equation_for_copy_delete(Program *program, Token *block, 
     //Copy any rhs that is not ours
     if ((token->children[1]->type == Token_Type::VAR_DECL) || (token->children[1]->type == Token_Type::VAR_CALL)) {
         Var_Def *vd = program->vars[token->children[1]->definition_number];
+
         if (((vd->is_removed == false) || (vd->is_dependent == false))
                 && (is_complex_var(program, token->children[1]->definition_number))) {
 
@@ -2519,7 +2514,11 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope)
                                 (child->children[0]->type == Token_Type::METHOD_CALL) ||
                                 (child->children[0]->type == Token_Type::ACTION_CALL)) {
                             examine_port_of_exit(program, child->children[0]);
+                            ++i;
                         }
+                    }
+                    else {
+                        ++i;
                     }
                     std::vector<int> delete_site = build_delete_list(program, scope, child->start_pos);
                     if (delete_site.size() > 0) {
@@ -2529,7 +2528,7 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope)
 
                         child->children.push_back(deletion);
                     }
-                    ++i;
+
                 }
                 else if (child->type == Token_Type::WHILE_BLOCK) {
                     std::vector<int> delete_site = build_delete_list(program, scope, child->start_pos);
