@@ -181,7 +181,7 @@ public:
 
     }
     void compile_program(int argc, char *argv[], char *output_file, std::string include_dir,
-            const std::vector<std::string> &lib_dirs, const std::vector<std::string> &libs) {
+            const std::vector<std::string> &lib_dirs, const std::vector<std::string> &libs, const std::string optimization_level) {
 
         std::ostringstream output;
 
@@ -196,7 +196,7 @@ public:
             outfile.close();
             std::ostringstream exe_cmdline;
 
-            exe_cmdline << "gcc -ggdb -o \"" << output_file << "\" tmpXXXXX.c -Werror -I\"" << include_dir
+            exe_cmdline << "gcc -ggdb -O" << optimization_level << " -o \"" << output_file << "\" tmpXXXXX.c -Werror -I\"" << include_dir
                 << "\" ";
 
             for (unsigned int i = 0; i < lib_dirs.size(); ++i) {
@@ -313,6 +313,7 @@ int main(int argc, char *argv[]) {
     std::string prefix_dir = "";
     std::string lib_dir = ".";
     std::string include_dir = "aquarium";
+    std::string optimization_level = "0";
 
     #ifdef INSTALLPREFIX
         prefix_dir = INSTALLPREFIX;
@@ -330,6 +331,7 @@ int main(int argc, char *argv[]) {
         //for (int i = 1; i < argc; ++i) {
         int i = 1;
         while (i < argc) {
+            /*
             if (strcmp(argv[i], "-o") == 0) {
                 //grab output file
                 if ((i+1) < argc) {
@@ -365,6 +367,88 @@ int main(int argc, char *argv[]) {
                     exit(0);
                 }
             }
+            */
+            if (argv[i][0] == '-') {
+                int arglen = strlen(argv[i]);
+                if (arglen > 1) {
+                    switch(argv[i][1]) {
+                        case ('o') :
+                            if (arglen == 2) {
+                                //grab output file
+                                if ((i+1) < argc) {
+                                    output_file = argv[i+1];
+                                    i = i + 2;
+                                }
+                                else {
+                                    printf("Missing output filename:  Use -o <filename> to output a binary\n");
+                                    exit(0);
+                                }
+                            }
+                            else {
+                                //grab output file
+                                output_file = (char *)(argv[i] + 2);
+                                ++i;
+                            }
+                        break;
+                        case ('L') :
+                            if (arglen == 2) {
+                                if ((i+1) < argc) {
+                                    std::string libdir = argv[i+1];
+                                    lib_dirs.push_back(libdir);
+                                    i = i + 2;
+                                }
+                                else {
+                                    printf("Missing library directory:  Use -L <director> to add a library directory\n");
+                                    exit(0);
+                                }
+                            }
+                            else {
+                                //grab output file
+                                std::string libdir = (char *)(argv[i] + 2);
+                                lib_dirs.push_back(libdir);
+                                ++i;
+                            }
+                        break;
+                        case ('l') :
+                            if (arglen == 2) {
+                                if ((i+1) < argc) {
+                                    std::string libname = argv[i+1];
+                                    libs.push_back(libname);
+                                    i = i + 2;
+                                }
+                                else {
+                                    printf("Missing library filename:  Use -l <filename> to add a library\n");
+                                    exit(0);
+                                }
+                            }
+                            else {
+                                //grab output file
+                                std::string libname = (char *)(argv[i] + 2);
+                                libs.push_back(libname);
+                                ++i;
+                            }
+                        break;
+                        case ('O') :
+                            if (arglen == 2) {
+                                if ((i+1) < argc) {
+                                    optimization_level = argv[i+1];
+                                    i = i + 2;
+                                }
+                                else {
+                                    printf("Missing optimization level:  Use -O <level> to set the optimization level\n");
+                                    exit(0);
+                                }
+                            }
+                            else {
+                                //grab output file
+                                optimization_level = (char *)(argv[i] + 2);
+                                ++i;
+                            }
+                        break;
+                    }
+                }
+
+            }
             else {
                 compiler.translate_file(argv[i]);
                 ++i;
@@ -374,7 +458,7 @@ int main(int argc, char *argv[]) {
         compiler.analyze_files();
 
         //Then, start outputting code
-        compiler.compile_program(argc, argv, output_file, include_dir, lib_dirs, libs);
+        compiler.compile_program(argc, argv, output_file, include_dir, lib_dirs, libs, optimization_level);
 
     }
     catch (Compiler_Exception &ce) {
