@@ -159,6 +159,7 @@ public:
         build_internal_func(int_def_num, int_def_num, int_def_num, "-");
         build_internal_func(int_def_num, int_def_num, int_def_num, "*");
         build_internal_func(int_def_num, int_def_num, int_def_num, "/");
+        build_internal_func(int_def_num, int_def_num, int_def_num, "%");
         build_internal_func(int_def_num, int_def_num, int_def_num, "**");
         build_internal_func(int_def_num, int_def_num, bool_def_num, "==");
         build_internal_func(int_def_num, int_def_num, bool_def_num, "!=");
