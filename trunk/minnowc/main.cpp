@@ -294,6 +294,14 @@ public:
     }
 };
 
+void print_help() {
+    printf("Usage: minnowc <options> <filename(s)>\n");
+    printf("-o <filename>   : compile and output to a binary file\n");
+    printf("-O <level>      : set the optimization level\n");
+    printf("-L <lib dir>    : add a library directory to the library search path\n");
+    printf("-l <library>    : add a library to link against\n");
+    printf("-h              : this help\n");
+}
 
 int main(int argc, char *argv[]) {
     Compiler compiler;
@@ -302,6 +310,7 @@ int main(int argc, char *argv[]) {
     std::string current_bin = argv[0];
 
     if (argc < 2) {
+        print_help();
         printf("Please specify the file to compile\n");
         exit(0);
     }
@@ -372,6 +381,10 @@ int main(int argc, char *argv[]) {
                 int arglen = strlen(argv[i]);
                 if (arglen > 1) {
                     switch(argv[i][1]) {
+                        case ('h') :
+                            print_help();
+                            exit(0);
+                        break;
                         case ('o') :
                             if (arglen == 2) {
                                 //grab output file
