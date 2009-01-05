@@ -1,0 +1,16 @@
+action main
+  x : int = 4
+  x = x.bit_or(1)
+  print(x)
+  x = x.bit_xor(4)
+  print(x)
+  x = x.bit_and(1)
+  print(x)
+  x = x.bit_shl(2)
+  print(x)
+  x = x.bit_shr(1)
+  print(x)
+  x = x.bit_not()
+  print(x)
+  Sys.exit()
+end

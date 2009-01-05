@@ -40,6 +40,30 @@ public:
         owner->token->scope->local_funs[from_name.str()] = funs.size() - 1;
     }
 
+    void build_internal_bit_methods(Type_Def *owner) {
+        unsigned int int_def_num = global->local_types["int"];
+        char* method_names[] = {"bit_shl", "bit_shr", "bit_and", "bit_or", "bit_xor"};
+        for (int i = 0; i < 5; ++i) {
+            std::ostringstream method_name;
+            method_name << method_names[i] << "__" << int_def_num;
+
+            Function_Def *method_fd = new Function_Def(true);
+            method_fd->return_type_def_num = global->local_types["int"];
+            method_fd->arg_def_nums.push_back(int_def_num);
+            method_fd->token = new Token(Token_Type::FUN_DEF);
+
+            funs.push_back(method_fd);
+            owner->token->scope->local_funs[method_name.str()] = funs.size() - 1;
+        }
+        Function_Def *method_fd = new Function_Def(true);
+        method_fd->return_type_def_num = global->local_types["int"];
+        method_fd->token = new Token(Token_Type::FUN_DEF);
+
+        funs.push_back(method_fd);
+        owner->token->scope->local_funs["bit_not"] = funs.size() - 1;
+
+    }
+
     void build_internal_array_methods(Type_Def *owner, unsigned int type_def_num) {
         std::ostringstream push_name, pop_name, size_name, empty_name, insert_name, delete_name;
         push_name << "push__" << owner->contained_type_def_num;
@@ -125,6 +149,9 @@ public:
 
                 funs.push_back(null_check);
                 td->token->scope->local_funs["is_null"] = funs.size() - 1;
+            }
+            else if (strcmp(internal_types[i], "int") == 0) {
+                build_internal_bit_methods(td);
             }
         }
         //Handle string differently

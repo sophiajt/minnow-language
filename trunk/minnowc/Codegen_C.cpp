@@ -198,6 +198,46 @@ void Codegen::codegen_method_call(Program *p, Token *t, std::ostringstream &outp
             output << ").";
             codegen_tu_typesig(p, td->contained_type_def_num, output);
         }
+        else if ((child->children[0]->contents == "bit_shl") && (t->children[0]->type_def_num == (signed)p->global->local_types["int"])) {
+            output << "(";
+            codegen_token(p, t->children[0], output);
+            output << " << ";
+            codegen_token(p, child->children[1], output);
+            output << ")";
+        }
+        else if ((child->children[0]->contents == "bit_shr") && (t->children[0]->type_def_num == (signed)p->global->local_types["int"])) {
+            output << "(";
+            codegen_token(p, t->children[0], output);
+            output << " >> ";
+            codegen_token(p, child->children[1], output);
+            output << ")";
+        }
+        else if ((child->children[0]->contents == "bit_xor") && (t->children[0]->type_def_num == (signed)p->global->local_types["int"])) {
+            output << "(";
+            codegen_token(p, t->children[0], output);
+            output << " ^ ";
+            codegen_token(p, child->children[1], output);
+            output << ")";
+        }
+        else if ((child->children[0]->contents == "bit_or") && (t->children[0]->type_def_num == (signed)p->global->local_types["int"])) {
+            output << "(";
+            codegen_token(p, t->children[0], output);
+            output << " | ";
+            codegen_token(p, child->children[1], output);
+            output << ")";
+        }
+        else if ((child->children[0]->contents == "bit_and") && (t->children[0]->type_def_num == (signed)p->global->local_types["int"])) {
+            output << "(";
+            codegen_token(p, t->children[0], output);
+            output << " & ";
+            codegen_token(p, child->children[1], output);
+            output << ")";
+        }
+        else if ((child->children[0]->contents == "bit_not") && (t->children[0]->type_def_num == (signed)p->global->local_types["int"])) {
+            output << "(~";
+            codegen_token(p, t->children[0], output);
+            output << ")";
+        }
         else if (child->children[0]->contents == "is_null") {
             output << "(";
             codegen_token(p, t->children[0], output);
