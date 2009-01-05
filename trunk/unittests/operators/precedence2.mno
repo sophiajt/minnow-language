@@ -1,0 +1,4 @@
+action main
+  print(3 * 3 / 9)
+  Sys.exit()
+end

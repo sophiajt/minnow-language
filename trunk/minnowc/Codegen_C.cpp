@@ -167,6 +167,11 @@ void Codegen::codegen_method_call(Program *p, Token *t, std::ostringstream &outp
             output << "->";
             output << "current_size";
         }
+        else if ((child->children[0]->contents == "empty") && (td->container == Container_Type::ARRAY)) {
+            codegen_token(p, t->children[0], output);
+            output << "->";
+            output << "current_size == 0";
+        }
         else if ((child->children[0]->contents == "pop") && (td->container == Container_Type::ARRAY)) {
             output << "pop_off_typeless_vector__(";
             codegen_token(p, t->children[0], output);

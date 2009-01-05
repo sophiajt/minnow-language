@@ -53,6 +53,14 @@ def print(f : float)
   Sys.Externals.print_f__(f)
 end
 
+def print(b : bool)
+  if (b == true)
+    print("true")
+  else
+    print("false")
+  end
+end
+
 //----SYS----
 
 namespace Sys

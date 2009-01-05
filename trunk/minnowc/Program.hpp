@@ -41,10 +41,11 @@ public:
     }
 
     void build_internal_array_methods(Type_Def *owner, unsigned int type_def_num) {
-        std::ostringstream push_name, pop_name, size_name, insert_name, delete_name;
+        std::ostringstream push_name, pop_name, size_name, empty_name, insert_name, delete_name;
         push_name << "push__" << owner->contained_type_def_num;
         pop_name << "pop";
         size_name << "size";
+        empty_name << "empty";
         insert_name << "insert__" << owner->contained_type_def_num << "__"  << global->local_types["int"];
         delete_name << "delete__" << global->local_types["int"];
 
@@ -61,6 +62,10 @@ public:
         Function_Def *size_fd = new Function_Def(true);
         size_fd->return_type_def_num = global->local_types["int"];
         size_fd->token = new Token(Token_Type::FUN_DEF);
+
+        Function_Def *empty_fd = new Function_Def(true);
+        empty_fd->return_type_def_num = global->local_types["bool"];
+        empty_fd->token = new Token(Token_Type::FUN_DEF);
 
         Function_Def *insert_fd = new Function_Def(true);
         insert_fd->return_type_def_num = global->local_types["void"];
@@ -80,6 +85,8 @@ public:
         owner->token->scope->local_funs[pop_name.str()] = funs.size() - 1;
         funs.push_back(size_fd);
         owner->token->scope->local_funs[size_name.str()] = funs.size() - 1;
+        funs.push_back(empty_fd);
+        owner->token->scope->local_funs[empty_name.str()] = funs.size() - 1;
         funs.push_back(insert_fd);
         owner->token->scope->local_funs[insert_name.str()] = funs.size() - 1;
         funs.push_back(delete_fd);

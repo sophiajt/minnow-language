@@ -2411,6 +2411,33 @@ void Analyzer::examine_port_of_exit(Program *program, Token *token) {
 void Analyzer::examine_equation_for_copy_delete(Program *program, Token *block, Token *token, unsigned int &i) {
     //Don't allow any deletion of references
 
+    //Copy any rhs that is not ours
+    if ((token->children[1]->type == Token_Type::VAR_DECL) || (token->children[1]->type == Token_Type::VAR_CALL)) {
+        Var_Def *vd = program->vars[token->children[1]->definition_number];
+
+        if (((vd->is_removed == false) || (vd->is_dependent == false))
+                && (is_complex_var(program, token->children[1]->definition_number))) {
+
+            if ((vd->usage_end == token->children[1]->end_pos) && (vd->is_dependent == true)) {
+                vd->is_removed = true;
+            }
+            else {
+                Token *copy_t = new Token(Token_Type::COPY);
+                copy_t->start_pos = token->children[1]->start_pos;
+                copy_t->end_pos = token->children[1]->end_pos;
+                copy_t->type_def_num = token->children[1]->type_def_num;
+                copy_t->children.push_back(token->children[1]);
+
+                token->children[1] = copy_t;
+            }
+        }
+    }
+    else if ((token->children[1]->type == Token_Type::FUN_CALL) || (token->children[1]->type == Token_Type::METHOD_CALL) ||
+            (token->children[1]->type == Token_Type::ACTION_CALL)) {
+
+        examine_port_of_exit(program, token->children[1]);
+    }
+
     if ((token->children[0]->type == Token_Type::VAR_CALL) || (token->children[0]->type == Token_Type::VAR_DECL)) {
         Var_Def *vd = program->vars[token->children[0]->definition_number];
 
@@ -2439,32 +2466,6 @@ void Analyzer::examine_equation_for_copy_delete(Program *program, Token *block, 
         ++i;
     }
 
-    //Copy any rhs that is not ours
-    if ((token->children[1]->type == Token_Type::VAR_DECL) || (token->children[1]->type == Token_Type::VAR_CALL)) {
-        Var_Def *vd = program->vars[token->children[1]->definition_number];
-
-        if (((vd->is_removed == false) || (vd->is_dependent == false))
-                && (is_complex_var(program, token->children[1]->definition_number))) {
-
-            if ((vd->usage_end == token->children[1]->end_pos) && (vd->is_dependent == true)) {
-                vd->is_removed = true;
-            }
-            else {
-                Token *copy_t = new Token(Token_Type::COPY);
-                copy_t->start_pos = token->children[1]->start_pos;
-                copy_t->end_pos = token->children[1]->end_pos;
-                copy_t->type_def_num = token->children[1]->type_def_num;
-                copy_t->children.push_back(token->children[1]);
-
-                token->children[1] = copy_t;
-            }
-        }
-    }
-    else if ((token->children[1]->type == Token_Type::FUN_CALL) || (token->children[1]->type == Token_Type::METHOD_CALL) ||
-            (token->children[1]->type == Token_Type::ACTION_CALL)) {
-
-        examine_port_of_exit(program, token->children[1]);
-    }
 }
 
 void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope) {
