@@ -22,7 +22,7 @@ void *loopcount(void *v){
 int main() {
     Thread__ *thread = new Thread__();
 
-    printf("Num processors: %i\n", thread->num_hw_threads());
+    printf("Num processors: %i\n", num_hw_threads__());
 
     thread->create(loopcount, thread);
     thread->join();

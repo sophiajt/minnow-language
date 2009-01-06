@@ -62,11 +62,20 @@ public:
     /** Exits the thread, freeing resources */
     void exit();
 
-    /** Returns a count of the number of cores/processors available on the current machine */
-    int num_hw_threads();
 };
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** Sleeps in a platform-specific way for the given number of milliseconds */
 void sleep_in_ms__(unsigned int amount);
+
+/** Returns a count of the number of cores/processors available on the current machine */
+int num_hw_threads__();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* THREADING_HPP_ */

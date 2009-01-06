@@ -124,7 +124,7 @@ void Thread__::exit() {
 /**
  * Returns the number of hardware (OS level) threads
  */
-int Thread__::num_hw_threads() {
+int num_hw_threads__() {
     return sysconf(_SC_NPROCESSORS_CONF);
 }
 

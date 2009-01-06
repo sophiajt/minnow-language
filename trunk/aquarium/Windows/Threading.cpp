@@ -168,7 +168,7 @@ void Thread__::exit() {
 /**
  * Returns the number of hardware (OS level) threads
  */
-int Thread__::num_hw_threads() {
+int num_hw_threads__() {
     SYSTEM_INFO info;
     GetSystemInfo(&info);
     return info.dwNumberOfProcessors;

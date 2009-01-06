@@ -1,4 +1,4 @@
-#include "SDL.h"
+#include <SDL.h>
 
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 240
@@ -31,8 +31,10 @@ void *create_sdl_surface_(int width, int height, int depth) {
 }
 
 void blit_surface_(void *screen_v, void *surface_v) {
-  SDL_BlitSurface(surface_v, NULL, screen_v, NULL);
-  SDL_Flip(screen_v);
+  SDL_Surface *screen = (SDL_Surface *)screen_v;
+  SDL_Surface *surface = (SDL_Surface *)surface_v;
+  SDL_BlitSurface(surface, NULL, screen, NULL);
+  SDL_Flip(screen);
 }
 
 void blit_surface_at_(void *screen_v, void *surface_v, int x, int y) {
@@ -44,8 +46,8 @@ void blit_surface_at_(void *screen_v, void *surface_v, int x, int y) {
   rect.w = surface->w;
   rect.h = surface->h;
 
-  SDL_BlitSurface(surface_v, NULL, screen_v, &rect);
-  SDL_UpdateRect(screen_v, rect.x, rect.y, rect.w, rect.h);
+  SDL_BlitSurface(surface, NULL, screen, &rect);
+  SDL_UpdateRect(screen, rect.x, rect.y, rect.w, rect.h);
   //SDL_Flip(screen_v);
 }
 

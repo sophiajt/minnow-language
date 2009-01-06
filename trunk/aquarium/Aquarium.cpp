@@ -360,7 +360,7 @@ int aquarium_main__(int argc, char *argv[], BOOL(*task)(Message__ *), BOOL pass_
     Thread__ t;
 
     //FIXME: traditionally something like num_hw_threads would be a static
-    int num_sched_threads = t.num_hw_threads();
+    int num_sched_threads = num_hw_threads__();
     Message_Channel__ *actor_updates = create_message_channel__();
 
     Scheduler__ *schedulers[num_sched_threads];
