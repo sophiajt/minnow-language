@@ -201,7 +201,7 @@ action main(args : Array[string])
   if (args.size() > 0)
     div = args[0].to_int()
   else
-    div = 1
+    div = Sys.num_hw_threads()
   end
 
   sdlwriter:var = spawn SDLWriter(w, h, div)
@@ -213,16 +213,4 @@ action main(args : Array[string])
     calcs.push(p)
     y += h/div
   end
-  /*
-  while (x < w)
-    y = 0
-    while (y < h)
-      p:var = spawn PixelCalc(new Point(x, y), new Point(x+(w/div), y+(h/div)), sdlwriter, w, h)
-      p::calc()
-      calcs.push(p)
-      y += h/div
-    end
-    x += w/div
-  end
-  */
 end

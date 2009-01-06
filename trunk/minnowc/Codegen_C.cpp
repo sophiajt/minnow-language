@@ -1800,6 +1800,7 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
                 output << ");" << std::endl;
             }
             output << "  }" << std::endl;
+            output << "  ret_val__->current_size = ((Typeless_Vector__ *)v__)->current_size;" << std::endl;
             output << "  return ret_val__;" << std::endl;
         }
         else if ((td->token->type == Token_Type::ACTOR_DEF) || (td->token->type == Token_Type::ISOLATED_ACTOR_DEF)) {
