@@ -514,7 +514,7 @@ void Codegen::codegen_symbol(Program *p, Token *t, std::ostringstream &output) {
         int string_id = p->global->local_types["string"];
 
         if ((t->children[0]->type_def_num == string_id) && (t->children[0]->type != Token_Type::VAR_DECL)) {
-            output << "safe_eq__((void**)&";
+            output << "safe_eq__(m__, (void**)&";
             codegen_token(p, t->children[0], output);
             output << ", ";
             codegen_token(p, t->children[1], output);
@@ -1065,7 +1065,7 @@ void Codegen::codegen_deletion_site(Program *p, Token *t, std::ostringstream &ou
 
         for (unsigned int i = 0; i < vars.size(); ++i) {
             Var_Def *vd = p->vars[vars[i]];
-            output << "delete__(var__" << vars[i] << ", " << vd->type_def_num << ");" << std::endl;
+            output << "delete__(m__, var__" << vars[i] << ", " << vd->type_def_num << ");" << std::endl;
             output << "var__" << vars[i] << " = NULL;" << std::endl;
         }
     }
@@ -1093,13 +1093,13 @@ void Codegen::codegen_token(Program *p, Token *t, std::ostringstream &output) {
         }
         break;
         case (Token_Type::COPY) : {
-            output << "copy__(";
+            output << "copy__(m__, ";
             codegen_token(p, t->children[0], output);
             output << ", " << t->children[0]->type_def_num << ")";
         }
         break;
         case (Token_Type::DELETE) : {
-            output << "delete__(";
+            output << "delete__(m__, ";
             codegen_token(p, t->children[0], output);
             output << ", " << t->children[0]->type_def_num << ");";
             codegen_token(p, t->children[0], output);
@@ -1749,17 +1749,17 @@ void Codegen::codegen_fun_decl(Program *p, Token *t, std::ostringstream &output)
 }
 
 void Codegen::codegen_copy_predecl(Program *p, unsigned int type_def_num, std::ostringstream &output) {
-    output << "void *copy__(void *v__, unsigned int t__);" << std::endl;
+    output << "void *copy__(Message__ *m__, void *v__, unsigned int t__);" << std::endl;
 }
 
 void Codegen::codegen_delete_predecl(Program *p, std::ostringstream &output) {
-    output << "void delete__(void *v__, unsigned int t__);" << std::endl;
+    output << "void delete__(Message__ *m__, void *v__, unsigned int t__);" << std::endl;
 }
 
 void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostringstream &output) {
     int obj_id = p->global->local_types["object"];
     int string_id = p->global->local_types["string"];
-    output << "void *copy__(void *v__, unsigned int t__)" << std::endl << "{" << std::endl;
+    output << "void *copy__(Message__ *m__, void *v__, unsigned int t__)" << std::endl << "{" << std::endl;
     output << "if (v__ == NULL) return NULL;" << std::endl;
 
     output << "switch(t__)" << "{" << std::endl;
@@ -1777,7 +1777,7 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
         Type_Def *td = p->types[i];
 
         if (i == (unsigned)obj_id) {
-            output << "  Object_Feature__ *ret_val__ = (Object_Feature__*)copy__(v__, ((Object_Feature__*)v__)->feature_id);" << std::endl;
+            output << "  Object_Feature__ *ret_val__ = (Object_Feature__*)copy__(m__, v__, ((Object_Feature__*)v__)->feature_id);" << std::endl;
             output << "  return ret_val__;" << std::endl;
         }
         else if (td->container == Container_Type::ARRAY) {
@@ -1790,7 +1790,7 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
             if ((td->contained_type_def_num >= (signed)obj_id) || (td->contained_type_def_num == (signed)string_id)) {
                 output << "(";
                 codegen_typesig(p, td->contained_type_def_num, output);
-                output << ")copy__(INDEX_AT__(((Typeless_Vector__ *)v__), i, ";
+                output << ")copy__(m__, INDEX_AT__(((Typeless_Vector__ *)v__), i, ";
                 codegen_typesig(p, td->contained_type_def_num, output);
                 output << "), " << td->contained_type_def_num << ");" << std::endl;
             }
@@ -1815,7 +1815,7 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
             copy_fn << "copy__" << i;
             if (td->token->scope->local_funs.find(copy_fn.str()) != td->token->scope->local_funs.end()) {
                 //Function_Def *delete_fd = p->funs[td->token->scope->local_funs["delete"]];
-                output << "  fun__" << td->token->scope->local_funs[copy_fn.str()] << "(NULL, (";
+                output << "  fun__" << td->token->scope->local_funs[copy_fn.str()] << "(m__, (";
                 codegen_typesig(p, i, output);
                 output << ")ret_val__, (";
                 codegen_typesig(p, i, output);
@@ -1830,7 +1830,7 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
                         codegen_typesig(p, i, output);
                         output << ")ret_val__)->var__" << iter->second << " = (";
                         codegen_typesig(p, vd->type_def_num, output);
-                        output << ")copy__(((";
+                        output << ")copy__(m__, ((";
                         codegen_typesig(p, i, output);
                         output << ")v__)->var__"
                             << iter->second << ", " << vd->type_def_num << ");" << std::endl;
@@ -1845,7 +1845,7 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
                 }
             }
             output << "  if (((Object_Feature__*)v__)->next != NULL) {" << std::endl;
-            output << "    ret_val__->next = (Object_Feature__*)copy__( ((Object_Feature__*)v__)->next, ((Object_Feature__*)(((Object_Feature__*)v__)->next))->feature_id);" << std::endl;
+            output << "    ret_val__->next = (Object_Feature__*)copy__(m__, ((Object_Feature__*)v__)->next, ((Object_Feature__*)(((Object_Feature__*)v__)->next))->feature_id);" << std::endl;
             output << "  }" << std::endl;
             output << "  else {" << std::endl;
             output << "    ret_val__->next = NULL;" << std::endl;
@@ -1864,7 +1864,7 @@ void Codegen::codegen_delete_decl(Program *p, std::ostringstream &output) {
     int obj_id = p->global->local_types["object"];
     int string_id = p->global->local_types["string"];
 
-    output << "void delete__(void *v__, unsigned int t__)" << std::endl << "{" << std::endl;
+    output << "void delete__(Message__ *m__, void *v__, unsigned int t__)" << std::endl << "{" << std::endl;
     output << "if (v__ == NULL) return;" << std::endl;
     output << "switch(t__)" << "{" << std::endl;
     output << "  case(" << string_id << "): {" << std::endl;
@@ -1878,7 +1878,7 @@ void Codegen::codegen_delete_decl(Program *p, std::ostringstream &output) {
         Type_Def *td = p->types[i];
 
         if (i == (unsigned)obj_id) {
-            output << "  delete__(v__, ((Object_Feature__*)v__)->feature_id);" << std::endl;
+            output << "  delete__(m__, v__, ((Object_Feature__*)v__)->feature_id);" << std::endl;
         }
         else if (td->container == Container_Type::ARRAY) {
             output << "  unsigned int i;" << std::endl;
@@ -1886,7 +1886,7 @@ void Codegen::codegen_delete_decl(Program *p, std::ostringstream &output) {
             //if ((contained->token->type != Token_Type::ACTOR_DEF) && (contained->token->type != Token_Type::ISOLATED_ACTOR_DEF)) {
             if ((td->contained_type_def_num >= (signed)obj_id) || (td->contained_type_def_num == (signed)string_id)) {
                 output << "  for (i = 0; i < ((Typeless_Vector__ *)v__)->current_size; ++i)" << std::endl << "  {" << std::endl;
-                output << "    delete__(INDEX_AT__(((Typeless_Vector__ *)v__), i, ";
+                output << "    delete__(m__, INDEX_AT__(((Typeless_Vector__ *)v__), i, ";
                 codegen_typesig(p, td->contained_type_def_num, output);
                 output << "), " << td->contained_type_def_num << ");" << std::endl;
                 output << "  }" << std::endl;
@@ -1899,7 +1899,7 @@ void Codegen::codegen_delete_decl(Program *p, std::ostringstream &output) {
         else if (td->token->type == Token_Type::FEATURE_DEF) {
             if (td->token->scope->local_funs.find("delete") != td->token->scope->local_funs.end()) {
                 //Function_Def *delete_fd = p->funs[td->token->scope->local_funs["delete"]];
-                output << "  fun__" << td->token->scope->local_funs["delete"] << "(NULL,  (";
+                output << "  fun__" << td->token->scope->local_funs["delete"] << "(m__,  (";
                 codegen_typesig(p, i, output);
                 output << ")v__);" << std::endl;
             }
@@ -1908,7 +1908,7 @@ void Codegen::codegen_delete_decl(Program *p, std::ostringstream &output) {
                         end = td->token->scope->local_vars.end(); iter != end; ++iter) {
                     Var_Def *vd = p->vars[iter->second];
                     if ((vd->type_def_num >= obj_id) || (vd->type_def_num == string_id)) {
-                        output << "  delete__(((";
+                        output << "  delete__(m__, ((";
                         codegen_typesig(p, i, output);
                         output << ")v__)->var__"
                             << iter->second << ", " << vd->type_def_num << ");" << std::endl;
@@ -1916,7 +1916,7 @@ void Codegen::codegen_delete_decl(Program *p, std::ostringstream &output) {
                 }
             }
             output << "  if (((Object_Feature__*)v__)->next != NULL) {" << std::endl;
-            output << "    delete__( ((Object_Feature__*)v__)->next, ((Object_Feature__*)(((Object_Feature__*)v__)->next))->feature_id);" << std::endl;
+            output << "    delete__(m__,  ((Object_Feature__*)v__)->next, ((Object_Feature__*)(((Object_Feature__*)v__)->next))->feature_id);" << std::endl;
             output << "  }" << std::endl;
             output << "  free(v__);" << std::endl;
         }
@@ -1928,13 +1928,13 @@ void Codegen::codegen_delete_decl(Program *p, std::ostringstream &output) {
 }
 
 void Codegen::codegen_safe_eq_predecl(Program *p, Token *token, std::ostringstream &output) {
-    output << "void *safe_eq__(void **lhs__, void *rhs__, unsigned int t__);" << std::endl;
+    output << "void *safe_eq__(Message__ *m__, void **lhs__, void *rhs__, unsigned int t__);" << std::endl;
 }
 
 void Codegen::codegen_safe_eq_decl(Program *p, Token *token, std::ostringstream &output) {
-    output << "void *safe_eq__(void **lhs__, void *rhs__, unsigned int t__) {" << std::endl;
+    output << "void *safe_eq__(Message__ *m__, void **lhs__, void *rhs__, unsigned int t__) {" << std::endl;
     output << "  if (*lhs__ != NULL) {" << std::endl;
-    output << "    delete__(*lhs__, t__);" << std::endl;
+    output << "    delete__(m__, *lhs__, t__);" << std::endl;
     output << "  }" << std::endl;
     output << "  *lhs__ = rhs__;" << std::endl;
     output << "}" << std::endl;

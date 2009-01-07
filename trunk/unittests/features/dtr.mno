@@ -1,0 +1,14 @@
+feature Bob
+  def delete
+    print("delete called")
+  end
+end
+
+def test
+  b : Bob = new Bob()
+end
+
+action main
+  test()
+  Sys.exit()
+end

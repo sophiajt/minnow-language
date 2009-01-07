@@ -1,0 +1,19 @@
+feature Bob
+  x : int
+  def copy(b : Bob)
+    print("copy called")
+  end
+end
+
+action main
+  b1 : Bob = new Bob()
+  b1.x = 5
+
+  //Simply trying to force an aliasing won't quite do it
+  b2 : Bob = b1
+
+  //We have to explicitly use b1 again to make sure it isn't handed off but instead copied
+  print(b1.x)
+
+  Sys.exit()
+end
