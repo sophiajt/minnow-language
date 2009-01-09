@@ -24,9 +24,9 @@ SET (MINNOW_SRCS minnowc/main.cpp minnowc/Analyzer.cpp minnowc/Codegen_C.cpp min
 SET (AQUARIUM_LIBS )
 #Platform ident hackery
 IF (WIN32)
-  SET(CMAKE_BUILD_TYPE release)
-  SET(CMAKE_CXX_FLAGS_RELEASE " -Wall -DINSTALLPREFIX=\"\\\"${CMAKE_INSTALL_PREFIX}/\"\\\" -O3")
-  SET(CMAKE_C_FLAGS_RELEASE " -Wall -DINSTALLPREFIX=\"\\\"${CMAKE_INSTALL_PREFIX}/\"\\\" -O3")
+#  SET(CMAKE_BUILD_TYPE release)
+#  SET(CMAKE_CXX_FLAGS_RELEASE " -Wall -DINSTALLPREFIX=\"\\\"${CMAKE_INSTALL_PREFIX}/\"\\\" -O3")
+#  SET(CMAKE_C_FLAGS_RELEASE " -Wall -DINSTALLPREFIX=\"\\\"${CMAKE_INSTALL_PREFIX}/\"\\\" -O3")
 
   IF (MINGW)
     SET (AQUARIUM_SRCS ${AQUARIUM_SRCS} aquarium/Windows/Threading.cpp)

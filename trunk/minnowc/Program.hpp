@@ -42,7 +42,7 @@ public:
 
     void build_internal_bit_methods(Type_Def *owner) {
         unsigned int int_def_num = global->local_types["int"];
-        char* method_names[] = {"bit_shl", "bit_shr", "bit_and", "bit_or", "bit_xor"};
+        const char* method_names[] = {"bit_shl", "bit_shr", "bit_and", "bit_or", "bit_xor"};
         for (int i = 0; i < 5; ++i) {
             std::ostringstream method_name;
             method_name << method_names[i] << "__" << int_def_num;

@@ -120,6 +120,11 @@ end
 
 
 action main(args : Array[string])
+  if (args.size() == 0) 
+    print("Please specify size: mandelbrot <size>\n")
+    Sys.exit()
+  end
+
   w : int = args[0].to_int()
   h : int = w
 
