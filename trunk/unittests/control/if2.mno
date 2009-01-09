@@ -1,0 +1,14 @@
+action main
+  x : int = 5
+
+  if (x == 5)
+    print("5")
+  else 
+    print("not")
+  end
+
+  Sys.exit()
+end
+
+
+

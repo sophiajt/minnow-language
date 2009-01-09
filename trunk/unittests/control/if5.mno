@@ -1,0 +1,16 @@
+action main
+  x : int = 5
+
+  if (x == 4)
+    print("4")
+  elseif (x == 6)
+    print("6")
+  else
+    print("5")
+  end
+
+  Sys.exit()
+end
+
+
+
