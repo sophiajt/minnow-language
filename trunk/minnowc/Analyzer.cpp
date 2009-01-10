@@ -993,6 +993,9 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
             }
             return;
         }
+        else if ((token->contents == "+=") || (token->contents == "-=")) {
+            //do nothing
+        }
         else {
             for (unsigned int i = 0; i < token->children.size(); ++i) {
                 analyze_token_types(program, token->children[i], scope);

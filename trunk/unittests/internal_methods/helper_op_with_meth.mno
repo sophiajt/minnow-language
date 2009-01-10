@@ -1,0 +1,15 @@
+feature Test
+  def return_val : int
+    return 4
+  end
+end
+
+action main
+  f : var = new Test()
+
+  i : int = 1
+  i += f.return_val()
+
+  print(i)
+  Sys.exit()
+end
