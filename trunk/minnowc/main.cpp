@@ -196,7 +196,7 @@ public:
             outfile.close();
             std::ostringstream exe_cmdline;
 
-            exe_cmdline << "gcc-4.2 -ggdb -O" << optimization_level << " -o \"" << output_file << "\" tmpXXXXX.c -Werror -I\"" << include_dir
+            exe_cmdline << "gcc -ggdb -O" << optimization_level << " -o \"" << output_file << "\" tmpXXXXX.c -Werror -I\"" << include_dir
                 << "\" ";
 
             for (unsigned int i = 0; i < lib_dirs.size(); ++i) {

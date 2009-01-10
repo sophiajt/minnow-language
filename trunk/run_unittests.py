@@ -91,7 +91,7 @@ print("")
 if (len(failed_tests) > 0):
   print("Failed tests: " + str(len(failed_tests)) + " of " + str(total_test_count))
   for i in failed_tests:
-    print i
+    print(i)
 else:
   print("All tests (" + str(total_test_count) + " of " + str(total_test_count) + ") pass")
 
