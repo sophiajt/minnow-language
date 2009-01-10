@@ -4,7 +4,7 @@ then
 fi
 mkdir tmp
 
-./bin/minnowc samples/obj6.mno -o tmp/obj6
+./bin/minnowc -O3 samples/obj6.mno -o tmp/obj6
 echo "Running obj6..."
 output=$(./tmp/obj6)
 if [ $output != "3Hello" ]; then
@@ -12,7 +12,7 @@ if [ $output != "3Hello" ]; then
   kill 0
 fi
 
-./bin/minnowc samples/obj7.mno -o tmp/obj7
+./bin/minnowc -O3 samples/obj7.mno -o tmp/obj7
 echo "Running obj7..."
 output=$(./tmp/obj7)
 if [ $output != "3Hello" ]; then
@@ -21,7 +21,7 @@ if [ $output != "3Hello" ]; then
 fi
 
 echo "Running big bang..."
-./bin/minnowc samples/big_bang.mno -o tmp/big_bang
+./bin/minnowc -O3 samples/big_bang.mno -o tmp/big_bang
 echo "500"
 time ./tmp/big_bang 500
 OUT=$?
@@ -44,7 +44,7 @@ if [ $OUT -ne 0 ]; then
 fi
 
 echo "Running threadring..."
-./bin/minnowc samples/threadring.mno -o tmp/threadring
+./bin/minnowc -O3 samples/threadring.mno -o tmp/threadring
 
 echo "10000000"
 time ./tmp/threadring 10000000
@@ -61,7 +61,7 @@ if [ $OUT -ne 0 ]; then
 fi
 
 echo "Running rebalance..."
-./bin/minnowc samples/rebalance.mno -o tmp/rebalance
+./bin/minnowc -O3 samples/rebalance.mno -o tmp/rebalance
 echo "1000 1000000"
 time ./tmp/rebalance 1000 1000000
 OUT=$?
