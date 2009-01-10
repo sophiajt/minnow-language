@@ -978,7 +978,7 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
     ++this->cont_id;
 
     if ((t->children.size() > 0) && (t->children[0]->type != Token_Type::DELETION_SITE)) {
-        output << "((Actor__*)m__->recipient)->timeslice_remaining = --timeslice__;" << std::endl;
+        output << "((Actor__*)m__->recipient)->timeslice_remaining = timeslice__;" << std::endl;
         output << "case(" << this->cont_id << "):" << std::endl;
         codegen_token(p, t->children[0], output);
         output << ";" << std::endl;
@@ -989,7 +989,7 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
         }
 
         output << "timeslice__ = ((Actor__*)m__->recipient)->timeslice_remaining;" << std::endl;
-        output << "if (timeslice__ <= 0) {" << std::endl;
+        output << "if (timeslice__ == 0) {" << std::endl;
 
         if (t->definition_number != -1) {
             for (unsigned int i = 0; i < p->var_sites[t->definition_number].size(); ++i) {
@@ -1008,7 +1008,7 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
             codegen_default_value(p, owner->return_type_def_num, output);
             output << "; } " << std::endl;
         }
-        /*
+
         output << "else if (--timeslice__ == 0) {" << std::endl;
         output << "((Actor__*)m__->recipient)->timeslice_remaining = timeslice__;" << std::endl;
 
@@ -1033,13 +1033,13 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
         }
 
         output << "case(" << this->cont_id << "):" << std::endl;
-        */
+
     }
     else {
         if ((t->children.size() > 0) && (t->children[0]->type == Token_Type::DELETION_SITE)) {
             codegen_token(p, t->children[0], output);
         }
-        output << "if (--timeslice__ <= 0) {" << std::endl;
+        output << "if (--timeslice__ == 0) {" << std::endl;
         output << "((Actor__*)m__->recipient)->timeslice_remaining = timeslice__;" << std::endl;
         if (t->definition_number != -1) {
             for (unsigned int i = 0; i < p->var_sites[t->definition_number].size(); ++i) {
