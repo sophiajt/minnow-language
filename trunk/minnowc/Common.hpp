@@ -164,6 +164,41 @@ public:
         contained_type_def_num(-1), container(Container_Type::SCALAR) { }
 };
 
+class Extent_Type {
+public:
+    enum Type { DECLARE, IF_START, ELSEIF_START, ELSE_START, IF_JOIN, READ, WRITE, LOOP_START, LOOP_JOIN };
+};
+
+class Extent_Color_Type {
+public:
+    /**
+     * The extent "colors" that make up variable tracing:
+     * Store - This variable's value must be preserved between continuations
+     * Default - This variable should be given a default value on resume, but ignored when swapping out
+     * Delete - This variable should be deleted when swapping out, and given a default value on resume
+     * Ignore - This variable shouldn't be dealt with
+     */
+    enum Type { STORE, DEFAULT, DELETE, IGNORE };
+};
+
+class Extent {
+public:
+    Extent_Type::Type type;
+    Extent *prev;
+    Extent *next;
+    Position start_pos, end_pos;
+
+    Extent() : type(Extent_Type::READ), prev(NULL), next(NULL) { }
+};
+
+class Extent_Color {
+    Extent_Color_Type::Type type;
+    Extent_Color *next;
+    Position start_pos, end_pos;
+
+    Extent_Color() : type(Extent_Color_Type::STORE), next(NULL) { }
+};
+
 class Var_Def {
 public:
     Token *token;
@@ -174,7 +209,10 @@ public:
 
     Position usage_start, usage_end;
 
-    Var_Def() : token(NULL), type_def_num(-1), is_property(false), is_removed(false), is_dependent(true) {}
+    Extent *extent;
+    Extent_Color *extent_color;
+
+    Var_Def() : token(NULL), type_def_num(-1), is_property(false), is_removed(false), is_dependent(true), extent(NULL), extent_color(NULL) {}
 };
 
 class Scope {

@@ -1584,6 +1584,350 @@ bool Analyzer::contains_var(Token *token, unsigned int var_def_num) {
     return false;
 }
 
+void attach_extent(Var_Def *vd, Extent *extent) {
+    if (vd->extent == NULL) {
+        vd->extent = extent;
+    }
+    else {
+        Extent *pos = vd->extent;
+
+        while (pos->next != NULL) {
+            pos = pos->next;
+        }
+        pos->next = extent;
+        extent->prev = pos;
+    }
+}
+
+void Analyzer::analyze_usage_extents(Program *program, Token *token, Token *bounds, Scope *scope) {
+    Extent *extent;
+
+    if (token->scope != NULL) {
+        scope = token->scope;
+    }
+
+
+    if ((token->type == Token_Type::FUN_CALL) || (token->type == Token_Type::METHOD_CALL) || (token->type == Token_Type::ACTION_CALL)) {
+        bounds = token;
+
+        for (unsigned int i = 0; i < token->children.size(); ++i) {
+            analyze_usage_extents(program, token->children[i], bounds, scope);
+        }
+
+    }
+    else if (token->type == Token_Type::VAR_DECL) {
+        if (token->definition_number != -1) {
+            extent = new Extent();
+            if (bounds != NULL) {
+                extent->start_pos = bounds->start_pos;
+                extent->end_pos = bounds->end_pos;
+            }
+            else {
+                extent->start_pos = token->start_pos;
+                extent->end_pos = token->end_pos;
+            }
+            extent->type = Extent_Type::DECLARE;
+            attach_extent(program->vars[token->definition_number], extent);
+        }
+    }
+    else if (token->type == Token_Type::VAR_CALL) {
+        if (token->definition_number != -1) {
+            extent = new Extent();
+            if (bounds != NULL) {
+                extent->start_pos = bounds->start_pos;
+                extent->end_pos = bounds->end_pos;
+            }
+            else {
+                extent->start_pos = token->start_pos;
+                extent->end_pos = token->end_pos;
+            }
+            extent->type = Extent_Type::READ;
+            attach_extent(program->vars[token->definition_number], extent);
+        }
+    }
+    else if (token->contents == "=") {
+        if (token->children[0]->type == Token_Type::VAR_DECL) {
+            extent = new Extent();
+            if (bounds != NULL) {
+                extent->start_pos = bounds->start_pos;
+                extent->end_pos = bounds->end_pos;
+            }
+            else {
+                extent->start_pos = token->children[0]->start_pos;
+                extent->end_pos = token->children[0]->end_pos;
+            }
+            extent->type = Extent_Type::DECLARE;
+            attach_extent(program->vars[token->children[0]->definition_number], extent);
+
+            extent = new Extent();
+            if (bounds != NULL) {
+                extent->start_pos = bounds->start_pos;
+                extent->end_pos = bounds->end_pos;
+            }
+            else {
+                extent->start_pos = token->children[0]->start_pos;
+                extent->end_pos = token->children[0]->end_pos;
+            }
+            extent->type = Extent_Type::WRITE;
+            attach_extent(program->vars[token->children[0]->definition_number], extent);
+        }
+        if (token->children[0]->type == Token_Type::VAR_CALL) {
+            extent = new Extent();
+            if (bounds != NULL) {
+                extent->start_pos = bounds->start_pos;
+                extent->end_pos = bounds->end_pos;
+            }
+            else {
+                extent->start_pos = token->children[0]->start_pos;
+                extent->end_pos = token->children[0]->end_pos;
+            }
+            extent->type = Extent_Type::WRITE;
+            attach_extent(program->vars[token->children[0]->definition_number], extent);
+        }
+        for (unsigned int i = 0; i < token->children[0]->children.size(); ++i) {
+            analyze_usage_extents(program, token->children[0]->children[i], bounds, scope);
+        }
+        analyze_usage_extents(program, token->children[1], bounds, scope);
+    }
+    else if (token->type == Token_Type::WHILE_BLOCK) {
+        Scope *s;
+        s = scope;
+
+        for (std::map<std::string, unsigned int>::iterator iter = s->local_vars.begin(), end = s->local_vars.end(); iter != end; ++iter) {
+            extent = new Extent();
+            if (bounds != NULL) {
+                extent->start_pos = bounds->start_pos;
+                extent->end_pos = bounds->end_pos;
+            }
+            else {
+                extent->start_pos = token->start_pos;
+                extent->end_pos = token->start_pos;
+            }
+            extent->type = Extent_Type::LOOP_START;
+            attach_extent(program->vars[iter->second], extent);
+        }
+        do {
+            s = s->parent;
+            for (std::map<std::string, unsigned int>::iterator iter = s->local_vars.begin(), end = s->local_vars.end(); iter != end; ++iter) {
+                extent = new Extent();
+                if (bounds != NULL) {
+                    extent->start_pos = bounds->start_pos;
+                    extent->end_pos = bounds->end_pos;
+                }
+                else {
+                    extent->start_pos = token->start_pos;
+                    extent->end_pos = token->start_pos;
+                }
+                extent->type = Extent_Type::LOOP_START;
+                attach_extent(program->vars[iter->second], extent);
+            }
+
+        } while ((s->owner->type != Token_Type::ACTION_DEF) && (s->owner->type != Token_Type::FUN_DEF));
+
+
+        for (unsigned int i = 0; i < token->children.size(); ++i) {
+            analyze_usage_extents(program, token->children[i], bounds, scope);
+        }
+
+        s = scope;
+
+        for (std::map<std::string, unsigned int>::iterator iter = s->local_vars.begin(), end = s->local_vars.end(); iter != end; ++iter) {
+            extent = new Extent();
+            if (bounds != NULL) {
+                extent->start_pos = bounds->start_pos;
+                extent->end_pos = bounds->end_pos;
+            }
+            else {
+                extent->start_pos = token->end_pos;
+                extent->end_pos = token->end_pos;
+            }
+            extent->type = Extent_Type::LOOP_JOIN;
+            attach_extent(program->vars[iter->second], extent);
+        }
+        do {
+            s = s->parent;
+            for (std::map<std::string, unsigned int>::iterator iter = s->local_vars.begin(), end = s->local_vars.end(); iter != end; ++iter) {
+                extent = new Extent();
+                if (bounds != NULL) {
+                    extent->start_pos = bounds->start_pos;
+                    extent->end_pos = bounds->end_pos;
+                }
+                else {
+                    extent->start_pos = token->end_pos;
+                    extent->end_pos = token->end_pos;
+                }
+                extent->type = Extent_Type::LOOP_JOIN;
+                attach_extent(program->vars[iter->second], extent);
+            }
+
+        } while ((s->owner->type != Token_Type::ACTION_DEF) && (s->owner->type != Token_Type::FUN_DEF));
+    }
+    else if (token->type == Token_Type::IF_BLOCK) {
+        Scope *s;
+        s = scope;
+
+        for (std::map<std::string, unsigned int>::iterator iter = s->local_vars.begin(), end = s->local_vars.end(); iter != end; ++iter) {
+            extent = new Extent();
+            if (bounds != NULL) {
+                extent->start_pos = bounds->start_pos;
+                extent->end_pos = bounds->end_pos;
+            }
+            else {
+                extent->start_pos = token->start_pos;
+                extent->end_pos = token->start_pos;
+            }
+            extent->type = Extent_Type::IF_START;
+            attach_extent(program->vars[iter->second], extent);
+        }
+        do {
+            s = s->parent;
+            for (std::map<std::string, unsigned int>::iterator iter = s->local_vars.begin(), end = s->local_vars.end(); iter != end; ++iter) {
+                extent = new Extent();
+                if (bounds != NULL) {
+                    extent->start_pos = bounds->start_pos;
+                    extent->end_pos = bounds->end_pos;
+                }
+                else {
+                    extent->start_pos = token->start_pos;
+                    extent->end_pos = token->start_pos;
+                }
+                extent->type = Extent_Type::IF_START;
+                attach_extent(program->vars[iter->second], extent);
+            }
+
+        } while ((s->owner->type != Token_Type::ACTION_DEF) && (s->owner->type != Token_Type::FUN_DEF));
+
+
+        for (unsigned int i = 0; i < token->children.size(); ++i) {
+            analyze_usage_extents(program, token->children[i], bounds, scope);
+        }
+
+        s = scope;
+
+        for (std::map<std::string, unsigned int>::iterator iter = s->local_vars.begin(), end = s->local_vars.end(); iter != end; ++iter) {
+            extent = new Extent();
+            if (bounds != NULL) {
+                extent->start_pos = bounds->start_pos;
+                extent->end_pos = bounds->end_pos;
+            }
+            else {
+                extent->start_pos = token->end_pos;
+                extent->end_pos = token->end_pos;
+            }
+            extent->type = Extent_Type::IF_JOIN;
+            attach_extent(program->vars[iter->second], extent);
+        }
+        do {
+            s = s->parent;
+            for (std::map<std::string, unsigned int>::iterator iter = s->local_vars.begin(), end = s->local_vars.end(); iter != end; ++iter) {
+                extent = new Extent();
+                if (bounds != NULL) {
+                    extent->start_pos = bounds->start_pos;
+                    extent->end_pos = bounds->end_pos;
+                }
+                else {
+                    extent->start_pos = token->end_pos;
+                    extent->end_pos = token->end_pos;
+                }
+                extent->type = Extent_Type::IF_JOIN;
+                attach_extent(program->vars[iter->second], extent);
+            }
+
+        } while ((s->owner->type != Token_Type::ACTION_DEF) && (s->owner->type != Token_Type::FUN_DEF));
+    }
+    else if (token->type == Token_Type::ELSEIF_BLOCK) {
+        Scope *s;
+        s = scope;
+
+        for (std::map<std::string, unsigned int>::iterator iter = s->local_vars.begin(), end = s->local_vars.end(); iter != end; ++iter) {
+            extent = new Extent();
+            if (bounds != NULL) {
+                extent->start_pos = bounds->start_pos;
+                extent->end_pos = bounds->end_pos;
+            }
+            else {
+                extent->start_pos = token->start_pos;
+                extent->end_pos = token->start_pos;
+            }
+            extent->type = Extent_Type::ELSEIF_START;
+            attach_extent(program->vars[iter->second], extent);
+        }
+        do {
+            s = s->parent;
+            for (std::map<std::string, unsigned int>::iterator iter = s->local_vars.begin(), end = s->local_vars.end(); iter != end; ++iter) {
+                extent = new Extent();
+                if (bounds != NULL) {
+                    extent->start_pos = bounds->start_pos;
+                    extent->end_pos = bounds->end_pos;
+                }
+                else {
+                    extent->start_pos = token->start_pos;
+                    extent->end_pos = token->start_pos;
+                }
+                extent->type = Extent_Type::ELSEIF_START;
+                attach_extent(program->vars[iter->second], extent);
+            }
+
+        } while ((s->owner->type != Token_Type::ACTION_DEF) && (s->owner->type != Token_Type::FUN_DEF));
+
+
+        for (unsigned int i = 0; i < token->children.size(); ++i) {
+            analyze_usage_extents(program, token->children[i], bounds, scope);
+        }
+    }
+    else if (token->type == Token_Type::ELSE_BLOCK) {
+        Scope *s;
+        s = scope;
+
+        for (std::map<std::string, unsigned int>::iterator iter = s->local_vars.begin(), end = s->local_vars.end(); iter != end; ++iter) {
+            extent = new Extent();
+            if (bounds != NULL) {
+                extent->start_pos = bounds->start_pos;
+                extent->end_pos = bounds->end_pos;
+            }
+            else {
+                extent->start_pos = token->start_pos;
+                extent->end_pos = token->start_pos;
+            }
+            extent->type = Extent_Type::ELSE_START;
+            attach_extent(program->vars[iter->second], extent);
+        }
+        do {
+            s = s->parent;
+            for (std::map<std::string, unsigned int>::iterator iter = s->local_vars.begin(), end = s->local_vars.end(); iter != end; ++iter) {
+                extent = new Extent();
+                if (bounds != NULL) {
+                    extent->start_pos = bounds->start_pos;
+                    extent->end_pos = bounds->end_pos;
+                }
+                else {
+                    extent->start_pos = token->start_pos;
+                    extent->end_pos = token->start_pos;
+                }
+                extent->type = Extent_Type::ELSE_START;
+                attach_extent(program->vars[iter->second], extent);
+            }
+
+        } while ((s->owner->type != Token_Type::ACTION_DEF) && (s->owner->type != Token_Type::FUN_DEF));
+
+
+        for (unsigned int i = 0; i < token->children.size(); ++i) {
+            analyze_usage_extents(program, token->children[i], bounds, scope);
+        }
+    }
+    else if ((token->type == Token_Type::ACTION_DEF) || (token->type == Token_Type::FUN_DEF)) {
+        for (unsigned int i = 0; i < token->children[2]->children.size(); ++i) {
+            analyze_usage_extents(program, token->children[2]->children[i], bounds, scope);
+        }
+    }
+
+    else {
+        for (unsigned int i = 0; i < token->children.size(); ++i) {
+            analyze_usage_extents(program, token->children[i], bounds, scope);
+        }
+    }
+}
+
 void Analyzer::find_var_endpoints(Program *program, Token *token, unsigned int var_def_num) {
     if (token->type == Token_Type::VAR_DECL) {
         if (token->definition_number == (signed)var_def_num) {
@@ -1689,7 +2033,7 @@ std::vector<int> Analyzer::build_push_pop_list(Program *program, Scope *scope, P
                 tok_end.line << " " << tok_end.col << " vs " << vd->usage_start.line << " " << vd->usage_start.col << " to " <<
                 vd->usage_end.line << " " << vd->usage_end.col << std::endl;
             */
-            if (/*(vd->usage_start <= tok_end) && */ (vd->usage_end >= tok_start) && (vd->is_property == false)) {
+            if ((vd->usage_start <= tok_end) && (vd->usage_end >= tok_start) && (vd->is_property == false)) {
                 //std::cout << "Pushing" << std::endl;
                 ret_val.push_back(iter->second);
             }

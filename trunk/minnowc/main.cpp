@@ -94,6 +94,38 @@ void debug_print_def(Program *p, Token *token, std::string prepend) {
     }
 }
 
+void debug_print_position(Position &pos) {
+    std::cout << "f: " << pos.filename << " l: " << pos.line << " c: " << pos.col;
+}
+
+void debug_print_extents(Program *p) {
+    for (unsigned int i = 0; i < p->vars.size(); ++i) {
+        std::cout << "var: " << i;
+        Extent *extent = p->vars[i]->extent;
+        while (extent != NULL) {
+            std::cout << "[";
+            switch (extent->type) {
+                case (Extent_Type::DECLARE) : std::cout << "Decl"; break;
+                case (Extent_Type::ELSEIF_START) : std::cout << "Elseif"; break;
+                case (Extent_Type::ELSE_START) : std::cout << "Else"; break;
+                case (Extent_Type::IF_JOIN) : std::cout << "EndIf"; break;
+                case (Extent_Type::IF_START) : std::cout << "If"; break;
+                case (Extent_Type::LOOP_JOIN) : std::cout << "EndLoop"; break;
+                case (Extent_Type::LOOP_START) : std::cout << "Loop"; break;
+                case (Extent_Type::READ) : std::cout << "Read"; break;
+                case (Extent_Type::WRITE) : std::cout << "Write"; break;
+            }
+            std::cout << " ";
+            debug_print_position(extent->start_pos);
+            std::cout << " ";
+            debug_print_position(extent->end_pos);
+            std::cout << "]" << std::endl;
+            extent = extent->next;
+        }
+        std::cout << std::endl;
+    }
+}
+
 class Compiler {
     Analyzer an;
     Lex_Parser lp;
@@ -174,6 +206,9 @@ public:
         an.analyze_var_visibility(p, t);
         an.analyze_freeze_resume(p, t, p->global);
         an.analyze_copy_delete(p, t, p->global);
+
+        an.analyze_usage_extents(p, t, NULL, p->global);
+        //debug_print_extents(p);
 
         //debug_print_def(p, t, "");
         //debug_print_vars(p, t);

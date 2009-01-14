@@ -1008,7 +1008,6 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
             codegen_default_value(p, owner->return_type_def_num, output);
             output << "; } " << std::endl;
         }
-
         output << "else if (--timeslice__ == 0) {" << std::endl;
         output << "((Actor__*)m__->recipient)->timeslice_remaining = timeslice__;" << std::endl;
 
@@ -1033,7 +1032,6 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
         }
 
         output << "case(" << this->cont_id << "):" << std::endl;
-
     }
     else {
         if ((t->children.size() > 0) && (t->children[0]->type == Token_Type::DELETION_SITE)) {
@@ -1492,21 +1490,48 @@ void Codegen::codegen_action_decl(Program *p, Token *t, std::ostringstream &outp
                     output << "  switch(cont_id__) {" << std::endl;
 
                     for (unsigned int k = 0; k < fd->continuation_sites.size(); ++k) {
-                        if (fd->continuation_sites[k] != -1) {
-                            if (p->var_sites[fd->continuation_sites[k]].size() > 0) {
-                                output << "  case(" << k << ") : " << std::endl;
+                        if ((fd->continuation_sites[k] != -1) && (p->var_sites[fd->continuation_sites[k]].size() > 0)) {
+                            output << "  case(" << k << ") : " << std::endl;
 
-                                for (int j = p->var_sites[fd->continuation_sites[k]].size() - 1; j >= 0; --j) {
+                            for (int j = p->var_sites[fd->continuation_sites[k]].size() - 1; j >= 0; --j) {
 
-                                    Var_Def *vd = p->vars[p->var_sites[fd->continuation_sites[k]][j]];
-                                    output << "  var__" << p->var_sites[fd->continuation_sites[k]][j] << " = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack,";
-                                    output << "    ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, ";
-                                    codegen_typesig(p, vd->type_def_num, output);
-                                    output << ");" << std::endl;
-                                    output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
-                                }
-                                output << "  break;" << std::endl;
+                                Var_Def *vd = p->vars[p->var_sites[fd->continuation_sites[k]][j]];
+                                output << "  var__" << p->var_sites[fd->continuation_sites[k]][j] << " = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack,";
+                                output << "    ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, ";
+                                codegen_typesig(p, vd->type_def_num, output);
+                                output << ");" << std::endl;
+                                output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
                             }
+                            for (std::map<std::string, unsigned int>::iterator v_iter = fd->token->children[2]->scope->local_vars.begin(), v_end = fd->token->children[2]->scope->local_vars.end();
+                                v_iter != v_end; ++v_iter) {
+
+                                bool found = false;
+                                for (int j = p->var_sites[fd->continuation_sites[k]].size() - 1; j >= 0; --j) {
+                                    if (p->var_sites[fd->continuation_sites[k]][j] == (signed)v_iter->second) {
+                                        found = true;
+                                    }
+                                }
+
+                                Var_Def *vd = p->vars[v_iter->second];
+                                if (!found) {
+                                    output << "  var__" << v_iter->second << " = ";
+                                    codegen_default_value(p, vd->type_def_num, output);
+                                    output << ";" << std::endl;
+                                }
+                            }
+                            output << "  break;" << std::endl;
+                        }
+                        else {
+                            output << "  case(" << k << ") : " << std::endl;
+                            for (std::map<std::string, unsigned int>::iterator v_iter = fd->token->children[2]->scope->local_vars.begin(), v_end = fd->token->children[2]->scope->local_vars.end();
+                                v_iter != v_end; ++v_iter) {
+
+                                Var_Def *vd = p->vars[v_iter->second];
+                                output << "  var__" << v_iter->second << " = ";
+                                codegen_default_value(p, vd->type_def_num, output);
+                                output << ";" << std::endl;
+                            }
+                            output << "  break;" << std::endl;
                         }
                     }
 
@@ -1680,8 +1705,7 @@ void Codegen::codegen_fun_decl(Program *p, Token *t, std::ostringstream &output)
                     output << "  switch(cont_id__) {" << std::endl;
 
                     for (unsigned int k = 0; k < fd->continuation_sites.size(); ++k) {
-                        if (fd->continuation_sites[k] != -1) {
-                            if (p->var_sites[fd->continuation_sites[k]].size() > 0) {
+                        if ((fd->continuation_sites[k] != -1) && (p->var_sites[fd->continuation_sites[k]].size() > 0)) {
                                 output << "  case(" << k << ") : " << std::endl;
 
                                 for (int j = p->var_sites[fd->continuation_sites[k]].size() - 1; j >= 0; --j) {
@@ -1692,9 +1716,37 @@ void Codegen::codegen_fun_decl(Program *p, Token *t, std::ostringstream &output)
                                     output << ");" << std::endl;
                                     output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
                                 }
+                                for (std::map<std::string, unsigned int>::iterator v_iter = fd->token->children[2]->scope->local_vars.begin(), v_end = fd->token->children[2]->scope->local_vars.end();
+                                    v_iter != v_end; ++v_iter) {
+
+                                    bool found = false;
+                                    for (int j = p->var_sites[fd->continuation_sites[k]].size() - 1; j >= 0; --j) {
+                                        if (p->var_sites[fd->continuation_sites[k]][j] == (signed)v_iter->second) {
+                                            found = true;
+                                        }
+                                    }
+
+                                    Var_Def *vd = p->vars[v_iter->second];
+                                    if (!found) {
+                                        output << "  var__" << v_iter->second << " = ";
+                                        codegen_default_value(p, vd->type_def_num, output);
+                                        output << ";" << std::endl;
+                                    }
+                                }
 
                                 output << "  break;" << std::endl;
+                        }
+                        else {
+                            output << "  case(" << k << ") : " << std::endl;
+                            for (std::map<std::string, unsigned int>::iterator v_iter = fd->token->children[2]->scope->local_vars.begin(), v_end = fd->token->children[2]->scope->local_vars.end();
+                                v_iter != v_end; ++v_iter) {
+
+                                Var_Def *vd = p->vars[v_iter->second];
+                                output << "  var__" << v_iter->second << " = ";
+                                codegen_default_value(p, vd->type_def_num, output);
+                                output << ";" << std::endl;
                             }
+                            output << "  break;" << std::endl;
                         }
                     }
 
