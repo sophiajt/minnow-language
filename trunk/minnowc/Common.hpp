@@ -189,7 +189,7 @@ public:
 class Extent {
 public:
     Extent_Type::Type type;
-    Extent_Site_Type site_type;
+    Extent_Site_Type::Type site_type;
     Extent *prev;
     Extent *next;
     Position start_pos, end_pos;

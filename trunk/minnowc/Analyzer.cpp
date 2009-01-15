@@ -1938,7 +1938,7 @@ void Analyzer::analyze_usage_extent_for_var(Program *program, Extent *extent) {
 }
 
 void Analyzer::analyze_usage_extent_colors(Program *program) {
-    for (int i = 0; i < program->vars.size(); ++i) {
+    for (unsigned int i = 0; i < program->vars.size(); ++i) {
 
     }
 }
