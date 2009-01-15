@@ -800,7 +800,7 @@ void Codegen::codegen_if(Program *p, Token *t, std::ostringstream &output) {
     }
     output << "ifjmp" << block_end << ":" << std::endl;
 }
-
+/*
 void Codegen::codegen_while(Program *p, Token *t, std::ostringstream &output) {
     unsigned int top = this->temp_num++;
     unsigned int block_start = this->temp_num++;
@@ -874,8 +874,8 @@ void Codegen::codegen_while(Program *p, Token *t, std::ostringstream &output) {
 
     }
 }
+*/
 
-/*
 void Codegen::codegen_while(Program *p, Token *t, std::ostringstream &output) {
     unsigned int top = this->temp_num++;
     unsigned int block_start = this->temp_num++;
@@ -920,7 +920,7 @@ void Codegen::codegen_while(Program *p, Token *t, std::ostringstream &output) {
     output << "goto whilejmp" << top << ";" << std::endl;
     output << "whilejmp" << block_end << ":" << std::endl;
 }
-*/
+
 
 
 /*
@@ -1179,8 +1179,7 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
         if ((t->children.size() > 0) && (t->children[0]->type == Token_Type::DELETION_SITE)) {
             codegen_token(p, t->children[0], output);
         }
-        output << "case(" << this->cont_id << "):" << std::endl;
-        output << "if (timeslice__ == 0) {" << std::endl;
+        output << "if (--timeslice__ == 0) {" << std::endl;
         output << "((Actor__*)m__->recipient)->timeslice_remaining = timeslice__;" << std::endl;
         if (t->definition_number != -1) {
             for (unsigned int i = 0; i < p->var_sites[t->definition_number].size(); ++i) {
@@ -1198,6 +1197,7 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
             codegen_default_value(p, owner->return_type_def_num, output);
             output << "; } " << std::endl;
         }
+        output << "case(" << this->cont_id << "):" << std::endl;
     }
 
 }

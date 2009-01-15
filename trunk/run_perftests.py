@@ -15,7 +15,9 @@ compiler_dir = "bin"
 compiler_bin = os.path.join(compiler_dir, "minnowc")
 
 total_test_count = 0
+total_time = 0
 failed_tests = []
+
 
 def tick_good():
   sys.stdout.write(".")
@@ -26,7 +28,7 @@ def tick_bad():
   sys.stdout.flush()
 
 def test_directory(d):
-  global total_test_count
+  global total_test_count, total_time
 
   print("Testing: " + d)
   perftests = os.listdir(d)
@@ -62,6 +64,7 @@ def test_directory(d):
         Popen([out_bin] + args_array, stdout=PIPE, stderr=PIPE).communicate()
         c2 = time.time()
         print("%s: %.3f secs" % (s, c2-c))
+        total_time = total_time + (c2-c)
         #print(bin_output)
 
 test_directory(perftest_dir)
@@ -71,7 +74,8 @@ if (len(failed_tests) > 0):
   for i in failed_tests:
     print(i)
 else:
-  print("All tests (" + str(total_test_count) + " of " + str(total_test_count) + ") pass")
+  print("All tests (" + str(total_test_count) + " of " + str(total_test_count) + ") pass.")
+  print("Time: %.3f secs" % total_time)
 
 #output = Popen(["ls", "-l"], stdout=PIPE).communicate()[0]
 #print output
