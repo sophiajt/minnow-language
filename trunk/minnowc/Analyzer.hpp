@@ -44,6 +44,7 @@ public:
     void find_var_endpoints(Program *program, Token *token, unsigned int var_def_num);
     void analyze_var_visibility(Program *program, Token *token);
     void analyze_usage_extents(Program *program, Token *token, Token *bounds, Scope *scope);
+    void analyze_usage_extent_colors(Program *program);
 
     std::vector<int> build_push_pop_list(Program *program, Scope *scope, Position &tok_start, Position &tok_end);
     void analyze_freeze_resume(Program *program, Token *token, Scope *scope);

@@ -1928,6 +1928,21 @@ void Analyzer::analyze_usage_extents(Program *program, Token *token, Token *boun
     }
 }
 
+void Analyzer::analyze_usage_extent_for_var(Program *program, Extent *extent) {
+    if (extent->type == Extent_Type::READ) {
+        extent->site_type = Extent_Site_Type::READ;
+    }
+    else if (extent->type == Extent_Type::WRITE) {
+        extent->site_type = Extent_Site_Type::WRITE;
+    }
+}
+
+void Analyzer::analyze_usage_extent_colors(Program *program) {
+    for (int i = 0; i < program->vars.size(); ++i) {
+
+    }
+}
+
 void Analyzer::find_var_endpoints(Program *program, Token *token, unsigned int var_def_num) {
     if (token->type == Token_Type::VAR_DECL) {
         if (token->definition_number == (signed)var_def_num) {

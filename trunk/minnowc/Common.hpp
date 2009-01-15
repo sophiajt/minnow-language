@@ -169,6 +169,11 @@ public:
     enum Type { DECLARE, IF_START, ELSEIF_START, ELSE_START, IF_JOIN, READ, WRITE, LOOP_START, LOOP_JOIN };
 };
 
+class Extent_Site_Type {
+public:
+    enum Type { UNKNOWN, READ, WRITE };
+};
+
 class Extent_Color_Type {
 public:
     /**
@@ -184,11 +189,12 @@ public:
 class Extent {
 public:
     Extent_Type::Type type;
+    Extent_Site_Type site_type;
     Extent *prev;
     Extent *next;
     Position start_pos, end_pos;
 
-    Extent() : type(Extent_Type::READ), prev(NULL), next(NULL) { }
+    Extent() : type(Extent_Type::READ), site_type(Extent_Site_Type::UNKNOWN), prev(NULL), next(NULL) { }
 };
 
 class Extent_Color {

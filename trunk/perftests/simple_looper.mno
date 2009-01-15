@@ -1,0 +1,7 @@
+action main
+  i : int = 0
+  while (i < 1000000000)
+    i += 1
+  end
+  Sys.exit()
+end

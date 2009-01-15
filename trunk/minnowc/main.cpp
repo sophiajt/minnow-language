@@ -208,6 +208,7 @@ public:
         an.analyze_copy_delete(p, t, p->global);
 
         an.analyze_usage_extents(p, t, NULL, p->global);
+        an.analyze_usage_extent_colors(p);
         //debug_print_extents(p);
 
         //debug_print_def(p, t, "");
