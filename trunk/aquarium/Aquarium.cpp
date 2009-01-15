@@ -23,6 +23,8 @@ typedef struct {
     std::vector<unsigned int> thread_pool_ids; /**< The ids of threads used for isolated actors in the thread pool */
     std::vector<bool> thread_available; /**< Whether or not the spare scheduler thread is available for an isolated actor */
 
+    std::vector<Thread__*> threads; /**< Scheduler threads themselves */
+    std::vector<Scheduler__*> schedulers;
 } Kernel_Actor__;
 
 /**
@@ -243,6 +245,11 @@ BOOL kernel_loop__(Message__ *m) {
         if ((lightest_pos != heaviest_pos) && ((heaviest_weight - lightest_weight) > (1 + (heaviest_weight / 10)))) {
             unsigned int amount = (50 + heaviest_weight - lightest_weight) / 50;
 
+            if (actor__->threads[lightest_pos] == NULL) {
+                actor__->threads[lightest_pos] = new Thread__();
+                actor__->threads[lightest_pos]->create(scheduler_loop__, actor__->schedulers[lightest_pos]);
+            }
+
             Message__ *msg = get_msg_from_cache__(m->sched);
             msg->message_type = MESSAGE_TYPE_REBALANCE_ACTORS;
             msg->args[0].Int32 = amount;
@@ -363,6 +370,7 @@ int aquarium_main__(int argc, char *argv[], BOOL(*task)(Message__ *), BOOL pass_
     int num_sched_threads = num_hw_threads__();
     Message_Channel__ *actor_updates = create_message_channel__();
 
+    /*
     Scheduler__ *schedulers[num_sched_threads];
 
     for (int i = 0; i < num_sched_threads; ++i) {
@@ -370,6 +378,7 @@ int aquarium_main__(int argc, char *argv[], BOOL(*task)(Message__ *), BOOL pass_
         schedulers[i]->actor_updates = actor_updates;
         schedulers[i]->scheduler_id = i;
     }
+    */
 
     //special case: the kernel is new'd here because it's one of the only things that has to be C++ managed
     Kernel_Actor__ *kernel = new Kernel_Actor__();
@@ -377,24 +386,30 @@ int aquarium_main__(int argc, char *argv[], BOOL(*task)(Message__ *), BOOL pass_
     kernel->actor_updates = actor_updates;
     kernel->num_hw_threads = num_sched_threads;
 
+    for (int i = 0; i < num_sched_threads; ++i) {
+        kernel->schedulers.push_back(create_scheduler__(SCHEDULER_NORMAL__));
+        kernel->schedulers[i]->actor_updates = actor_updates;
+        kernel->schedulers[i]->scheduler_id = i;
+    }
+
     //connect up channels
     for (int i = 0; i < num_sched_threads; ++i) {
         //printf("<%i>", i);
-        kernel->incoming_channels.push_back(schedulers[i]->outgoing_channel);
-        kernel->outgoing_channels.push_back(schedulers[i]->incoming_channel);
+        kernel->incoming_channels.push_back(kernel->schedulers[i]->outgoing_channel);
+        kernel->outgoing_channels.push_back(kernel->schedulers[i]->incoming_channel);
         kernel->schedule_weights.push_back(0);
     }
 
     //Schedule the main actor (like the main function in the program)
     Actor__ *main_actor = create_actor__(sizeof(Actor__));
-    add_actor_to_sched__(schedulers[0], main_actor);
-    add_actor_to_sched__(schedulers[0], &kernel->base__);
+    add_actor_to_sched__(kernel->schedulers[0], main_actor);
+    add_actor_to_sched__(kernel->schedulers[0], &kernel->base__);
 
     //Set up the action that will fire off our kernel event
-    Message__ *kernel_action = get_msg_from_cache__(schedulers[0]);
+    Message__ *kernel_action = get_msg_from_cache__(kernel->schedulers[0]);
     kernel_action->act_data.task = kernel_loop__;
     kernel_action->recipient = kernel;
-    kernel_action->sched = schedulers[0];
+    kernel_action->sched = kernel->schedulers[0];
     kernel_action->message_type = MESSAGE_TYPE_ACTION;
     mail_to_actor__(kernel_action, &kernel->base__);
 
@@ -410,33 +425,39 @@ int aquarium_main__(int argc, char *argv[], BOOL(*task)(Message__ *), BOOL pass_
         }
 
         //And send it the first message
-        Message__ *main_action = get_msg_from_cache__(schedulers[0]);
+        Message__ *main_action = get_msg_from_cache__(kernel->schedulers[0]);
         main_action->act_data.task = task;
         main_action->recipient = main_actor;
-        main_action->sched = schedulers[0];
+        main_action->sched = kernel->schedulers[0];
         main_action->args[0].VoidPtr = commandline_args;
         main_action->message_type = MESSAGE_TYPE_ACTION;
 
         mail_to_actor__(main_action, main_actor);
     }
     else {
-        Message__ *main_action = get_msg_from_cache__(schedulers[0]);
+        Message__ *main_action = get_msg_from_cache__(kernel->schedulers[0]);
         main_action->act_data.task = task;
         main_action->recipient = main_actor;
-        main_action->sched = schedulers[0];
+        main_action->sched = kernel->schedulers[0];
         main_action->message_type = MESSAGE_TYPE_ACTION;
 
         mail_to_actor__(main_action, main_actor);
     }
 
+    /*
     Thread__ *threads[num_sched_threads];
     for (int i = 1; i < num_sched_threads; ++i) {
         threads[i] = new Thread__();
         threads[i]->create(scheduler_loop__, schedulers[i]);
     }
+    */
+    kernel->threads.push_back(new Thread__());
+    for (int i = 1; i < num_sched_threads; ++i) {
+        kernel->threads.push_back(NULL);
+    }
 
     //printf("Scheduler loop\n");
-    scheduler_loop__(schedulers[0]);
+    scheduler_loop__(kernel->schedulers[0]);
 
     //join the threads here.
 
