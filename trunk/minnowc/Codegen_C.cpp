@@ -807,6 +807,81 @@ void Codegen::codegen_while(Program *p, Token *t, std::ostringstream &output) {
     unsigned int block_end = this->temp_num++;
     bool cont_at_end = false;
 
+    if (t->children[2]->children.size() > 1) {
+        if (t->children[2]->children.back()->type == Token_Type::CONTINUATION_SITE) {
+            if (t->children[2]->children.back()->children.size() == 0) {
+                cont_at_end = true;
+            }
+        }
+    }
+
+    if (cont_at_end) {
+        output << "while(1) {" << std::endl;
+        output << "while(--timeslice__ > 0) {" << std::endl;
+        if (t->children[1]->children.size() > 1) {
+            output << "if (!(";
+            codegen_token(p, t->children[1]->children[t->children[1]->children.size() - 1], output);
+            output << ")) break;" << std::endl;
+        }
+        else {
+            output << "if (!(";
+            codegen_token(p, t->children[1]->children[0], output);
+            output << ")) break;" << std::endl;
+        }
+
+        for (unsigned int i = 0; i < t->children[2]->children.size() - 1; ++i) {
+            codegen_token(p, t->children[2]->children[i], output);
+            output << ";" << std::endl;
+        }
+        //codegen_block(p, t->children[2], output);
+        output << "}" << std::endl;
+        output << "if (timeslice__ > 0) {" << std::endl;
+        output << "  break;" << std::endl;
+        output << "} else {" << std::endl;
+        codegen_token(p, t->children[2]->children.back(), output);
+        output << "}" << std::endl;
+        output << "}" << std::endl;
+    }
+    else {
+        output << "whilejmp" << top << ":" << std::endl;
+        if (t->children[1]->children.size() > 1) {
+            if (cont_at_end == false) {
+                for (unsigned int i = 0; i < t->children[1]->children.size() - 1; ++i) {
+                    codegen_token(p, t->children[1]->children[i], output);
+                    output << ";" << std::endl;
+                }
+            }
+            output << "if (";
+            codegen_token(p, t->children[1]->children[t->children[1]->children.size() - 1], output);
+            output << ") goto whilejmp" << block_start << "; else goto whilejmp" << block_end << ";" << std::endl;
+        }
+        else {
+            output << "if (";
+            codegen_token(p, t->children[1]->children[0], output);
+            output << ") goto whilejmp" << block_start << "; else goto whilejmp" << block_end << ";" << std::endl;
+        }
+
+        output << "whilejmp" << block_start << ":" << std::endl;
+        codegen_block(p, t->children[2], output);
+        if (cont_at_end) {
+            for (unsigned int i = 0; i < t->children[1]->children.size() - 1; ++i) {
+                codegen_token(p, t->children[1]->children[i], output);
+                output << ";" << std::endl;
+            }
+        }
+        output << "goto whilejmp" << top << ";" << std::endl;
+        output << "whilejmp" << block_end << ":" << std::endl;
+
+    }
+}
+
+/*
+void Codegen::codegen_while(Program *p, Token *t, std::ostringstream &output) {
+    unsigned int top = this->temp_num++;
+    unsigned int block_start = this->temp_num++;
+    unsigned int block_end = this->temp_num++;
+    bool cont_at_end = false;
+
 
     if (t->children[1]->children.size() > 1) {
         if (t->children[1]->children[0]->type == Token_Type::CONTINUATION_SITE) {
@@ -815,7 +890,6 @@ void Codegen::codegen_while(Program *p, Token *t, std::ostringstream &output) {
             }
         }
     }
-
 
     output << "whilejmp" << top << ":" << std::endl;
     if (t->children[1]->children.size() > 1) {
@@ -846,6 +920,73 @@ void Codegen::codegen_while(Program *p, Token *t, std::ostringstream &output) {
     output << "goto whilejmp" << top << ";" << std::endl;
     output << "whilejmp" << block_end << ":" << std::endl;
 }
+*/
+
+
+/*
+void Codegen::codegen_while(Program *p, Token *t, std::ostringstream &output) {
+    unsigned int top = this->temp_num++;
+    unsigned int block_start = this->temp_num++;
+    unsigned int block_end = this->temp_num++;
+    bool cont_at_end = false;
+
+    if (t->children[2]->children.size() > 0) {
+        Token *last_token = t->children[2]->children[t->children[2]->children.size() - 1];
+        if (last_token->type == Token_Type::CONTINUATION_SITE) {
+            if (last_token->children.size() == 0) {
+                cont_at_end = true;
+            }
+        }
+    }
+
+    output << "whilejmp" << top << ":" << std::endl;
+    if (t->children[1]->children.size() > 1) {
+        for (unsigned int i = 0; i < t->children[1]->children.size() - 1; ++i) {
+            codegen_token(p, t->children[1]->children[i], output);
+            output << ";" << std::endl;
+        }
+        output << "if (";
+        codegen_token(p, t->children[1]->children[t->children[1]->children.size() - 1], output);
+        if (cont_at_end) {
+            output << " && (--timeslice__ > 0)) goto whilejmp" << block_start << "; else goto whilejmp" << block_end << ";" << std::endl;
+        }
+        else {
+            output << ") goto whilejmp" << block_start << "; else goto whilejmp" << block_end << ";" << std::endl;
+        }
+    }
+    else {
+        output << "if (";
+        codegen_token(p, t->children[1]->children[0], output);
+        if (cont_at_end) {
+            output << " && (--timeslice__ > 0)) goto whilejmp" << block_start << "; else goto whilejmp" << block_end << ";" << std::endl;
+        }
+        else {
+            output << ") goto whilejmp" << block_start << "; else goto whilejmp" << block_end << ";" << std::endl;
+        }
+    }
+
+    output << "whilejmp" << block_start << ":" << std::endl;
+    if (cont_at_end) {
+        for (unsigned int i = 0; i < t->children[2]->children.size() - 1; ++i) {
+            codegen_token(p, t->children[2]->children[i], output);
+            output << ";" << std::endl;
+        }
+        output << "case(" << (this->cont_id+1) << "):" << std::endl;
+    }
+    else {
+        for (unsigned int i = 0; i < t->children[2]->children.size(); ++i) {
+            codegen_token(p, t->children[2]->children[i], output);
+            output << ";" << std::endl;
+        }
+    }
+    output << "goto whilejmp" << top << ";" << std::endl;
+    output << "whilejmp" << block_end << ":" << std::endl;
+    if (cont_at_end) {
+        codegen_token(p, t->children[2]->children[t->children[2]->children.size() - 1], output);
+    }
+
+}
+*/
 
 void Codegen::codegen_return(Program *p, Token *t, std::ostringstream &output) {
     output << "((Actor__*)m__->recipient)->timeslice_remaining = timeslice__;" << std::endl;
@@ -975,6 +1116,7 @@ void Codegen::codegen_reference_feature(Program *p, Token *t, std::ostringstream
 
 void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream &output) {
     Function_Def *owner = this->current_fun;
+
     ++this->cont_id;
 
     if ((t->children.size() > 0) && (t->children[0]->type != Token_Type::DELETION_SITE)) {
@@ -1037,7 +1179,8 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
         if ((t->children.size() > 0) && (t->children[0]->type == Token_Type::DELETION_SITE)) {
             codegen_token(p, t->children[0], output);
         }
-        output << "if (--timeslice__ == 0) {" << std::endl;
+        output << "case(" << this->cont_id << "):" << std::endl;
+        output << "if (timeslice__ == 0) {" << std::endl;
         output << "((Actor__*)m__->recipient)->timeslice_remaining = timeslice__;" << std::endl;
         if (t->definition_number != -1) {
             for (unsigned int i = 0; i < p->var_sites[t->definition_number].size(); ++i) {
@@ -1055,7 +1198,6 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
             codegen_default_value(p, owner->return_type_def_num, output);
             output << "; } " << std::endl;
         }
-        output << "case(" << this->cont_id << "):" << std::endl;
     }
 
 }
