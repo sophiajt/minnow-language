@@ -59,7 +59,7 @@ def test_directory(d):
         args_array = args_contents.split(" ")
         c = time.time()
         #print(["time", out_bin] + args_array)
-        Popen(["time", out_bin] + args_array, stdout=PIPE, stderr=PIPE).communicate()
+        Popen([out_bin] + args_array, stdout=PIPE, stderr=PIPE).communicate()
         c2 = time.time()
         print("%s: %.3f secs" % (s, c2-c))
         #print(bin_output)
