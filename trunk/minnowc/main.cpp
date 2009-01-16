@@ -205,7 +205,7 @@ public:
         an.analyze_return_calls(p, t, 0);
         an.analyze_var_visibility(p, t);
         an.analyze_freeze_resume(p, t, p->global);
-        an.analyze_copy_delete(p, t, p->global);
+        an.analyze_copy_delete(p, t, NULL, p->global);
 
         an.analyze_usage_extents(p, t, NULL, p->global);
         an.analyze_usage_extent_colors(p);

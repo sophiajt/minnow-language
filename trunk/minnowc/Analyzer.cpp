@@ -1994,6 +1994,7 @@ void Analyzer::find_var_endpoints(Program *program, Token *token, Token *bounds,
     else {
         if (bounds == NULL) {
             switch (token->type) {
+                case (Token_Type::ACTION_CALL) :
                 case (Token_Type::ARRAY_CALL) :
                 case (Token_Type::CONCATENATE) :
                 case (Token_Type::CONSTRUCTOR_CALL) :
@@ -2003,6 +2004,7 @@ void Analyzer::find_var_endpoints(Program *program, Token *token, Token *bounds,
                 case (Token_Type::RETURN_CALL) :
                 case (Token_Type::SYMBOL) :
                     bounds = token;
+                break;
                 default:
                     break;
             }
@@ -2048,6 +2050,7 @@ void Analyzer::analyze_var_visibility(Program *program, Token *token) {
                     find_var_endpoints(program, token->children[2], NULL, var_def_num);
                 }
                 else {
+                    vd->is_dependent = false;
                     vd->usage_end = token->end_pos;
                 }
             }
@@ -2693,7 +2696,7 @@ std::vector<int> Analyzer::build_delete_remaining_list(Program *program, Scope *
 }
 */
 
-void Analyzer::examine_port_of_exit(Program *program, Token *token) {
+void Analyzer::examine_port_of_exit(Program *program, Token *token, Token *bounds) {
     Function_Def *fd;
     if ((token->type == Token_Type::ACTION_CALL) || (token->type == Token_Type::METHOD_CALL)) {
         fd = program->funs[token->children[1]->definition_number];
@@ -2704,6 +2707,8 @@ void Analyzer::examine_port_of_exit(Program *program, Token *token) {
     else {
         throw Compiler_Exception("Internal error in examine_port_of_exit", token->start_pos, token->end_pos);
     }
+
+    std::vector<int> var_refs;
 
     if (fd->is_port_of_exit) {
         if (token->children[1]->children.size() > 1) {
@@ -2727,7 +2732,11 @@ void Analyzer::examine_port_of_exit(Program *program, Token *token) {
                         Var_Def *vd = program->vars[rhs->definition_number];
                         if (((vd->is_removed == false) || (vd->is_dependent == false))
                                 && (is_complex_var(program, rhs->definition_number)))  {
-                            if ((vd->usage_end == rhs->end_pos) && (vd->is_dependent == true)) {
+
+                            std::cout << "VD: " << rhs->definition_number << " " << vd->usage_end.col << " " << bounds->end_pos.col << std::endl;
+                            if ((vd->usage_end == bounds->end_pos) && (vd->is_dependent == true) &&
+                                    (find(var_refs.begin(), var_refs.end(), rhs->definition_number) == var_refs.end())) {
+                                var_refs.push_back(rhs->definition_number);
                                 vd->is_removed = true;
                             }
                             else {
@@ -2756,7 +2765,10 @@ void Analyzer::examine_port_of_exit(Program *program, Token *token) {
                         if (((vd->is_removed == false) || (vd->is_dependent == false))
                                 && (is_complex_var(program, lhs->definition_number)))  {
 
-                            if ((vd->usage_end == lhs->end_pos) && (vd->is_dependent == true)) {
+                            std::cout << "VD: " << lhs->definition_number << " " << vd->usage_end.col << " " << bounds->end_pos.col << std::endl;
+                            if ((vd->usage_end == bounds->end_pos) && (vd->is_dependent == true) &&
+                                    (find(var_refs.begin(), var_refs.end(), lhs->definition_number) == var_refs.end())) {
+                                var_refs.push_back(lhs->definition_number);
                                 vd->is_removed = true;
                             }
                             else {
@@ -2790,7 +2802,11 @@ void Analyzer::examine_port_of_exit(Program *program, Token *token) {
                     if (((vd->is_removed == false) || (vd->is_dependent == false))
                             && (is_complex_var(program, parm->definition_number)))  {
 
-                        if ((vd->usage_end == parm->end_pos) && (vd->is_dependent == true)) {
+                        std::cout << "VD: " << parm->definition_number << " " << vd->usage_end.col << " " << bounds->end_pos.col << std::endl;
+                        if ((vd->usage_end == bounds->end_pos) && (vd->is_dependent == true) &&
+                                (find(var_refs.begin(), var_refs.end(), parm->definition_number) == var_refs.end())) {
+
+                            var_refs.push_back(parm->definition_number);
                             vd->is_removed = true;
                         }
                         else {
@@ -2809,7 +2825,7 @@ void Analyzer::examine_port_of_exit(Program *program, Token *token) {
     }
 }
 
-void Analyzer::examine_equation_for_copy_delete(Program *program, Token *block, Token *token, unsigned int &i) {
+void Analyzer::examine_equation_for_copy_delete(Program *program, Token *block, Token *token, Token *bounds, unsigned int &i) {
     //Don't allow any deletion of references
 
     //Copy any rhs that is not ours
@@ -2836,7 +2852,7 @@ void Analyzer::examine_equation_for_copy_delete(Program *program, Token *block, 
     else if ((token->children[1]->type == Token_Type::FUN_CALL) || (token->children[1]->type == Token_Type::METHOD_CALL) ||
             (token->children[1]->type == Token_Type::ACTION_CALL)) {
 
-        examine_port_of_exit(program, token->children[1]);
+        examine_port_of_exit(program, token->children[1], bounds);
     }
 
     if ((token->children[0]->type == Token_Type::VAR_CALL) || (token->children[0]->type == Token_Type::VAR_DECL)) {
@@ -2869,13 +2885,30 @@ void Analyzer::examine_equation_for_copy_delete(Program *program, Token *block, 
 
 }
 
-void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope) {
+void Analyzer::analyze_copy_delete(Program *program, Token *token, Token *bounds, Scope *scope) {
+    if (bounds == NULL) {
+        switch (token->type) {
+            case (Token_Type::ACTION_CALL) :
+            case (Token_Type::ARRAY_CALL) :
+            case (Token_Type::CONCATENATE) :
+            case (Token_Type::CONSTRUCTOR_CALL) :
+            case (Token_Type::FUN_CALL) :
+            case (Token_Type::METHOD_CALL) :
+            case (Token_Type::NEW_ALLOC) :
+            case (Token_Type::RETURN_CALL) :
+            case (Token_Type::SYMBOL) :
+                bounds = token;
+            break;
+            default:
+                break;
+        }
+    }
 
     if ((token->type == Token_Type::ACTION_DEF) || (token->type == Token_Type::FUN_DEF)) {
         //scope = token->scope;
         scope = token->children[2]->scope;
 
-        analyze_copy_delete(program, token->children[2], scope);
+        analyze_copy_delete(program, token->children[2], bounds, scope);
         if (token->children[2]->children.size() > 0) {
             if (token->children[2]->children[token->children[2]->children.size() - 1]->type != Token_Type::RETURN_CALL) {
                 std::vector<int> delete_site = build_delete_list(program, scope, token->end_pos);
@@ -2894,7 +2927,7 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope)
     }
     else if ((token->type == Token_Type::FEATURE_DEF) || (token->type == Token_Type::ACTOR_DEF) ||
             (token->type == Token_Type::ISOLATED_ACTOR_DEF)) {
-        analyze_copy_delete(program, token->children[2], scope);
+        analyze_copy_delete(program, token->children[2], bounds, scope);
     }
     else {
         if (token->type == Token_Type::BLOCK) {
@@ -2902,20 +2935,40 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope)
             while (i < token->children.size()) {
                 Token *child = token->children[i];
 
+                //if (bounds == NULL) {
+                    switch (child->type) {
+                        case (Token_Type::ACTION_CALL) :
+                        case (Token_Type::ARRAY_CALL) :
+                        case (Token_Type::CONCATENATE) :
+                        case (Token_Type::CONSTRUCTOR_CALL) :
+                        case (Token_Type::FUN_CALL) :
+                        case (Token_Type::METHOD_CALL) :
+                        case (Token_Type::NEW_ALLOC) :
+                        case (Token_Type::RETURN_CALL) :
+                        case (Token_Type::SYMBOL) :
+                            bounds = child;
+                        break;
+                        default:
+                            bounds = NULL;
+                    }
+                //}
+
+
                 //While handles analysis differently, so we check for that here
                 if (child->type != Token_Type::WHILE_BLOCK) {
-                    analyze_copy_delete(program, token->children[i], scope);
+                    analyze_copy_delete(program, token->children[i], bounds, scope);
                 }
 
                 if (child->type == Token_Type::CONTINUATION_SITE) {
                     if (child->children.size() > 0) {
                         if (child->children[0]->contents == "=") {
-                            examine_equation_for_copy_delete(program, token, child->children[0], i);
+                            bounds = child->children[0];
+                            examine_equation_for_copy_delete(program, token, child->children[0], bounds, i);
                         }
                         else if ((child->children[0]->type == Token_Type::FUN_CALL) ||
                                 (child->children[0]->type == Token_Type::METHOD_CALL) ||
                                 (child->children[0]->type == Token_Type::ACTION_CALL)) {
-                            examine_port_of_exit(program, child->children[0]);
+                            examine_port_of_exit(program, child->children[0], bounds);
                             ++i;
                         }
                     }
@@ -2934,7 +2987,7 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope)
                 }
                 else if (child->type == Token_Type::WHILE_BLOCK) {
                     std::vector<int> delete_site = build_delete_list(program, scope, child->start_pos);
-                    analyze_copy_delete(program, token->children[i], scope);
+                    analyze_copy_delete(program, token->children[i], bounds, scope);
                     if (delete_site.size() > 0) {
                         Token *deletion = new Token(Token_Type::DELETION_SITE);
                         program->var_sites.push_back(delete_site);
@@ -3024,7 +3077,7 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope)
                 else if ((child->type == Token_Type::ACTION_CALL) || (child->type == Token_Type::METHOD_CALL)
                         || (child->type == Token_Type::FUN_CALL)) {
 
-                    examine_port_of_exit(program, child);
+                    examine_port_of_exit(program, child, bounds);
                     ++i;
                 }
                 else if (child->contents == "<+") {
@@ -3070,7 +3123,7 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope)
                     }
                 }
                 else if (child->contents == "=") {
-                    examine_equation_for_copy_delete(program, token, child, i);
+                    examine_equation_for_copy_delete(program, token, child, bounds, i);
                 }
                 else {
                     ++i;
@@ -3079,7 +3132,7 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Scope *scope)
         }
         else {
             for (unsigned int i = 0; i < token->children.size(); ++i) {
-                analyze_copy_delete(program, token->children[i], scope);
+                analyze_copy_delete(program, token->children[i], bounds, scope);
             }
         }
     }
