@@ -35,13 +35,15 @@ public:
 
     void analyze_implied_this(Program *program, Token *token, Scope *scope);
 
-    Token *extract_function(Program *program, Token *token, Scope *var_scope);
-    void analyze_embedded_functions(Program *program, Token *token);
+    /*
+    Token *extract_function(Program *program, Token *token, Token *bounds, Scope *var_scope);
+    void analyze_embedded_functions(Program *program, Token *token, Token *bounds);
+    */
 
     void analyze_return_calls(Program *program, Token *token, unsigned int allowed_return_type);
 
     bool contains_var(Token *token, unsigned int var_def_num);
-    void find_var_endpoints(Program *program, Token *token, unsigned int var_def_num);
+    void find_var_endpoints(Program *program, Token *token, Token *bounds, unsigned int var_def_num);
     void analyze_var_visibility(Program *program, Token *token);
     void analyze_usage_extents(Program *program, Token *token, Token *bounds, Scope *scope);
     void analyze_usage_extent_for_var(Program *program, Extent *extent);

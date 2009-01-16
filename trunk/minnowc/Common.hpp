@@ -212,13 +212,15 @@ public:
     bool is_property;
     bool is_removed; //todo: use proper tracing instead of the work around.  Todo: remove this.
     bool is_dependent; //if we're responsible for this variable directly.
+    bool is_temporary;
 
     Position usage_start, usage_end;
 
     Extent *extent;
     Extent_Color *extent_color;
 
-    Var_Def() : token(NULL), type_def_num(-1), is_property(false), is_removed(false), is_dependent(true), extent(NULL), extent_color(NULL) {}
+    Var_Def() : token(NULL), type_def_num(-1), is_property(false), is_removed(false),
+        is_dependent(true), is_temporary(false), extent(NULL), extent_color(NULL) {}
 };
 
 class Scope {

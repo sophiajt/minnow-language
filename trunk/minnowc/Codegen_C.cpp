@@ -1121,14 +1121,13 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
 
     if ((t->children.size() > 0) && (t->children[0]->type != Token_Type::DELETION_SITE)) {
         output << "((Actor__*)m__->recipient)->timeslice_remaining = timeslice__;" << std::endl;
-        output << "case(" << this->cont_id << "):" << std::endl;
-        codegen_token(p, t->children[0], output);
-        output << ";" << std::endl;
-
         //Deletion if it's there
         if (t->children.size() > 1) {
             codegen_token(p, t->children[1], output);
         }
+        output << "case(" << this->cont_id << "):" << std::endl;
+        codegen_token(p, t->children[0], output);
+        output << ";" << std::endl;
 
         output << "timeslice__ = ((Actor__*)m__->recipient)->timeslice_remaining;" << std::endl;
         output << "if (timeslice__ == 0) {" << std::endl;
@@ -1199,7 +1198,6 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
         }
         output << "case(" << this->cont_id << "):" << std::endl;
     }
-
 }
 
 void Codegen::codegen_deletion_site(Program *p, Token *t, std::ostringstream &output) {

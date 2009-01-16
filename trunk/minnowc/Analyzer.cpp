@@ -1278,7 +1278,8 @@ void Analyzer::analyze_implied_this(Program *program, Token *token, Scope *scope
     }
 }
 
-Token *Analyzer::extract_function(Program *program, Token *token, Scope *var_scope) {
+/*
+Token *Analyzer::extract_function(Program *program, Token *token, Token *bounds, Scope *var_scope) {
     if (token->children.size() > 0) {
         unsigned int i = 0;
         while (i < token->children.size()) {
@@ -1295,7 +1296,8 @@ Token *Analyzer::extract_function(Program *program, Token *token, Scope *var_sco
 
                 vd->token = token->children[i];
                 vd->type_def_num = type_def_num;
-                vd->usage_start = token->children[i]->start_pos;
+                //vd->usage_start = token->children[i]->start_pos;
+                vd->usage_start = bounds->start_pos;
 
                 program->vars.push_back(vd);
 
@@ -1330,7 +1332,8 @@ Token *Analyzer::extract_function(Program *program, Token *token, Scope *var_sco
 
                 vd->token = token->children[i];
                 vd->type_def_num = type_def_num;
-                vd->usage_start = token->children[i]->start_pos;
+                //vd->usage_start = token->children[i]->start_pos;
+                vd->usage_start = bounds->start_pos;
 
                 program->vars.push_back(vd);
 
@@ -1366,7 +1369,8 @@ Token *Analyzer::extract_function(Program *program, Token *token, Scope *var_sco
 
                 vd->token = token->children[i];
                 vd->type_def_num = type_def_num;
-                vd->usage_start = token->children[i]->start_pos;
+                //vd->usage_start = token->children[i]->start_pos;
+                vd->usage_start = bounds->start_pos;
 
                 program->vars.push_back(vd);
 
@@ -1401,8 +1405,9 @@ Token *Analyzer::extract_function(Program *program, Token *token, Scope *var_sco
 
                 vd->token = token->children[i];
                 vd->type_def_num = type_def_num;
-                vd->usage_start = token->children[i]->start_pos;
-                vd->usage_end = token->children[i]->end_pos;
+                //vd->usage_start = token->children[i]->start_pos;
+                //vd->usage_end = token->children[i]->end_pos;
+                vd->usage_start = bounds->start_pos;
 
                 program->vars.push_back(vd);
 
@@ -1437,6 +1442,7 @@ Token *Analyzer::extract_function(Program *program, Token *token, Scope *var_sco
 
                 vd->token = token->children[i];
                 vd->type_def_num = type_def_num;
+                vd->usage_start = bounds->start_pos;
 
                 program->vars.push_back(vd);
 
@@ -1468,6 +1474,7 @@ Token *Analyzer::extract_function(Program *program, Token *token, Scope *var_sco
                         unsigned int type_def_num = child->children[1]->type_def_num;
                         vd->token = child->children[1];
                         vd->type_def_num = type_def_num;
+                        vd->usage_start = bounds->start_pos;
 
                         program->vars.push_back(vd);
 
@@ -1505,7 +1512,7 @@ Token *Analyzer::extract_function(Program *program, Token *token, Scope *var_sco
                 }
             }
             else {
-                Token *results = extract_function(program, token->children[i], var_scope);
+                Token *results = extract_function(program, token->children[i], bounds, var_scope);
                 if (results != NULL)  {
                     if (token->type == Token_Type::BLOCK) {
                         //We've backed out to the point we can now insert the new equation node before the
@@ -1539,15 +1546,18 @@ Token *Analyzer::extract_function(Program *program, Token *token, Scope *var_sco
     return NULL;
 }
 
-void Analyzer::analyze_embedded_functions(Program *program, Token *token) {
+void Analyzer::analyze_embedded_functions(Program *program, Token *token, Token *bounds) {
     if ((token->type == Token_Type::FUN_DEF) || (token->type == Token_Type::ACTION_DEF)) {
-        extract_function(program, token->children[2], token->children[2]->scope);
+        extract_function(program, token->children[2], bounds, token->children[2]->scope);
     }
-
+    else if (token->type == Token_Type::BLOCK) {
+        bounds = token;
+    }
     for (unsigned int i = 0; i < token->children.size(); ++i) {
-        analyze_embedded_functions(program, token->children[i]);
+        analyze_embedded_functions(program, token->children[i], bounds);
     }
 }
+*/
 
 void Analyzer::analyze_return_calls(Program *program, Token *token, unsigned int allowed_return_type) {
     if ((token->type == Token_Type::FUN_DEF) || (token->type == Token_Type::ACTION_DEF)) {
@@ -1943,11 +1953,17 @@ void Analyzer::analyze_usage_extent_colors(Program *program) {
     }
 }
 
-void Analyzer::find_var_endpoints(Program *program, Token *token, unsigned int var_def_num) {
+void Analyzer::find_var_endpoints(Program *program, Token *token, Token *bounds, unsigned int var_def_num) {
     if (token->type == Token_Type::VAR_DECL) {
         if (token->definition_number == (signed)var_def_num) {
             Var_Def *vd = program->vars[var_def_num];
-            vd->usage_end = token->end_pos;
+            if (bounds != NULL) {
+                vd->usage_end = bounds->end_pos;
+            }
+            else {
+
+                vd->usage_end = token->end_pos;
+            }
         }
     }
     else if (token->type == Token_Type::WHILE_BLOCK) {
@@ -1966,11 +1982,33 @@ void Analyzer::find_var_endpoints(Program *program, Token *token, unsigned int v
     */
     else if ((token->type == Token_Type::VAR_CALL) && (token->definition_number == (signed)var_def_num)) {
         Var_Def *vd = program->vars[var_def_num];
-        vd->usage_end = token->end_pos;
+
+        if (bounds != NULL) {
+            vd->usage_end = bounds->end_pos;
+        }
+        else {
+
+            vd->usage_end = token->end_pos;
+        }
     }
     else {
+        if (bounds == NULL) {
+            switch (token->type) {
+                case (Token_Type::ARRAY_CALL) :
+                case (Token_Type::CONCATENATE) :
+                case (Token_Type::CONSTRUCTOR_CALL) :
+                case (Token_Type::FUN_CALL) :
+                case (Token_Type::METHOD_CALL) :
+                case (Token_Type::NEW_ALLOC) :
+                case (Token_Type::RETURN_CALL) :
+                case (Token_Type::SYMBOL) :
+                    bounds = token;
+                default:
+                    break;
+            }
+        }
         for (unsigned int i = 0; i < token->children.size(); ++i) {
-            find_var_endpoints(program, token->children[i], var_def_num);
+            find_var_endpoints(program, token->children[i], bounds, var_def_num);
         }
     }
 }
@@ -2007,7 +2045,7 @@ void Analyzer::analyze_var_visibility(Program *program, Token *token) {
 
                 if (token->type == Token_Type::ACTION_DEF) {
                     vd->usage_end = vd->token->end_pos;
-                    find_var_endpoints(program, token->children[2], var_def_num);
+                    find_var_endpoints(program, token->children[2], NULL, var_def_num);
                 }
                 else {
                     vd->usage_end = token->end_pos;
@@ -2025,7 +2063,7 @@ void Analyzer::analyze_var_visibility(Program *program, Token *token) {
             Scope *scope = token->scope;
             for (std::map<std::string, unsigned int>::iterator iter = scope->local_vars.begin(), end = scope->local_vars.end(); iter != end; ++iter) {
                 unsigned int var_def_num = iter->second;
-                find_var_endpoints(program, token, var_def_num);
+                find_var_endpoints(program, token, NULL, var_def_num);
             }
         }
     }
@@ -2148,7 +2186,8 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Token *b
 
                     equation->children.push_back(var_ref);
                     equation->children.push_back(ret_val);
-                    vd->usage_end = ret_val->end_pos;
+                    vd->usage_end = token->children[i]->end_pos;
+                    vd->is_temporary = true;
 
                     token->children.insert(token->children.begin() + i, equation);
                 }
