@@ -243,6 +243,23 @@ void Codegen::codegen_method_call(Program *p, Token *t, std::ostringstream &outp
             codegen_token(p, t->children[0], output);
             output << " == NULL)";
         }
+
+        else if (child->children[0]->contents == "delete") {
+            output << "delete__(m__, ";
+            codegen_token(p, t->children[0], output);
+            output << ", " << t->children[0]->type_def_num;
+            output << "); ";
+            codegen_token(p, t->children[0], output);
+            output << " = NULL;" << std::endl;
+        }
+        else if (child->children[0]->contents == "copy") {
+            codegen_token(p, t->children[0], output);
+            output << " = copy__(m__, ";
+            codegen_token(p, child->children[1], output);
+            output << ", " << t->children[0]->type_def_num;
+            output << "); ";
+        }
+
         else if ((child->children[0]->contents == "to_int") && (t->children[0]->type_def_num == (signed)p->global->local_types["string"])) {
             output << "convert_s_to_i__(";
             codegen_token(p, t->children[0], output);
@@ -2051,7 +2068,9 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
 
             std::ostringstream copy_fn;
             copy_fn << "copy__" << i;
-            if (td->token->scope->local_funs.find(copy_fn.str()) != td->token->scope->local_funs.end()) {
+
+            std::map<std::string, unsigned int>::iterator cpy_meth = td->token->scope->local_funs.find(copy_fn.str());
+            if ((cpy_meth != td->token->scope->local_funs.end()) && (p->funs[cpy_meth->second]->is_internal == false)) {
                 //Function_Def *delete_fd = p->funs[td->token->scope->local_funs["delete"]];
                 output << "  fun__" << td->token->scope->local_funs[copy_fn.str()] << "(m__, (";
                 codegen_typesig(p, i, output);
@@ -2135,7 +2154,10 @@ void Codegen::codegen_delete_decl(Program *p, std::ostringstream &output) {
             //do nothing
         }
         else if (td->token->type == Token_Type::FEATURE_DEF) {
-            if (td->token->scope->local_funs.find("delete") != td->token->scope->local_funs.end()) {
+            std::map<std::string, unsigned int>::iterator del_meth = td->token->scope->local_funs.find("delete");
+
+            if ((del_meth != td->token->scope->local_funs.end()) &&
+                    (p->funs[del_meth->second]->is_internal == false)){
                 //Function_Def *delete_fd = p->funs[td->token->scope->local_funs["delete"]];
                 output << "  fun__" << td->token->scope->local_funs["delete"] << "(m__,  (";
                 codegen_typesig(p, i, output);

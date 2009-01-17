@@ -26,6 +26,21 @@ public:
     Token *lexparse_square_brackets(std::string::iterator &curr, std::string::iterator &end, Position &p);
     Token *lexparse_quoted_string(std::string::iterator &curr, std::string::iterator &end, Position &p);
     Token *lexparse_single_quoted_string(std::string::iterator &curr, std::string::iterator &end, Position &p);
+
+    Token *lexparse_def(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
+    Token *lexparse_extern(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
+    Token *lexparse_action(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
+    Token *lexparse_isolated(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
+    Token *lexparse_new(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
+    Token *lexparse_spawn(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
+    Token *lexparse_namespace(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
+    Token *lexparse_use(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
+    Token *lexparse_actor(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
+    Token *lexparse_feature(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
+    Token *lexparse_return(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
+    Token *lexparse_if(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
+    Token *lexparse_while(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
+
     Token *lexparse_reserved(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
     Token *lexparse_primary(std::string::iterator &curr, std::string::iterator &end, Position &p);
     Token *lexparse_operator(std::string::iterator &curr, std::string::iterator &end, Position &p);

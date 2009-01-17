@@ -315,15 +315,51 @@ Token *Lex_Parser::lexparse_single_quoted_string(std::string::iterator &curr, st
     return t;
 }
 
-Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
+Token *Lex_Parser::lexparse_def(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
     Position start = p;
-    if (id->contents == "def") {
+    Token *t = lexparse_expression(curr, end, p);
+    switch (t->type) {
+        case (Token_Type::SYMBOL) : //for return types
+        case (Token_Type::FUN_CALL) :
+        case (Token_Type::ID) : {
+            Token *fun_def = new Token(Token_Type::FUN_DEF, id->start_pos, t->end_pos);
+            fun_def->children.push_back(id);
+            fun_def->children.push_back(t);
+
+            Token *name = t;
+            while (name->children.size() > 0) {
+                name = name->children[0];
+            }
+            fun_def->contents = name->contents;
+
+            Token *block = lexparse_block(curr, end, p);
+            fun_def->children.push_back(block);
+            fun_def->end_pos = p;
+
+            return fun_def;
+        }
+        break;
+        default:
+            throw Compiler_Exception("'def' not followed by function heading", start, p);
+    }
+}
+
+Token *Lex_Parser::lexparse_extern(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
+    Position start = p;
+
+    delete id;
+    id = lexparse_id(curr, end, p);
+
+    if (id->contents != "def") {
+        throw Compiler_Exception("Extern not followed by 'def' keyword", id->start_pos, id->end_pos);
+    }
+    else {
         Token *t = lexparse_expression(curr, end, p);
         switch (t->type) {
             case (Token_Type::SYMBOL) : //for return types
             case (Token_Type::FUN_CALL) :
             case (Token_Type::ID) : {
-                Token *fun_def = new Token(Token_Type::FUN_DEF, id->start_pos, t->end_pos);
+                Token *fun_def = new Token(Token_Type::EXTERN_FUN_DEF, id->start_pos, t->end_pos);
                 fun_def->children.push_back(id);
                 fun_def->children.push_back(t);
 
@@ -332,9 +368,6 @@ Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::i
                     name = name->children[0];
                 }
                 fun_def->contents = name->contents;
-
-                Token *block = lexparse_block(curr, end, p);
-                fun_def->children.push_back(block);
                 fun_def->end_pos = p;
 
                 return fun_def;
@@ -344,75 +377,338 @@ Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::i
                 throw Compiler_Exception("'def' not followed by function heading", start, p);
         }
     }
-    else if (id->contents == "extern") {
-        delete id;
-        Token *id = lexparse_id(curr, end, p);
-        if (id->contents != "def") {
-            throw Compiler_Exception("Extern not followed by 'def' keyword", id->start_pos, id->end_pos);
+}
+
+Token *Lex_Parser::lexparse_action(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
+    Position start = p;
+
+    Token *t = lexparse_expression(curr, end, p);
+    switch (t->type) {
+        case (Token_Type::SYMBOL) : //for return types
+        case (Token_Type::FUN_CALL) :
+        case (Token_Type::ID) : {
+            Token *action_def = new Token(Token_Type::ACTION_DEF, id->start_pos, t->end_pos);
+            action_def->children.push_back(id);
+            action_def->children.push_back(t);
+
+            Token *name = t;
+            while (name->children.size() > 0) {
+                name = name->children[0];
+            }
+            action_def->contents = name->contents;
+
+            Token *block = lexparse_block(curr, end, p);
+            action_def->children.push_back(block);
+            action_def->end_pos = p;
+
+            return action_def;
         }
-        else {
-            Token *t = lexparse_expression(curr, end, p);
-            switch (t->type) {
-                case (Token_Type::SYMBOL) : //for return types
-                case (Token_Type::FUN_CALL) :
-                case (Token_Type::ID) : {
-                    Token *fun_def = new Token(Token_Type::EXTERN_FUN_DEF, id->start_pos, t->end_pos);
-                    fun_def->children.push_back(id);
-                    fun_def->children.push_back(t);
+        break;
+        default:
+            throw Compiler_Exception("'action' not followed by action heading", start, p);
+    }
+}
 
-                    Token *name = t;
-                    while (name->children.size() > 0) {
-                        name = name->children[0];
+Token *Lex_Parser::lexparse_isolated(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
+    Position start = p;
+
+    delete id;
+    Token *action_def = lexparse_primary(curr, end, p);
+    if (action_def->type != Token_Type::ACTOR_DEF) {
+        std::cout << "TYPE: " << action_def->type << std::endl;
+        throw Compiler_Exception("Isolated not followed by action definition", action_def->start_pos, action_def->end_pos);
+    }
+    action_def->type = Token_Type::ISOLATED_ACTOR_DEF;
+
+    return action_def;
+}
+
+Token *Lex_Parser::lexparse_new(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
+    Position start = p;
+
+    Token *t = lexparse_expression(curr, end, p, NAMESPACE_PREC);
+    switch (t->type) {
+        case (Token_Type::FUN_CALL) :
+        case (Token_Type::SYMBOL) :
+        case (Token_Type::ARRAY_CALL) :
+        case (Token_Type::ID) : {
+            Token *new_alloc = new Token(Token_Type::NEW_ALLOC, id->start_pos, t->end_pos);
+            new_alloc->children.push_back(id);
+            new_alloc->children.push_back(t);
+
+            return new_alloc;
+        }
+        break;
+        default:
+            throw Compiler_Exception("'new' not followed by feature or container", start, p);
+    }
+}
+
+Token *Lex_Parser::lexparse_spawn(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
+    Position start = p;
+
+    Token *t = lexparse_expression(curr, end, p, NAMESPACE_PREC);
+    switch (t->type) {
+        case (Token_Type::FUN_CALL) :
+        case (Token_Type::SYMBOL) :
+        case (Token_Type::ID) : {
+            Token *spawn_actor = new Token(Token_Type::SPAWN_ACTOR, id->start_pos, t->end_pos);
+            spawn_actor->children.push_back(id);
+            spawn_actor->children.push_back(t);
+
+            return spawn_actor;
+        }
+        break;
+        default:
+            throw Compiler_Exception("'new' not followed by feature or container", start, p);
+    }
+}
+
+Token *Lex_Parser::lexparse_namespace(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
+    Position start = p;
+
+    Token *t = lexparse_expression(curr, end, p);
+    switch (t->type) {
+        case (Token_Type::SYMBOL) : //for return types
+        case (Token_Type::ID) : {
+            Token *namespace_start = new Token(Token_Type::NAMESPACE, id->start_pos, t->end_pos);
+            namespace_start->children.push_back(id);
+            namespace_start->children.push_back(t);
+
+            return namespace_start;
+        }
+        break;
+        default:
+            throw Compiler_Exception("'namespace' not followed by name", start, p);
+    }
+}
+
+Token *Lex_Parser::lexparse_use(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
+    Position start = p;
+
+    Token *t = lexparse_expression(curr, end, p);
+    if (t != NULL) {
+        Token *use_call = new Token(Token_Type::USE_CALL, id->start_pos, t->end_pos);
+        use_call->children.push_back(id);
+        use_call->children.push_back(t);
+
+        return use_call;
+    }
+    else {
+        throw Compiler_Exception("'use' not followed by file reference", start, p);
+    }
+}
+
+Token *Lex_Parser::lexparse_actor(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
+    Position start = p;
+
+    Token *t = lexparse_primary(curr, end, p);
+    switch (t->type) {
+        case (Token_Type::ID) : {
+            Token *actor_def = new Token(Token_Type::ACTOR_DEF, id->start_pos, t->end_pos);
+            actor_def->children.push_back(id);
+            actor_def->children.push_back(t);
+
+            Token *name = t;
+            while (name->children.size() > 0) {
+                name = name->children[0];
+            }
+            actor_def->contents = name->contents;
+
+            Token *block = lexparse_block(curr, end, p);
+            actor_def->children.push_back(block);
+            actor_def->end_pos = p;
+
+            return actor_def;
+        }
+        break;
+        default:
+            throw Compiler_Exception("'actor' not followed by actor name", start, p);
+    }
+}
+
+Token *Lex_Parser::lexparse_feature(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
+    Position start = p;
+
+    Token *t = lexparse_primary(curr, end, p);
+    switch (t->type) {
+        case (Token_Type::ID) : {
+            Token *feature_def = new Token(Token_Type::FEATURE_DEF, id->start_pos, t->end_pos);
+            feature_def->children.push_back(id);
+            feature_def->children.push_back(t);
+
+            Token *name = t;
+            while (name->children.size() > 0) {
+                name = name->children[0];
+            }
+            feature_def->contents = name->contents;
+
+            Token *block = lexparse_block(curr, end, p);
+            feature_def->children.push_back(block);
+            feature_def->end_pos = p;
+
+            return feature_def;
+        }
+        break;
+        default:
+            throw Compiler_Exception("'feature' not followed by feature name", start, p);
+    }
+}
+
+Token *Lex_Parser::lexparse_return(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
+    Position start = p;
+
+    Token *return_call;
+    Token *t = lexparse_expression(curr, end, p);
+
+    if (t != NULL) {
+        return_call = new Token(Token_Type::RETURN_CALL, id->start_pos, t->end_pos);
+        return_call->children.push_back(id);
+
+        return_call->children.push_back(t);
+    }
+    else {
+        return_call = new Token(Token_Type::RETURN_CALL, id->start_pos, id->end_pos);
+        return_call->children.push_back(id);
+    }
+
+    return return_call;
+}
+
+Token *Lex_Parser::lexparse_if(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
+    Position start = p;
+
+    Token *t = lexparse_expression(curr, end, p);
+    switch (t->type) {
+        case (Token_Type::SYMBOL) : //for return types
+        case (Token_Type::BOOL) :
+        case (Token_Type::FUN_CALL) :
+        case (Token_Type::ID) : {
+            Token *if_block = new Token(Token_Type::IF_BLOCK, id->start_pos, t->end_pos);
+            if_block->children.push_back(id);
+
+            //push condition into its own block
+            Token *if_cond = new Token(Token_Type::BLOCK, t->start_pos, t->end_pos);
+            if_cond->children.push_back(t);
+            if_block->children.push_back(if_cond);
+
+            /*
+            Token *name = t;
+            while (name->children.size() > 0) {
+                name = name->children[0];
+            }
+            if_block->contents = name->contents;
+            */
+
+            Token *continuation = NULL;
+            Token *block = lexparse_ifblock(curr, end, p, &continuation);
+            if_block->children.push_back(block);
+
+            while (continuation != NULL) {
+                if (continuation->contents == "elseif") {
+                    Token *t = lexparse_expression(curr, end, p);
+                    switch (t->type) {
+                        case (Token_Type::SYMBOL) : //for return types
+                        case (Token_Type::ID) : {
+                            Token *elseif_block = new Token(Token_Type::ELSEIF_BLOCK, continuation->start_pos, t->end_pos);
+                            elseif_block->children.push_back(continuation);
+                            Token *elseif_cond = new Token(Token_Type::BLOCK, t->start_pos, t->end_pos);
+                            elseif_cond->children.push_back(t);
+                            elseif_block->children.push_back(elseif_cond);
+
+                            //elseif_block->children.push_back(t);
+
+                            /*
+                            Token *name = t;
+                            while (name->children.size() > 0) {
+                                name = name->children[0];
+                            }
+                            elseif_block->contents = name->contents;
+                            */
+
+                            continuation = NULL;
+                            Token *block = lexparse_ifblock(curr, end, p, &continuation);
+                            elseif_block->children.push_back(block);
+                            elseif_block->end_pos = p;
+                            if_block->children.push_back(elseif_block);
+                            if_block->end_pos = p;
+                        }
+                        break;
+                        default:
+                            continuation = NULL;
                     }
-                    fun_def->contents = name->contents;
-                    fun_def->end_pos = p;
-
-                    return fun_def;
                 }
-                break;
-                default:
-                    throw Compiler_Exception("'def' not followed by function heading", start, p);
+                else if (continuation->contents == "else") {
+                    Token *block = lexparse_block(curr, end, p);
+                    Token *else_block = new Token(Token_Type::ELSE_BLOCK, continuation->start_pos, continuation->end_pos);
+                    else_block->children.push_back(continuation);
+                    else_block->children.push_back(block);
+
+                    if_block->children.push_back(else_block);
+                    if_block->end_pos = p;
+                    continuation = NULL;
+                }
+                else {
+                    continuation = NULL;
+                }
             }
 
+            return if_block;
         }
+        break;
+        default:
+            throw Compiler_Exception("'if' not followed by condition", start, p);
+    }
+}
+
+Token *Lex_Parser::lexparse_while(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
+    Position start = p;
+
+    Token *t = lexparse_expression(curr, end, p);
+    switch (t->type) {
+        case (Token_Type::SYMBOL) : //for return types
+        case (Token_Type::BOOL) :
+        case (Token_Type::FUN_CALL) :
+        case (Token_Type::ID) : {
+            Token *while_block = new Token(Token_Type::WHILE_BLOCK, id->start_pos, t->end_pos);
+            while_block->children.push_back(id);
+
+            //push condition into its own block
+            Token *while_cond = new Token(Token_Type::BLOCK, t->start_pos, t->end_pos);
+            while_cond->children.push_back(t);
+            while_block->children.push_back(while_cond);
+
+            Token *name = t;
+            while (name->children.size() > 0) {
+                name = name->children[0];
+            }
+            while_block->contents = name->contents;
+
+            Token *block = lexparse_block(curr, end, p);
+            while_block->children.push_back(block);
+            while_block->end_pos = p;
+
+            return while_block;
+        }
+        break;
+        default:
+            throw Compiler_Exception("'while' not followed by condition",start, p);
+    }
+}
+
+Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
+    Position start = p;
+    if (id->contents == "def") {
+        return lexparse_def(curr, end, p, id);
+    }
+    else if (id->contents == "extern") {
+        return lexparse_extern(curr, end, p, id);
     }
     else if (id->contents == "action") {
-        Token *t = lexparse_expression(curr, end, p);
-        switch (t->type) {
-            case (Token_Type::SYMBOL) : //for return types
-            case (Token_Type::FUN_CALL) :
-            case (Token_Type::ID) : {
-                Token *action_def = new Token(Token_Type::ACTION_DEF, id->start_pos, t->end_pos);
-                action_def->children.push_back(id);
-                action_def->children.push_back(t);
-
-                Token *name = t;
-                while (name->children.size() > 0) {
-                    name = name->children[0];
-                }
-                action_def->contents = name->contents;
-
-                Token *block = lexparse_block(curr, end, p);
-                action_def->children.push_back(block);
-                action_def->end_pos = p;
-
-                return action_def;
-            }
-            break;
-            default:
-                throw Compiler_Exception("'action' not followed by action heading", start, p);
-        }
+        return lexparse_action(curr, end, p, id);
     }
     else if (id->contents == "isolated") {
-        delete id;
-        Token *action_def = lexparse_primary(curr, end, p);
-        if (action_def->type != Token_Type::ACTOR_DEF) {
-            std::cout << "TYPE: " << action_def->type << std::endl;
-            throw Compiler_Exception("Isolated not followed by action definition", action_def->start_pos, action_def->end_pos);
-        }
-        action_def->type = Token_Type::ISOLATED_ACTOR_DEF;
-
-        return action_def;
+        return lexparse_isolated(curr, end, p, id);
     }
     else if ((id->contents == "true") || (id->contents == "false")) {
         Token *bool_val = id;
@@ -427,135 +723,25 @@ Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::i
         return this_val;
     }
     else if (id->contents == "new") {
-        Token *t = lexparse_expression(curr, end, p, NAMESPACE_PREC);
-        switch (t->type) {
-            case (Token_Type::FUN_CALL) :
-            case (Token_Type::SYMBOL) :
-            case (Token_Type::ARRAY_CALL) :
-            case (Token_Type::ID) : {
-                Token *new_alloc = new Token(Token_Type::NEW_ALLOC, id->start_pos, t->end_pos);
-                new_alloc->children.push_back(id);
-                new_alloc->children.push_back(t);
-
-                return new_alloc;
-            }
-            break;
-            default:
-                throw Compiler_Exception("'new' not followed by feature or container", start, p);
-        }
+        return lexparse_new(curr, end, p, id);
     }
     else if (id->contents == "spawn") {
-        Token *t = lexparse_expression(curr, end, p, NAMESPACE_PREC);
-        switch (t->type) {
-            case (Token_Type::FUN_CALL) :
-            case (Token_Type::SYMBOL) :
-            case (Token_Type::ID) : {
-                Token *spawn_actor = new Token(Token_Type::SPAWN_ACTOR, id->start_pos, t->end_pos);
-                spawn_actor->children.push_back(id);
-                spawn_actor->children.push_back(t);
-
-                return spawn_actor;
-            }
-            break;
-            default:
-                throw Compiler_Exception("'new' not followed by feature or container", start, p);
-        }
+        return lexparse_spawn(curr, end, p, id);
     }
     else if (id->contents == "namespace") {
-        Token *t = lexparse_expression(curr, end, p);
-        switch (t->type) {
-            case (Token_Type::SYMBOL) : //for return types
-            case (Token_Type::ID) : {
-                Token *namespace_start = new Token(Token_Type::NAMESPACE, id->start_pos, t->end_pos);
-                namespace_start->children.push_back(id);
-                namespace_start->children.push_back(t);
-
-                return namespace_start;
-            }
-            break;
-            default:
-                throw Compiler_Exception("'namespace' not followed by name", start, p);
-        }
+        return lexparse_namespace(curr, end, p, id);
     }
     else if (id->contents == "use") {
-        Token *t = lexparse_expression(curr, end, p);
-        if (t != NULL) {
-            Token *use_call = new Token(Token_Type::USE_CALL, id->start_pos, t->end_pos);
-            use_call->children.push_back(id);
-            use_call->children.push_back(t);
-
-            return use_call;
-        }
-        else {
-            throw Compiler_Exception("'use' not followed by file reference", start, p);
-        }
+        return lexparse_use(curr, end, p, id);
     }
     else if (id->contents == "actor") {
-        Token *t = lexparse_primary(curr, end, p);
-        switch (t->type) {
-            case (Token_Type::ID) : {
-                Token *actor_def = new Token(Token_Type::ACTOR_DEF, id->start_pos, t->end_pos);
-                actor_def->children.push_back(id);
-                actor_def->children.push_back(t);
-
-                Token *name = t;
-                while (name->children.size() > 0) {
-                    name = name->children[0];
-                }
-                actor_def->contents = name->contents;
-
-                Token *block = lexparse_block(curr, end, p);
-                actor_def->children.push_back(block);
-                actor_def->end_pos = p;
-
-                return actor_def;
-            }
-            break;
-            default:
-                throw Compiler_Exception("'actor' not followed by actor name", start, p);
-        }
+        return lexparse_actor(curr, end, p, id);
     }
     else if (id->contents == "feature") {
-        Token *t = lexparse_primary(curr, end, p);
-        switch (t->type) {
-            case (Token_Type::ID) : {
-                Token *feature_def = new Token(Token_Type::FEATURE_DEF, id->start_pos, t->end_pos);
-                feature_def->children.push_back(id);
-                feature_def->children.push_back(t);
-
-                Token *name = t;
-                while (name->children.size() > 0) {
-                    name = name->children[0];
-                }
-                feature_def->contents = name->contents;
-
-                Token *block = lexparse_block(curr, end, p);
-                feature_def->children.push_back(block);
-                feature_def->end_pos = p;
-
-                return feature_def;
-            }
-            break;
-            default:
-                throw Compiler_Exception("'feature' not followed by feature name", start, p);
-        }
+        return lexparse_feature(curr, end, p, id);
     }
     else if (id->contents == "return") {
-        Token *return_call;
-        Token *t = lexparse_expression(curr, end, p);
-
-        if (t != NULL) {
-            return_call = new Token(Token_Type::RETURN_CALL, id->start_pos, t->end_pos);
-            return_call->children.push_back(id);
-
-            return_call->children.push_back(t);
-        }
-        else {
-            return_call = new Token(Token_Type::RETURN_CALL, id->start_pos, id->end_pos);
-            return_call->children.push_back(id);
-        }
-
-        return return_call;
+        return lexparse_return(curr, end, p, id);
     }
     else if (id->contents == "elseif") {
         return id;
@@ -564,119 +750,10 @@ Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::i
         return id;
     }
     else if (id->contents == "if") {
-        Token *t = lexparse_expression(curr, end, p);
-        switch (t->type) {
-            case (Token_Type::SYMBOL) : //for return types
-            case (Token_Type::BOOL) :
-            case (Token_Type::FUN_CALL) :
-            case (Token_Type::ID) : {
-                Token *if_block = new Token(Token_Type::IF_BLOCK, id->start_pos, t->end_pos);
-                if_block->children.push_back(id);
-
-                //push condition into its own block
-                Token *if_cond = new Token(Token_Type::BLOCK, t->start_pos, t->end_pos);
-                if_cond->children.push_back(t);
-                if_block->children.push_back(if_cond);
-
-                /*
-                Token *name = t;
-                while (name->children.size() > 0) {
-                    name = name->children[0];
-                }
-                if_block->contents = name->contents;
-                */
-
-                Token *continuation = NULL;
-                Token *block = lexparse_ifblock(curr, end, p, &continuation);
-                if_block->children.push_back(block);
-
-                while (continuation != NULL) {
-                    if (continuation->contents == "elseif") {
-                        Token *t = lexparse_expression(curr, end, p);
-                        switch (t->type) {
-                            case (Token_Type::SYMBOL) : //for return types
-                            case (Token_Type::ID) : {
-                                Token *elseif_block = new Token(Token_Type::ELSEIF_BLOCK, continuation->start_pos, t->end_pos);
-                                elseif_block->children.push_back(continuation);
-                                Token *elseif_cond = new Token(Token_Type::BLOCK, t->start_pos, t->end_pos);
-                                elseif_cond->children.push_back(t);
-                                elseif_block->children.push_back(elseif_cond);
-
-                                //elseif_block->children.push_back(t);
-
-                                /*
-                                Token *name = t;
-                                while (name->children.size() > 0) {
-                                    name = name->children[0];
-                                }
-                                elseif_block->contents = name->contents;
-                                */
-
-                                continuation = NULL;
-                                Token *block = lexparse_ifblock(curr, end, p, &continuation);
-                                elseif_block->children.push_back(block);
-                                elseif_block->end_pos = p;
-                                if_block->children.push_back(elseif_block);
-                                if_block->end_pos = p;
-                            }
-                            break;
-                            default:
-                                continuation = NULL;
-                        }
-                    }
-                    else if (continuation->contents == "else") {
-                        Token *block = lexparse_block(curr, end, p);
-                        Token *else_block = new Token(Token_Type::ELSE_BLOCK, continuation->start_pos, continuation->end_pos);
-                        else_block->children.push_back(continuation);
-                        else_block->children.push_back(block);
-
-                        if_block->children.push_back(else_block);
-                        if_block->end_pos = p;
-                        continuation = NULL;
-                    }
-                    else {
-                        continuation = NULL;
-                    }
-                }
-
-                return if_block;
-            }
-            break;
-            default:
-                throw Compiler_Exception("'if' not followed by condition", start, p);
-        }
+        return lexparse_if(curr, end, p, id);
     }
     else if (id->contents == "while") {
-        Token *t = lexparse_expression(curr, end, p);
-        switch (t->type) {
-            case (Token_Type::SYMBOL) : //for return types
-            case (Token_Type::BOOL) :
-            case (Token_Type::FUN_CALL) :
-            case (Token_Type::ID) : {
-                Token *while_block = new Token(Token_Type::WHILE_BLOCK, id->start_pos, t->end_pos);
-                while_block->children.push_back(id);
-
-                //push condition into its own block
-                Token *while_cond = new Token(Token_Type::BLOCK, t->start_pos, t->end_pos);
-                while_cond->children.push_back(t);
-                while_block->children.push_back(while_cond);
-
-                Token *name = t;
-                while (name->children.size() > 0) {
-                    name = name->children[0];
-                }
-                while_block->contents = name->contents;
-
-                Token *block = lexparse_block(curr, end, p);
-                while_block->children.push_back(block);
-                while_block->end_pos = p;
-
-                return while_block;
-            }
-            break;
-            default:
-                throw Compiler_Exception("'while' not followed by condition",start, p);
-        }
+        return lexparse_while(curr, end, p, id);
     }
 
     return NULL;

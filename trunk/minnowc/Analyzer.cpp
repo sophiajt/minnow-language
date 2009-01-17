@@ -507,6 +507,7 @@ void Analyzer::analyze_type_blocks(Program *program, Token *token, Scope **scope
 
                 program->funs.push_back(null_check);
                 new_scope->local_funs["is_null"] = program->funs.size() - 1;
+
             }
             *scope = new_scope;
         }
@@ -644,6 +645,36 @@ void Analyzer::add_implied_constructors(Program *program) {
                 program->funs.push_back(new_c);
 
                 td->token->scope->local_funs[td->token->contents] = program->funs.size() - 1;
+            }
+        }
+        if (td->token->type == Token_Type::FEATURE_DEF) {
+            //Check for delete method
+            if (td->token->scope->local_funs.find("delete") == td->token->scope->local_funs.end()) {
+                Function_Def *delete_me = new Function_Def(true);
+                delete_me->return_type_def_num = program->global->local_types["void"];
+                delete_me->is_port_of_exit = false;
+                delete_me->is_internal = true;
+                delete_me->token = new Token(Token_Type::FUN_DEF);
+
+                program->funs.push_back(delete_me);
+                td->token->scope->local_funs["delete"] = program->funs.size() - 1;
+            }
+
+            //Check for copy call
+            std::ostringstream match;
+            match << "copy__" << i;
+
+            if (td->token->scope->local_funs.find(match.str()) == td->token->scope->local_funs.end()) {
+                Function_Def *copy_me = new Function_Def(true);
+                copy_me->return_type_def_num = program->global->local_types["void"];
+                copy_me->arg_def_nums.push_back(i);
+                copy_me->is_port_of_exit = false;
+                copy_me->is_internal = true;
+                copy_me->is_port_of_entry = true;
+                copy_me->token = new Token(Token_Type::FUN_DEF);
+
+                program->funs.push_back(copy_me);
+                td->token->scope->local_funs[match.str()] = program->funs.size() - 1;
             }
         }
     }

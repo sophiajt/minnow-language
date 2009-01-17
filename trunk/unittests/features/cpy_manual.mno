@@ -1,0 +1,15 @@
+feature Bob
+  x : int
+end
+
+action main
+  y : Bob = new Bob()
+  y.x = 5
+
+  z : Bob
+  z.copy(y)
+
+  print(z.x)
+
+  Sys.exit()
+end
