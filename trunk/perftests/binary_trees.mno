@@ -59,6 +59,8 @@ action main(args : Array[string])
       b : Node = make(0-i, d)
       c = c + a.check() + b.check()
       i += 1
+      a.delete()
+      b.delete()
     end
     print( (2*iterations).to_string() + "\t trees of depth " + d.to_string() + "\t check: " + c.to_string() + "\n")
 
