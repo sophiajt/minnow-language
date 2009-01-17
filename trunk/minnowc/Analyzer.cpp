@@ -9,6 +9,7 @@
 #include <vector>
 #include <map>
 #include <sstream>
+#include <algorithm>
 
 bool is_complex_type(Program *program, unsigned int type_def_num) {
     Type_Def *td = program->types[type_def_num];
@@ -2764,7 +2765,6 @@ void Analyzer::examine_port_of_exit(Program *program, Token *token, Token *bound
                         if (((vd->is_removed == false) || (vd->is_dependent == false))
                                 && (is_complex_var(program, rhs->definition_number)))  {
 
-                            std::cout << "VD: " << rhs->definition_number << " " << vd->usage_end.col << " " << bounds->end_pos.col << std::endl;
                             if ((vd->usage_end == bounds->end_pos) && (vd->is_dependent == true) &&
                                     (find(var_refs.begin(), var_refs.end(), rhs->definition_number) == var_refs.end())) {
                                 var_refs.push_back(rhs->definition_number);
