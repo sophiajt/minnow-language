@@ -33,6 +33,24 @@ extern def convert_c_to_i__(c : char) : int
 extern def create_char_string__(num_elems : uint) : string
 extern def num_hw_threads__() : int
 
+//Math
+namespace Math
+extern def cos(d : double) : double
+extern def sin(d : double) : double
+extern def tan(d : double) : double
+extern def acos(d : double) : double
+extern def asin(d : double) : double
+extern def atan(d : double) : double
+extern def atan2(d : double, d2 : double) : double
+extern def log(d : double) : double
+extern def log10(d : double) : double
+extern def sqrt(d : double) : double
+extern def cbrt(d : double) : double
+extern def floor(d : double) : double
+extern def ceil(d : double) : double
+extern def fabs(d : double) : double
+extern def abs(i : int) : int
+
 namespace global
 def print(i : int)
   Sys.Externals.print_i__(i)
