@@ -29,7 +29,7 @@ void debug_print(Token *token, std::string prepend) {
 }
 
 bool is_symbol(char c) {
-    if (strchr("!@#$%^&*<>,.?/:|\\-+=~`", c) != NULL) {
+    if (strchr("!@#$%^&*<>,.?/:|\\-+=~", c) != NULL) {
         return true;
     }
     else {
@@ -187,11 +187,30 @@ Token *Lex_Parser::lexparse_id(std::string::iterator &curr, std::string::iterato
     lexparse_whitespace(curr, end, p);
     if (curr == end) return NULL;
 
-    if (((*curr >= 'A') && (*curr <= 'Z')) || ((*curr >= 'a') && (*curr <= 'z')) || (*curr == '_')) {
+    if (*curr == '`') {
+        std::string::iterator start = curr;
+        Position start_p = p;
+        ++curr;
+        ++p.col;
+        while ((curr != end) && (*curr != '`')) {
+            ++curr;
+            ++p.col;
+        }
+        if ((start+1) == (curr)) {
+            throw Compiler_Exception("Empty special identifier", start_p, p);
+        }
+        std::string val(start+1, curr);
+
+        ++curr;
+        ++p.col;
+        Token *token = new Token(Token_Type::ID, val, start_p, p);
+        return token;
+    }
+    else if (((*curr >= 'A') && (*curr <= 'Z')) || ((*curr >= 'a') && (*curr <= 'z')) || (*curr == '_')) {
         //starting on a number
         std::string::iterator start = curr;
         Position start_p = p;
-        while (((*curr >= 'A') && (*curr <= 'Z')) || ((*curr >= 'a') && (*curr <= 'z')) || (*curr == '_') || ((*curr >= '0') && (*curr <= '9'))) {
+        while ((curr != end) && (((*curr >= 'A') && (*curr <= 'Z')) || ((*curr >= 'a') && (*curr <= 'z')) || (*curr == '_') || ((*curr >= '0') && (*curr <= '9')))) {
             ++curr;
             ++p.col;
         }

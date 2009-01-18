@@ -587,9 +587,14 @@ void Analyzer::analyze_fun_blocks(Program *program, Token *token, Scope **scope)
             if ((*scope)->local_funs.find(full_fn_name) != (*scope)->local_funs.end()) {
                 Function_Def *dupe = program->funs[(*scope)->local_funs[full_fn_name]];
                 std::ostringstream msg;
-                msg << "Duplicate definitions for function/action (see also: line: " << dupe->token->start_pos.line
-                    << " of " << dupe->token->start_pos.filename << ")";
-                throw Compiler_Exception(msg.str(), token->start_pos, token->end_pos);
+                if (dupe->token != NULL) {
+                    msg << "Duplicate definitions for function/action (see also: line: " << dupe->token->start_pos.line
+                        << " of " << dupe->token->start_pos.filename << ")";
+                }
+                else {
+                    msg << "Duplicate definitions for built-in \"" << token->contents << "\"";
+                }
+                throw Compiler_Exception(msg.str(), token->children[1]->start_pos, token->children[1]->end_pos);
             }
             else {
                 program->funs.push_back(fd);
@@ -1176,10 +1181,12 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
         else {
             std::ostringstream name;
             name << token->contents << "__" << token->children[0]->type_def_num << "__" << token->children[1]->type_def_num;
+
             while (scope != NULL) {
                 std::string fullname = name.str();
                 if (scope->local_funs.find(fullname) != scope->local_funs.end()) {
                     token->type_def_num = program->funs[scope->local_funs[fullname]]->return_type_def_num;
+                    token->definition_number = scope->local_funs[fullname];
                     return;
                 }
                 scope = scope->parent;

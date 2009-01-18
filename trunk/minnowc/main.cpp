@@ -198,6 +198,7 @@ public:
 
         an.add_implied_constructors(p);
         an.analyze_var_type_and_scope(p, t, p->global);
+
         an.analyze_token_types(p, t, p->global);
 
         an.analyze_ports_of_entry(p, t, NULL, p->global, false, false);
@@ -209,6 +210,7 @@ public:
 
         an.analyze_usage_extents(p, t, NULL, p->global);
         an.analyze_usage_extent_colors(p);
+
         //debug_print_extents(p);
 
         //debug_print_def(p, t, "");

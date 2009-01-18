@@ -107,6 +107,46 @@ def print(b : bool)
   end
 end
 
+def `+`(x:int, y:double) : double
+  return x.to_double() + y
+end
+
+def `+`(x:double, y:int) : double
+  return x + y.to_double()
+end
+
+def `-`(x:int, y:double) : double
+  return x.to_double() - y
+end
+
+def `-`(x:double, y:int) : double
+  return x - y.to_double()
+end
+
+def `*`(x:int, y:double) : double
+  return x.to_double() * y
+end
+
+def `*`(x:double, y:int) : double
+  return x * y.to_double()
+end
+
+def `/`(x:int, y:double) : double
+  return x.to_double() / y
+end
+
+def `/`(x:double, y:int) : double
+  return x / y.to_double()
+end
+
+def `**`(x:int, y:double) : double
+  return x.to_double() ** y
+end
+
+def `**`(x:double, y:int) : double
+  return x ** y.to_double()
+end
+
 //----SYS----
 
 namespace Sys

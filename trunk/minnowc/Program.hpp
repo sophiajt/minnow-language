@@ -167,6 +167,7 @@ public:
         std::ostringstream name;
 
         Function_Def *fd = new Function_Def(true, ret_type, arg_type1, arg_type2);
+
         funs.push_back(fd);
         name << op << "__" << arg_type1 << "__" << arg_type2;
         global->local_funs[name.str()] = funs.size() - 1;

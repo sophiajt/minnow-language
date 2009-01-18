@@ -707,11 +707,20 @@ void Codegen::codegen_symbol(Program *p, Token *t, std::ostringstream &output) {
         output << ") )";
     }
     else {
-        output << "(";
-        codegen_token(p, t->children[0], output);
-        output << t->contents;
-        codegen_token(p, t->children[1], output);
-        output << ")";
+        if (p->funs[t->definition_number]->is_internal) {
+            output << "(";
+            codegen_token(p, t->children[0], output);
+            output << t->contents;
+            codegen_token(p, t->children[1], output);
+            output << ")";
+        }
+        else {
+            output << "fun__" << t->definition_number << "(m__, ";
+            codegen_token(p, t->children[0], output);
+            output << ", ";
+            codegen_token(p, t->children[1], output);
+            output << ")";
+        }
     }
 }
 
