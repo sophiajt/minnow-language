@@ -1,0 +1,5 @@
+action main
+  t : var = "Test me"
+  print(String.substr(t, 2, 2))
+  Sys.exit()
+end

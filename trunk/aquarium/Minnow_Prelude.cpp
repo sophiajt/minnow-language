@@ -207,3 +207,23 @@ float convert_c_to_f__(char c) {
     return (float)c;
 }
 
+/* STRING */
+
+Typeless_Vector__ *substr_s_i_i__(Typeless_Vector__ *s, int start, int length) {
+    if (length < 0) { length = 0; }
+    Typeless_Vector__ *retval = create_typeless_vector__(sizeof(char), length);
+
+    if ((unsigned)start > s->current_size) {
+        return retval;
+    }
+
+    if ((unsigned)(start+length) > s->current_size) {
+        length = s->current_size - start;
+    }
+
+    for (int i = start; i < (start+length); ++i) {
+        push_onto_char_string__(retval, ((char*)s->contents)[i]);
+    }
+
+    return retval;
+}

@@ -45,6 +45,8 @@ Typeless_Vector__ *file_read_all_p__(void *p);
 void exit_i__(int i);
 void exit__();
 
+Typeless_Vector__ *substr_s_i_i__(Typeless_Vector__ *s, int start, int length);
+
 #ifdef __cplusplus
 }
 #endif

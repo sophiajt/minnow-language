@@ -1,0 +1,21 @@
+def print_lines(v : Array[string])
+  i : int = 0
+  print(v.size())
+  
+  while (i < v.size())
+    print(v[i] + '\n')
+    i += 1
+  end
+end
+
+action main
+  print_lines(String.lines("Bob"))
+  print_lines(String.lines("Bob\nSally"))
+  print_lines(String.lines("Bob\nSally\nFred"))
+  print_lines(String.lines("\nSally\nFred"))
+  print_lines(String.lines("\n\nFred"))
+  print_lines(String.lines("\nFred\n"))
+  print_lines(String.lines(" "))
+
+  Sys.exit()
+end

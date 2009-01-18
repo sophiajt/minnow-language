@@ -2796,7 +2796,6 @@ void Analyzer::examine_port_of_exit(Program *program, Token *token, Token *bound
                         if (((vd->is_removed == false) || (vd->is_dependent == false))
                                 && (is_complex_var(program, lhs->definition_number)))  {
 
-                            std::cout << "VD: " << lhs->definition_number << " " << vd->usage_end.col << " " << bounds->end_pos.col << std::endl;
                             if ((vd->usage_end == bounds->end_pos) && (vd->is_dependent == true) &&
                                     (find(var_refs.begin(), var_refs.end(), lhs->definition_number) == var_refs.end())) {
                                 var_refs.push_back(lhs->definition_number);
@@ -2833,7 +2832,6 @@ void Analyzer::examine_port_of_exit(Program *program, Token *token, Token *bound
                     if (((vd->is_removed == false) || (vd->is_dependent == false))
                             && (is_complex_var(program, parm->definition_number)))  {
 
-                        std::cout << "VD: " << parm->definition_number << " " << vd->usage_end.col << " " << bounds->end_pos.col << std::endl;
                         if ((vd->usage_end == bounds->end_pos) && (vd->is_dependent == true) &&
                                 (find(var_refs.begin(), var_refs.end(), parm->definition_number) == var_refs.end())) {
 

@@ -32,6 +32,7 @@ extern def convert_c_to_d__(c : char) : double
 extern def convert_c_to_i__(c : char) : int
 extern def create_char_string__(num_elems : uint) : string
 extern def num_hw_threads__() : int
+extern def substr_s_i_i__(s:string, from:int, to:int) : string
 
 //Math
 namespace Math
@@ -50,6 +51,32 @@ extern def floor(d : double) : double
 extern def ceil(d : double) : double
 extern def fabs(d : double) : double
 extern def abs(i : int) : int
+
+//String
+namespace String
+def substr(s:string, from:int, length:int) : string
+  return Sys.Externals.substr_s_i_i__(s, from, length)
+end
+
+def lines(s:string) : Array[string]
+  start : int = 0
+  length : int = 0
+  retval : var = new Array[string]
+
+  while ((start+length) <= s.size())
+    if (s[start+length] == '\n')
+      retval.push(String.substr(s, start, length))
+      start = start + length + 1 
+      length = 0
+    else
+      length += 1
+    end
+  end
+  if (length > 0)
+    retval.push(String.substr(s, start, length))
+  end
+  return(retval)
+end
 
 namespace global
 def print(i : int)
