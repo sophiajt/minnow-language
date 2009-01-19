@@ -59,7 +59,7 @@ extern "C" {
  * Message type, used in sending messages between actors
  */
 typedef struct message__ {
-    union Type_Union__ args[8]; /**< The arguments of the messaage */
+    Type_Union__ args[8]; /**< The arguments of the messaage */
     void *recipient; /**< The recipient of the message */
     void *sched; /**< The scheduler the message came from */
     Action_Data_Union__ act_data; /**< The action/data in the message */

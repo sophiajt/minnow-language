@@ -4,8 +4,6 @@
 #ifndef COMMON_HPP_
 #define COMMON_HPP_
 
-#include "Typeless_Vector.hpp"
-
 #ifdef __cplusplus
 
 extern "C" {
@@ -23,7 +21,7 @@ struct message__;
 /**
  * The union that allows us to collapse all the datatypes into one value type
  */
-union Type_Union__ {
+typedef union {
     signed char Int8;
     unsigned char UInt8;
     signed short Int16;
@@ -37,7 +35,7 @@ union Type_Union__ {
     BOOL Bool;
     void(*Function)(void *);
     void *VoidPtr;
-};
+}  Type_Union__;
 
 /**
  * A union to collapse action and data messages into one value type
@@ -50,5 +48,8 @@ typedef union {
 #ifdef __cplusplus
 }
 #endif
+
+#include "Typeless_Vector.hpp"
+
 
 #endif /* COMMON_HPP_ */
