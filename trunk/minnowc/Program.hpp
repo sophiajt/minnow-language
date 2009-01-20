@@ -66,21 +66,21 @@ public:
 
     void build_internal_array_methods(Type_Def *owner, unsigned int type_def_num) {
         std::ostringstream push_name, pop_name, size_name, empty_name, insert_name, delete_name;
-        push_name << "push__" << owner->contained_type_def_num;
+        push_name << "push__" << owner->contained_type_def_nums[0];
         pop_name << "pop";
         size_name << "size";
         empty_name << "empty";
-        insert_name << "insert__" << owner->contained_type_def_num << "__"  << global->local_types["int"];
+        insert_name << "insert__" << owner->contained_type_def_nums[0] << "__"  << global->local_types["int"];
         delete_name << "delete__" << global->local_types["int"];
 
         Function_Def *push_fd = new Function_Def(true);
         push_fd->return_type_def_num = global->local_types["void"];
-        push_fd->arg_def_nums.push_back(owner->contained_type_def_num);
+        push_fd->arg_def_nums.push_back(owner->contained_type_def_nums[0]);
         push_fd->token = new Token(Token_Type::FUN_DEF);
         push_fd->is_port_of_exit = true;
 
         Function_Def *pop_fd = new Function_Def(true);
-        pop_fd->return_type_def_num = owner->contained_type_def_num;
+        pop_fd->return_type_def_num = owner->contained_type_def_nums[0];
         pop_fd->token = new Token(Token_Type::FUN_DEF);
 
         Function_Def *size_fd = new Function_Def(true);
@@ -93,13 +93,13 @@ public:
 
         Function_Def *insert_fd = new Function_Def(true);
         insert_fd->return_type_def_num = global->local_types["void"];
-        insert_fd->arg_def_nums.push_back(owner->contained_type_def_num);
+        insert_fd->arg_def_nums.push_back(owner->contained_type_def_nums[0]);
         insert_fd->arg_def_nums.push_back(global->local_types["int"]);
         insert_fd->token = new Token(Token_Type::FUN_DEF);
         insert_fd->is_port_of_exit = true;
 
         Function_Def *delete_fd = new Function_Def(true);
-        delete_fd->return_type_def_num = owner->contained_type_def_num;
+        delete_fd->return_type_def_num = owner->contained_type_def_nums[0];
         delete_fd->arg_def_nums.push_back(global->local_types["int"]);
         delete_fd->token = new Token(Token_Type::FUN_DEF);
 
@@ -158,7 +158,7 @@ public:
         unsigned int td_type_def_num = this->global->local_types["string"];
         Type_Def *td_string = this->types[td_type_def_num];
         td_string->container = Container_Type::ARRAY;
-        td_string->contained_type_def_num = this->global->local_types["char"];
+        td_string->contained_type_def_nums.push_back(this->global->local_types["char"]);
         build_internal_array_methods(td_string, td_type_def_num);
 
     }

@@ -72,8 +72,11 @@ unsigned int get_precedence(Token *token) {
     else if ((token->contents == ":")) {
         return 110;
     }
-    else if (token->contents == ".") {
+    else if ((token->contents == "->")) {
         return 120;
+    }
+    else if (token->contents == ".") {
+        return 130;
     }
     return 0;
 }

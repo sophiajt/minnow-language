@@ -79,7 +79,12 @@ Typeless_Vector__ *file_read_all_p__(void *p) {
     int length = file_length_p__(p);
     Typeless_Vector__ *tv = create_char_string__(length);
     tv->current_size = (unsigned int)length;
-    fread(tv->contents, length, 1, in);
+
+    int read = fread(tv->contents, length, 1, in);
+
+    if (read != length) {
+        printf("Warning: file contents could not be completely read.\n");
+    }
 
     return tv;
 }

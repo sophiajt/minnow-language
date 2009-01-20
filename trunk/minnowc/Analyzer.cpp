@@ -158,7 +158,7 @@ unsigned int Analyzer::find_type(Program *program, Token *ns, Scope *scope) {
                     //It doesn't exist yet, so let's create it
                     Type_Def *container = new Type_Def();
                     container->container = Container_Type::ARRAY;
-                    container->contained_type_def_num = ns->children[1]->type_def_num;
+                    container->contained_type_def_nums.push_back(ns->children[1]->type_def_num);
                     container->token = new Token(Token_Type::EMPTY); //todo: set this to something reasonable
                     container->token->scope = new Scope();
                     container->token->scope->owner = container->token;
@@ -192,6 +192,52 @@ unsigned int Analyzer::find_type(Program *program, Token *ns, Scope *scope) {
                     throw Compiler_Exception("Can not find type '" + ns->children[1]->contents + "'", ns->start_pos, ns->end_pos);
                 }
             }
+        }
+        else if (ns->contents == "->") {
+            std::vector <unsigned int> ref_types;
+
+            while (ns->contents == "->") {
+                ref_types.push_back(find_type(program, ns->children[1], scope));
+                ns = ns->children[0];
+            }
+            ref_types.push_back(find_type(program, ns, scope));
+
+            std::ostringstream functorname;
+
+            functorname << "Fun___" << ref_types[0];
+
+            for (unsigned int i = 1; i < ref_types.size(); ++i) {
+                functorname << "__" << ref_types[i];
+            }
+
+            if (program->global->local_types.find(functorname.str()) != program->global->local_types.end()) {
+                ns->definition_number = program->global->local_types[functorname.str()];
+                ns->type_def_num = ns->definition_number;
+                return ns->definition_number;
+            }
+            else {
+                //It doesn't exist yet, so let's create it
+                Type_Def *functor = new Type_Def();
+                functor->container = Container_Type::FUNCTOR;
+                for (unsigned int i = 0; i < ref_types.size(); ++i) {
+                    functor->contained_type_def_nums.push_back(ref_types[i]);
+                }
+                functor->token = new Token(Token_Type::EMPTY); //todo: set this to something reasonable
+                functor->token->scope = new Scope();
+                functor->token->scope->owner = functor->token;
+                program->types.push_back(functor);
+
+                unsigned int def_num = program->types.size() - 1;
+
+                program->global->local_types[functorname.str()] = def_num;
+                ns->definition_number = def_num;
+                ns->type_def_num = def_num;
+
+                program->build_internal_array_methods(functor, def_num);
+
+                return ns->definition_number;
+            }
+
         }
         else {
             throw Compiler_Exception("Can not find type", ns->start_pos, ns->end_pos);
@@ -244,7 +290,7 @@ void Analyzer::find_constructor(Program *program, Token *ns, Scope *scope) {
                     //It doesn't exist yet, so let's create it
                     Type_Def *container = new Type_Def();
                     container->container = Container_Type::ARRAY;
-                    container->contained_type_def_num = ns->children[1]->type_def_num;
+                    container->contained_type_def_nums.push_back(ns->children[1]->type_def_num);
                     container->token = new Token(Token_Type::EMPTY); //todo: set this to something reasonable
                     container->token->scope = new Scope();
                     program->types.push_back(container);
@@ -1205,7 +1251,7 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
         token->type_def_num = program->global->local_types["string"];
     }
     else if (token->type == Token_Type::ARRAY_CALL) {
-        token->type_def_num = program->types[token->children[0]->type_def_num]->contained_type_def_num;
+        token->type_def_num = program->types[token->children[0]->type_def_num]->contained_type_def_nums[0];
     }
 }
 

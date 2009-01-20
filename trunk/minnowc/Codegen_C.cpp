@@ -154,7 +154,7 @@ void Codegen::codegen_method_call(Program *p, Token *t, std::ostringstream &outp
         if ((child->children[0]->contents == "push") && (td->container == Container_Type::ARRAY)) {
             ++temp_num;
             output << "{ ";
-            codegen_typesig(p, td->contained_type_def_num, output);
+            codegen_typesig(p, td->contained_type_def_nums[0], output);
             output << " tmp_member__" << temp_num << " = ";
             codegen_token(p, child->children[1], output);
             output << "; push_onto_typeless_vector__(";
@@ -176,12 +176,12 @@ void Codegen::codegen_method_call(Program *p, Token *t, std::ostringstream &outp
             output << "pop_off_typeless_vector__(";
             codegen_token(p, t->children[0], output);
             output << ").";
-            codegen_tu_typesig(p, td->contained_type_def_num, output);
+            codegen_tu_typesig(p, td->contained_type_def_nums[0], output);
         }
         else if ((child->children[0]->contents == "insert") && (td->container == Container_Type::ARRAY)) {
             ++temp_num;
             output << "{ ";
-            codegen_typesig(p, td->contained_type_def_num, output);
+            codegen_typesig(p, td->contained_type_def_nums[0], output);
             output << " tmp_member__" << temp_num << " = ";
             codegen_token(p, child->children[1]->children[0], output);
             output << "; insert_into_typeless_vector__(";
@@ -196,7 +196,7 @@ void Codegen::codegen_method_call(Program *p, Token *t, std::ostringstream &outp
             output << ", ";
             codegen_token(p, child->children[1], output);
             output << ").";
-            codegen_tu_typesig(p, td->contained_type_def_num, output);
+            codegen_tu_typesig(p, td->contained_type_def_nums[0], output);
         }
         else if ((child->children[0]->contents == "bit_shl") && (t->children[0]->type_def_num == (signed)p->global->local_types["int"])) {
             output << "(";
@@ -1097,7 +1097,7 @@ void Codegen::codegen_new(Program *p, Token *t, std::ostringstream &output) {
     }
     else if (td->container == Container_Type::ARRAY) {
         output << "create_typeless_vector__(sizeof(";
-        codegen_typesig(p, td->contained_type_def_num, output);
+        codegen_typesig(p, td->contained_type_def_nums[0], output);
         output << "), 0)";
     }
 }
@@ -2049,18 +2049,18 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
             output << "  Typeless_Vector__ *ret_val__ = create_typeless_vector__(((Typeless_Vector__ *)v__)->elem_size, ((Typeless_Vector__ *)v__)->current_size);" << std::endl;
             output << "  for (i = 0; i < ((Typeless_Vector__ *)v__)->current_size; ++i)" << std::endl << "  {" << std::endl;
             output << "    INDEX_AT__(ret_val__, i, ";
-            codegen_typesig(p, td->contained_type_def_num, output);
+            codegen_typesig(p, td->contained_type_def_nums[0], output);
             output << ") = ";
-            if ((td->contained_type_def_num >= (signed)obj_id) || (td->contained_type_def_num == (signed)string_id)) {
+            if ((td->contained_type_def_nums[0] >= (signed)obj_id) || (td->contained_type_def_nums[0] == (signed)string_id)) {
                 output << "(";
-                codegen_typesig(p, td->contained_type_def_num, output);
+                codegen_typesig(p, td->contained_type_def_nums[0], output);
                 output << ")copy__(m__, INDEX_AT__(((Typeless_Vector__ *)v__), i, ";
-                codegen_typesig(p, td->contained_type_def_num, output);
-                output << "), " << td->contained_type_def_num << ");" << std::endl;
+                codegen_typesig(p, td->contained_type_def_nums[0], output);
+                output << "), " << td->contained_type_def_nums[0] << ");" << std::endl;
             }
             else {
                 output << "INDEX_AT__(((Typeless_Vector__ *)v__), i, ";
-                codegen_typesig(p, td->contained_type_def_num, output);
+                codegen_typesig(p, td->contained_type_def_nums[0], output);
                 output << ");" << std::endl;
             }
             output << "  }" << std::endl;
@@ -2150,11 +2150,11 @@ void Codegen::codegen_delete_decl(Program *p, std::ostringstream &output) {
             output << "  unsigned int i;" << std::endl;
             //Type_Def *contained = p->types[td->contained_type_def_num];
             //if ((contained->token->type != Token_Type::ACTOR_DEF) && (contained->token->type != Token_Type::ISOLATED_ACTOR_DEF)) {
-            if ((td->contained_type_def_num >= (signed)obj_id) || (td->contained_type_def_num == (signed)string_id)) {
+            if ((td->contained_type_def_nums[0] >= (signed)obj_id) || (td->contained_type_def_nums[0] == (signed)string_id)) {
                 output << "  for (i = 0; i < ((Typeless_Vector__ *)v__)->current_size; ++i)" << std::endl << "  {" << std::endl;
                 output << "    delete__(m__, INDEX_AT__(((Typeless_Vector__ *)v__), i, ";
-                codegen_typesig(p, td->contained_type_def_num, output);
-                output << "), " << td->contained_type_def_num << ");" << std::endl;
+                codegen_typesig(p, td->contained_type_def_nums[0], output);
+                output << "), " << td->contained_type_def_nums[0] << ");" << std::endl;
                 output << "  }" << std::endl;
             }
             output << "  delete_typeless_vector__((Typeless_Vector__ *)v__);" << std::endl;

@@ -147,7 +147,7 @@ public:
 
 class Container_Type {
     public:
-        enum Type { SCALAR, ARRAY };
+        enum Type { SCALAR, ARRAY, FUNCTOR };
 };
 
 class Type_Def {
@@ -155,13 +155,14 @@ public:
     Token *token;
     bool is_internal;
     bool is_isolated_actor;  //todo: move this to being part of an attribute flag set
-    int contained_type_def_num;
+    std::vector<int> contained_type_def_nums;
+
     Container_Type::Type container;
 
     Type_Def() : token(NULL), is_internal(false), is_isolated_actor(false),
-        contained_type_def_num(-1), container(Container_Type::SCALAR) { }
+        container(Container_Type::SCALAR) { }
     Type_Def(bool internal) : token(NULL), is_internal(internal), is_isolated_actor(false),
-        contained_type_def_num(-1), container(Container_Type::SCALAR) { }
+        container(Container_Type::SCALAR) { }
 };
 
 class Extent_Type {
