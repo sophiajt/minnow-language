@@ -1,0 +1,10 @@
+def bob(x:int)
+  print(x)
+end
+
+action main
+  bob(3...
+  )
+  print("Hello")
+  Sys.exit()
+end

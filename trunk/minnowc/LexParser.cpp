@@ -945,9 +945,84 @@ bool Lex_Parser::lexparse_whitespace(std::string::iterator &curr, std::string::i
             ++p.col;
             ++curr;
         }
+
+        if ((curr != end) && (*curr == '.')) {
+            //check for ellipses
+            std::string::iterator prev_tok = curr;
+            Position prev_pos = p;
+
+            ++p.col;
+            ++curr;
+            if ((curr != end) && (*curr == '.')) {
+                ++p.col;
+                ++curr;
+                if ((curr != end) && (*curr == '.')) {
+                    //we found the ellipses, so we should find a carriage return, if not we have a prob.
+                    ++p.col;
+                    ++curr;
+
+                    Token *eol = lexparse_eol(curr, end, p);
+                    if (eol == NULL) {
+                        throw Compiler_Exception("Expected carriage return after multiline command '...'", prev_pos, p);
+                    }
+                    else {
+                        delete eol;
+                        return lexparse_whitespace(curr, end, p);
+                    }
+                }
+                else {
+                    curr = prev_tok;
+                    p = prev_pos;
+                    return true;
+                }
+            }
+            else {
+                curr = prev_tok;
+                p = prev_pos;
+                return true;
+            }
+        }
+
         return true;
     }
     else {
+        if ((curr != end) && (*curr == '.')) {
+            //check for ellipses
+            std::string::iterator prev_tok = curr;
+            Position prev_pos = p;
+
+            ++p.col;
+            ++curr;
+            if ((curr != end) && (*curr == '.')) {
+                ++p.col;
+                ++curr;
+                if ((curr != end) && (*curr == '.')) {
+                    //we found the ellipses, so we should find a carriage return, if not we have a prob.
+                    ++p.col;
+                    ++curr;
+
+                    Token *eol = lexparse_eol(curr, end, p);
+                    if (eol == NULL) {
+                        throw Compiler_Exception("Expected carriage return after multiline command '...'", prev_pos, p);
+                    }
+                    else {
+                        delete eol;
+                        return lexparse_whitespace(curr, end, p);
+                    }
+                }
+                else {
+                    curr = prev_tok;
+                    p = prev_pos;
+                    return false;
+                }
+            }
+            else {
+                curr = prev_tok;
+                p = prev_pos;
+                return false;
+            }
+        }
+
         return false;
     }
 }
