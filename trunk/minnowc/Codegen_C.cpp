@@ -964,7 +964,7 @@ void Codegen::codegen_for(Program *p, Token *t, std::ostringstream &output) {
     jmp_name << "forjmp" << block_end;
     break_jmp_name = jmp_name.str();
 
-    output << "{ int tmp__for__" << block_start << ";" << std::endl;
+    output << "{ " << std::endl;
     codegen_token(p, t->children[1], output);
     output << ";" << std::endl;
     output << "forjmp" << block_start << ":" << std::endl;
@@ -982,7 +982,7 @@ void Codegen::codegen_for(Program *p, Token *t, std::ostringstream &output) {
     output << "  var__" << t->definition_number << " = ";
     codegen_token(p, t->children[2], output);
     output << "+1;" << std::endl;
-    output << "  tmp__for__" << block_start << " = ";
+    output << "  var__" << t->definition_number+1 << " = ";
     codegen_token(p, t->children[2], output);
     output << "+1 - ";
     codegen_token(p, t->children[1]->children[0], output);
@@ -993,7 +993,7 @@ void Codegen::codegen_for(Program *p, Token *t, std::ostringstream &output) {
     output << "(";
     codegen_token(p, t->children[1]->children[0], output);
     output << ") + timeslice__;" << std::endl;
-    output << "  tmp__for__" << block_start << " = timeslice__;" << std::endl;
+    output << "  var__" << t->definition_number+1 << " = timeslice__;" << std::endl;
     output << "}" << std::endl;
 
     output << "forjmp" << block_start2 << ":" << std::endl;
@@ -1007,7 +1007,7 @@ void Codegen::codegen_for(Program *p, Token *t, std::ostringstream &output) {
     output << "goto forjmp" << block_start2 << ";" << std::endl;
 
     output << "forjmp" << block_end2 << ":" << std::endl;
-    output << "  if ((timeslice__ - tmp__for__" << block_start << ") < 0) { timeslice__ = 1;}" << std::endl;
+    output << "  if ((timeslice__ - var__" << t->definition_number+1 << ") < 0) { timeslice__ = 1;}" << std::endl;
 
     //output << "timeslice__ = 1;" << std::endl;
     codegen_continuation_site(p, t->children[4], output);

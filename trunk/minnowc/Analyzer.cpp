@@ -775,8 +775,20 @@ void Analyzer::analyze_var_type_and_scope(Program *program, Token *token, Scope 
 
         unsigned int var_def_num = program->vars.size() - 1;
         token->definition_number = var_def_num;
-
         scope->local_vars[name.str()] = var_def_num;
+
+        vd = new Var_Def();
+        vd->token = token;
+        vd->type_def_num = program->global->local_types["int"];
+        vd->usage_start = token->start_pos;
+        vd->usage_end = token->end_pos;
+        program->vars.push_back(vd);
+
+        var_def_num = program->vars.size() - 1;
+        std::ostringstream name2;
+        name2 << "for__" << for_inner_var_id++;
+        scope->local_vars[name2.str()] = var_def_num;
+
     }
 
     if ((token->type == Token_Type::FUN_DEF) || (token->type == Token_Type::ACTION_DEF) ||
