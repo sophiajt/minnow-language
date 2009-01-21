@@ -80,17 +80,18 @@ actor Calculator
         Cr = (2.0*x.to_double()/m_width.to_double() - 1.5)
         Ci = (2.0*y.to_double()/m_height.to_double() - 1.0)
 
-        i = 0
-        while ((i < iter) && (Tr + Ti <= limit * limit))
+        //while ((i < iter) && (Tr + Ti <= limit * limit))
+        for i = 0 to iter-1
           Zi = 2.0 * Zr * Zi + Ci
           Zr = Tr - Ti + Cr
           Tr = Zr * Zr
           Ti = Zi * Zi
-          i += 1
+          if (Tr + Ti > limit * limit)
+            break
+          end
         end
-
         acc = acc.bit_shl(1)
-        if ((Tr+Ti) <= limit*limit)
+        if (i == iter)
           acc = acc.bit_or(1)
         end
 
