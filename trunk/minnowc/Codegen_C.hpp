@@ -44,6 +44,7 @@ public:
 
     void codegen_if(Program *p, Token *t, std::ostringstream &output);
     void codegen_while(Program *p, Token *t, std::ostringstream &output);
+    void codegen_for(Program *p, Token *t, std::ostringstream &output);
 
     void codegen_return(Program *p, Token *t, std::ostringstream &output);
 

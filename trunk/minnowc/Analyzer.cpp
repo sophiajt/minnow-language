@@ -1063,6 +1063,11 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
                 throw Compiler_Exception("While block expects boolean expression", token->start_pos, token->end_pos);
             }
         }
+        else if (token->type == Token_Type::FOR_BLOCK) {
+            for (unsigned int i = 1; i < token->children.size(); ++i) {
+                analyze_token_types(program, token->children[i], scope);
+            }
+        }
         else if (token->type == Token_Type::FUN_CALL) {
             check_fun_call(program, token, scope, scope);
         }
@@ -2051,7 +2056,7 @@ void Analyzer::find_var_endpoints(Program *program, Token *token, Token *bounds,
             }
         }
     }
-    else if (token->type == Token_Type::WHILE_BLOCK) {
+    else if ((token->type == Token_Type::WHILE_BLOCK) || (token->type == Token_Type::FOR_BLOCK)) {
         if (contains_var(token, var_def_num)) {
             Var_Def *vd = program->vars[var_def_num];
             vd->usage_end = token->end_pos;

@@ -40,6 +40,8 @@ public:
     Token *lexparse_return(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
     Token *lexparse_if(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
     Token *lexparse_while(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
+    Token *lexparse_enum(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
+    Token *lexparse_for(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
 
     Token *lexparse_reserved(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
     Token *lexparse_primary(std::string::iterator &curr, std::string::iterator &end, Position &p);

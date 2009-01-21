@@ -947,6 +947,28 @@ void Codegen::codegen_while(Program *p, Token *t, std::ostringstream &output) {
     output << "whilejmp" << block_end << ":" << std::endl;
 }
 
+void Codegen::codegen_for(Program *p, Token *t, std::ostringstream &output) {
+    unsigned int top = this->temp_num++;
+    unsigned int block_start = this->temp_num++;
+    unsigned int block_end = this->temp_num++;
+
+    codegen_token(p, t->children[1], output);
+    output << ";" << std::endl;
+    output << "forjmp" << top << ":" << std::endl;
+    output << "if (";
+    codegen_token(p, t->children[1]->children[0], output);
+    output << " == (";
+    codegen_token(p, t->children[2], output);
+    output << "+1)) goto forjmp" << block_end << ";" << std::endl;
+
+    output << "forjmp" << block_start << ":" << std::endl;
+    codegen_block(p, t->children[3], output);
+    output << "++";
+    codegen_token(p, t->children[1]->children[0], output);
+    output << ";" << std::endl;
+    output << "goto forjmp" << top << ";" << std::endl;
+    output << "forjmp" << block_end << ":" << std::endl;
+}
 
 
 /*
@@ -1280,6 +1302,7 @@ void Codegen::codegen_token(Program *p, Token *t, std::ostringstream &output) {
         case (Token_Type::RETURN_CALL) : codegen_return(p, t, output); break;
         case (Token_Type::IF_BLOCK) : codegen_if(p, t, output); break;
         case (Token_Type::WHILE_BLOCK) : codegen_while(p, t, output); break;
+        case (Token_Type::FOR_BLOCK) : codegen_for(p, t, output); break;
         case (Token_Type::NEW_ALLOC) : codegen_new(p, t, output); break;
         case (Token_Type::SPAWN_ACTOR) : codegen_spawn(p, t, output); break;
         case (Token_Type::ACTION_CALL) : codegen_action_call(p, t, output); break;

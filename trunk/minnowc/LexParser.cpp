@@ -688,7 +688,7 @@ Token *Lex_Parser::lexparse_while(std::string::iterator &curr, std::string::iter
 
     Token *t = lexparse_expression(curr, end, p);
     switch (t->type) {
-        case (Token_Type::SYMBOL) : //for return types
+        case (Token_Type::SYMBOL) :
         case (Token_Type::BOOL) :
         case (Token_Type::FUN_CALL) :
         case (Token_Type::ID) : {
@@ -718,6 +718,58 @@ Token *Lex_Parser::lexparse_while(std::string::iterator &curr, std::string::iter
     }
 }
 
+Token *Lex_Parser::lexparse_for(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
+    Position start = p;
+
+    Token *t = lexparse_expression(curr, end, p);
+    switch (t->type) {
+        case (Token_Type::SYMBOL) : {
+            Token *for_block = new Token(Token_Type::FOR_BLOCK, id->start_pos, t->end_pos);
+            for_block->children.push_back(id);
+
+            //push condition into its own block
+            //Token *for_cond = new Token(Token_Type::BLOCK, t->start_pos, t->end_pos);
+            for_block->children.push_back(t);
+
+            Token *to = lexparse_id(curr, end, p);
+            if (to->contents != "to") {
+                throw Compiler_Exception("'for' not followed by the form \"<var> = <start value> to <finish value>\"",start, p);
+            }
+
+            Token *finish = lexparse_expression(curr, end, p);
+            if (finish != NULL) {
+                for_block->children.push_back(finish);
+            }
+            else {
+                throw Compiler_Exception("'for' not followed by the form \"<var> = <start value> to <finish value>\"",start, p);
+            }
+
+            //for_block->children.push_back(for_cond);
+
+            Token *name = t;
+            while (name->children.size() > 0) {
+                name = name->children[0];
+            }
+            for_block->contents = name->contents;
+
+            Token *block = lexparse_block(curr, end, p);
+            for_block->children.push_back(block);
+            for_block->end_pos = p;
+
+            return for_block;
+        }
+        break;
+        default:
+            throw Compiler_Exception("'for' not followed by the form \"<var> = <start value> to <finish value>\"",start, p);
+    }
+}
+
+Token *Lex_Parser::lexparse_enum(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
+    Position start = p;
+
+    return NULL;
+}
+
 Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
     Position start = p;
     if (id->contents == "def") {
@@ -744,6 +796,12 @@ Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::i
 
         return this_val;
     }
+    else if (id->contents == "break") {
+        Token *this_val = id;
+        this_val->type = Token_Type::BREAK;
+
+        return this_val;
+    }
     else if (id->contents == "new") {
         return lexparse_new(curr, end, p, id);
     }
@@ -764,6 +822,12 @@ Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::i
     }
     else if (id->contents == "return") {
         return lexparse_return(curr, end, p, id);
+    }
+    else if (id->contents == "enum") {
+        return lexparse_enum(curr, end, p, id);
+    }
+    else if (id->contents == "for") {
+        return lexparse_for(curr, end, p, id);
     }
     else if (id->contents == "elseif") {
         return id;
