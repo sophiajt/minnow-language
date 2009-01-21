@@ -9,6 +9,7 @@
 class Analyzer {
     int next_continuation;
     int next_deletion;
+    int for_inner_var_id;
 public:
     Scope *find_or_create_namespace(Program *program, Token *ns);
     Scope *find_namespace(Program *program, Token *ns, bool throw_exceptions);
@@ -63,7 +64,7 @@ public:
     void examine_equation_for_copy_delete(Program *program, Token *block, Token *token, Token *bounds, unsigned int &i);
     void analyze_copy_delete(Program *program, Token *token, Token *bounds, Scope *scope);
 
-    Analyzer() : next_continuation(0), next_deletion(0) { }
+    Analyzer() : next_continuation(0), next_deletion(0), for_inner_var_id(0) { }
 };
 
 bool is_complex_type(Program *program, unsigned int type_def_num);

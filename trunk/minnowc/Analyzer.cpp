@@ -761,6 +761,24 @@ void Analyzer::analyze_var_type_and_scope(Program *program, Token *token, Scope 
         }
     }
 
+    if (token->type == Token_Type::FOR_BLOCK) {
+        //for blocks need their own vars for constraint management
+        std::ostringstream name;
+        name << "for__" << for_inner_var_id++;
+
+        Var_Def *vd = new Var_Def();
+        vd->token = token;
+        vd->type_def_num = program->global->local_types["int"];
+        vd->usage_start = token->start_pos;
+        vd->usage_end = token->end_pos;
+        program->vars.push_back(vd);
+
+        unsigned int var_def_num = program->vars.size() - 1;
+        token->definition_number = var_def_num;
+
+        scope->local_vars[name.str()] = var_def_num;
+    }
+
     if ((token->type == Token_Type::FUN_DEF) || (token->type == Token_Type::ACTION_DEF) ||
             (token->type == Token_Type::ACTOR_DEF) || (token->type == Token_Type::FEATURE_DEF) ||
             (token->type == Token_Type::ISOLATED_ACTOR_DEF)) {
@@ -2612,6 +2630,27 @@ void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scop
                 token->children[2]->children.push_back(continuation);
             }
 
+        }
+
+        if (token->type == Token_Type::FOR_BLOCK) {
+            Token *continuation = new Token(Token_Type::CONTINUATION_SITE);
+
+            continuation->start_pos = token->start_pos;
+            continuation->end_pos = token->end_pos;
+            std::vector<int> push_pop = build_push_pop_list(program, scope, token->start_pos, token->end_pos);
+
+            if (scope->owner->definition_number < 0) {
+                throw Compiler_Exception("Internal error finding resume function", token->start_pos, token->end_pos);
+            }
+            Function_Def *owner = program->funs[scope->owner->definition_number];
+            program->var_sites.push_back(push_pop);
+            owner->continuation_sites.push_back(program->var_sites.size() - 1);
+            continuation->definition_number = program->var_sites.size() - 1;
+
+            // *token = *continuation;
+
+            //token->children[1]->children.insert(token->children[1]->children.begin(), continuation);
+            token->children.push_back(continuation);
         }
     }
 }

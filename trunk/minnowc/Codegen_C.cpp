@@ -908,6 +908,10 @@ void Codegen::codegen_while(Program *p, Token *t, std::ostringstream &output) {
     unsigned int block_end = this->temp_num++;
     bool cont_at_end = false;
 
+    std::string prev_break = break_jmp_name;
+    std::ostringstream jmp_name;
+    jmp_name << "whilejmp" << block_end;
+    break_jmp_name = jmp_name.str();
 
     if (t->children[1]->children.size() > 1) {
         if (t->children[1]->children[0]->type == Token_Type::CONTINUATION_SITE) {
@@ -945,18 +949,67 @@ void Codegen::codegen_while(Program *p, Token *t, std::ostringstream &output) {
     }
     output << "goto whilejmp" << top << ";" << std::endl;
     output << "whilejmp" << block_end << ":" << std::endl;
+
+    break_jmp_name = prev_break;
 }
 
 void Codegen::codegen_for(Program *p, Token *t, std::ostringstream &output) {
-    unsigned int top = this->temp_num++;
     unsigned int block_start = this->temp_num++;
+    unsigned int block_start2 = this->temp_num++;
     unsigned int block_end = this->temp_num++;
+    unsigned int block_end2 = this->temp_num++;
 
     std::string prev_break = break_jmp_name;
     std::ostringstream jmp_name;
     jmp_name << "forjmp" << block_end;
     break_jmp_name = jmp_name.str();
 
+    codegen_token(p, t->children[1], output);
+    output << ";" << std::endl;
+    output << "forjmp" << block_start << ":" << std::endl;
+
+    output << "if ((";
+    codegen_token(p, t->children[1]->children[0], output);
+    output << ")==(";
+    codegen_token(p, t->children[2], output);
+    output << "+1)) goto forjmp" << block_end << ";" << std::endl;
+    output << "if ((";
+    codegen_token(p, t->children[1]->children[0], output);
+    output << ") + timeslice__ >= ";
+    codegen_token(p, t->children[2], output);
+    output << "+1) {" << std::endl;
+    output << "  var__" << t->definition_number << " = ";
+    codegen_token(p, t->children[2], output);
+    output << "+1;" << std::endl;
+    output << "} else {" << std::endl;
+    output << "  var__" << t->definition_number << " = ";
+    output << "(";
+    codegen_token(p, t->children[1]->children[0], output);
+    output << ") + timeslice__;" << std::endl;
+    output << "}" << std::endl;
+
+    output << "forjmp" << block_start2 << ":" << std::endl;
+    output << "if ((";
+    codegen_token(p, t->children[1]->children[0], output);
+    output << ")== var__" << t->definition_number << ") goto forjmp" << block_end2 << ";" << std::endl;
+    codegen_block(p, t->children[3], output);
+    output << "++";
+    codegen_token(p, t->children[1]->children[0], output);
+    output << ";" << std::endl;
+    output << "goto forjmp" << block_start2 << ";" << std::endl;
+
+    output << "forjmp" << block_end2 << ":" << std::endl;
+    output << "  if (var__" << t->definition_number << " == ";
+    output << "(";
+    codegen_token(p, t->children[1]->children[0], output);
+    output << ") + timeslice__) { timeslice__ = 1;}" << std::endl;
+
+    //output << "timeslice__ = 1;" << std::endl;
+    codegen_continuation_site(p, t->children[4], output);
+    output << "goto forjmp" << block_start << ";" << std::endl;
+    output << "forjmp" << block_end << ":" << std::endl;
+
+    /*
     codegen_token(p, t->children[1], output);
     output << ";" << std::endl;
     output << "forjmp" << top << ":" << std::endl;
@@ -973,6 +1026,8 @@ void Codegen::codegen_for(Program *p, Token *t, std::ostringstream &output) {
     output << ";" << std::endl;
     output << "goto forjmp" << top << ";" << std::endl;
     output << "forjmp" << block_end << ":" << std::endl;
+    */
+
     break_jmp_name = prev_break;
 }
 
