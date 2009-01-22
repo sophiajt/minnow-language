@@ -661,6 +661,18 @@ Token *Lex_Parser::lexparse_if(std::string::iterator &curr, std::string::iterato
                     }
                 }
                 else if (continuation->contents == "else") {
+                    std::string::iterator prev_curr = curr;
+                    Position prev_p = p;
+
+                    Token *testforif = lexparse_id(curr, end, p);
+
+                    if ((testforif != NULL) && (testforif->contents == "if")) {
+                        throw Compiler_Exception("Use 'elseif' instead of 'else if'", prev_p, p);
+                    }
+
+                    curr = prev_curr;
+                    p = prev_p;
+
                     Token *block = lexparse_block(curr, end, p);
                     Token *else_block = new Token(Token_Type::ELSE_BLOCK, continuation->start_pos, continuation->end_pos);
                     else_block->children.push_back(continuation);
@@ -1238,7 +1250,9 @@ Token *Lex_Parser::lexparse_ifblock(std::string::iterator &curr, std::string::it
 
         throw Compiler_Exception("Can not parse element", p, p);
     }
-
+    if (curr == end) {
+        throw Compiler_Exception("Incomplete if block", block->start_pos, block->start_pos);
+    }
     block->end_pos = p;
     return block;
 }

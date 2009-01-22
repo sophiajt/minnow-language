@@ -17,7 +17,8 @@ bool is_complex_type(Program *program, unsigned int type_def_num) {
     if (((type_def_num >= program->global->local_types["object"]) ||
             (type_def_num == program->global->local_types["string"])) &&
         (td->token->type != Token_Type::ACTOR_DEF) &&
-        (td->token->type != Token_Type::ISOLATED_ACTOR_DEF)) {
+        (td->token->type != Token_Type::ISOLATED_ACTOR_DEF) &&
+        (td->token->type != Token_Type::ENUM_DEF)) {
         return true;
     }
     else {
@@ -517,6 +518,26 @@ void Analyzer::analyze_type_blocks(Program *program, Token *token, Scope **scope
         }
         break;
 
+        case (Token_Type::ENUM_DEF) : {
+            if ((*scope)->local_types.find(token->children[1]->contents) != (*scope)->local_types.end()) {
+                Type_Def *dupe = program->types[(*scope)->local_types[token->children[1]->contents]];
+                std::ostringstream msg;
+                msg << "Duplicate definitions for type (see also: line: " << dupe->token->start_pos.line
+                    << " of " << dupe->token->start_pos.filename << ")";
+                throw Compiler_Exception(msg.str(), token->children[1]->start_pos, token->children[1]->end_pos);
+            }
+            else {
+                Type_Def *td = new Type_Def();
+                td->token = token;
+                token->scope = *scope;
+
+                program->types.push_back(td);
+                token->definition_number = program->types.size() - 1;
+                (*scope)->local_types[td->token->children[1]->contents] = program->types.size() - 1;
+                program->build_internal_func(token->definition_number, token->definition_number, program->global->local_types["bool"], "==");
+            }
+        }
+        break;
         case (Token_Type::ACTOR_DEF) :
         case (Token_Type::ISOLATED_ACTOR_DEF) :
         case (Token_Type::FEATURE_DEF) : {
@@ -529,7 +550,7 @@ void Analyzer::analyze_type_blocks(Program *program, Token *token, Scope **scope
                 std::ostringstream msg;
                 msg << "Duplicate definitions for type (see also: line: " << dupe->token->start_pos.line
                     << " of " << dupe->token->start_pos.filename << ")";
-                throw Compiler_Exception(msg.str(), token->start_pos, token->end_pos);
+                throw Compiler_Exception(msg.str(), token->children[1]->start_pos, token->children[1]->end_pos);
             }
             else {
                 Type_Def *td = new Type_Def();
@@ -871,7 +892,7 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
         analyze_token_types(program, token->children[2], scope);
         return;
     }
-    else if (token->type == Token_Type::EXTERN_FUN_DEF) {
+    else if ((token->type == Token_Type::EXTERN_FUN_DEF) || (token->type == Token_Type::ENUM_DEF)) {
         return;
     }
 
@@ -916,6 +937,23 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
                     return;
                 }
                 else {
+                    analyze_token_types(program, token->children[0], scope);
+
+                    if (token->children[0]->type == Token_Type::ENUM_CALL) {
+                        //We're referencing the enum
+                        Token *enum_lookup = program->types[token->children[0]->definition_number]->token;
+                        for (unsigned int j = 2; j < enum_lookup->children.size(); ++j) {
+                            if (enum_lookup->children[j]->contents == token->children[1]->contents) {
+                                token->definition_number = j-2;
+                                token->type_def_num = token->children[0]->definition_number;
+                                token->type = Token_Type::REFERENCE_ENUM;
+                                return;
+                            }
+                        }
+                        throw Compiler_Exception("Unknown enumerated value", token->start_pos, token->end_pos);
+                    }
+
+
                     Scope *orig = scope;
                     while (scope != NULL) {
                         //Feature referencing
@@ -930,7 +968,6 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
                     }
                     scope = orig;
 
-                    analyze_token_types(program, token->children[0], scope);
                     Type_Def *dot_type = program->types[token->children[0]->type_def_num];
                     Scope *dot_scope = dot_type->token->scope;
 
@@ -1063,10 +1100,6 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
         else if (token->type == Token_Type::USE_CALL) {
             return;
         }
-        else if (token->type == Token_Type::ENUM_DEF) {
-            scope->local_enums[token->children[1]->contents] = token;
-            return;
-        }
         else if (token->type == Token_Type::IF_BLOCK) {
             for (unsigned int i = 1; i < token->children.size(); ++i) {
                 analyze_token_types(program, token->children[i], scope);
@@ -1127,14 +1160,24 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
         }
     }
     if (token->type == Token_Type::ID) {
+        Scope *prev_scope = scope;
+        while (scope != NULL) {
+            if (scope->local_types.find(token->contents) != scope->local_types.end()) {
+                Type_Def *td = program->types[scope->local_types[token->contents]];
+                if (td->token->type == Token_Type::ENUM_DEF) {
+                    //We used definition number because we do not want the parser
+                    //to pass using an enum without a lookup
+                    token->definition_number = scope->local_types[token->contents];
+                    token->type = Token_Type::ENUM_CALL;
+                    return;
+                }
+            }
+            scope = scope->parent;
+        }
+
+        scope = prev_scope;
 
         while (scope != NULL) {
-            /*
-            std::cout << "SCOPE: " << scope << " looking for: " << token->contents << std::endl;
-            for (std::map<std::string, unsigned int>::iterator iter = scope->local_vars.begin(), end = scope->local_vars.end(); iter != end; ++iter) {
-                std::cout << " var: " << iter->first << " def: " << iter->second << std::endl;
-            }
-            */
 
             if (scope->local_vars.find(token->contents) != scope->local_vars.end()) {
                 token->definition_number = scope->local_vars[token->contents];

@@ -24,6 +24,9 @@ void Codegen::codegen_typesig(Program *p, unsigned int type_def_num, std::ostrin
             case (Internal_Type::OBJECT) : output << "void*"; break;
         }
     }
+    else if (td->token->type == Token_Type::ENUM_DEF) {
+        output << "int";
+    }
     else {
         output << "struct type__" << type_def_num << "*";
     }
@@ -49,6 +52,9 @@ void Codegen::codegen_typesig_no_tail(Program *p, unsigned int type_def_num, std
             case (Internal_Type::OBJECT) : output << "void*"; break;
         }
     }
+    else if (td->token->type == Token_Type::ENUM_DEF) {
+        output << "int";
+    }
     else {
         output << "struct type__" << type_def_num;
     }
@@ -73,6 +79,9 @@ void Codegen::codegen_tu_typesig(Program *p, unsigned int type_def_num, std::ost
             case (Internal_Type::OBJECT) : output << "VoidPtr"; break;
         }
     }
+    else if (td->token->type == Token_Type::ENUM_DEF) {
+        output << "Int32";
+    }
     else {
         output << "VoidPtr";
     }
@@ -96,6 +105,9 @@ void Codegen::codegen_default_value(Program *p, unsigned int type_def_num, std::
             case (Internal_Type::POINTER) : output << "NULL"; break;
             case (Internal_Type::OBJECT) : output << "NULL"; break;
         }
+    }
+    else if (td->token->type == Token_Type::ENUM_DEF) {
+        output << "-1";
     }
     else {
         output << "NULL";
@@ -1345,6 +1357,7 @@ void Codegen::codegen_token(Program *p, Token *t, std::ostringstream &output) {
         case (Token_Type::BOOL) : if (t->contents == "true") { output << "TRUE"; } else { output << "FALSE"; }; break;
         case (Token_Type::SINGLE_QUOTED_STRING) : output << "'" << t->contents << "'"; break;
         case (Token_Type::QUOTED_STRING_CONST) : output << "create_char_string_from_char_ptr__(\"" << t->contents << "\")"; break;
+        case (Token_Type::REFERENCE_ENUM) : output << t->definition_number; break;
         case (Token_Type::ATTRIBUTE_CALL) : {
             codegen_token(p, t->children[0], output);
             output << "->";
