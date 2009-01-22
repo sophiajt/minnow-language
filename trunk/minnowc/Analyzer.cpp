@@ -595,6 +595,8 @@ void Analyzer::analyze_fun_blocks(Program *program, Token *token, Scope **scope)
         }
         break;
 
+        case (Token_Type::ENUM_DEF) :
+            break;
         case (Token_Type::ACTOR_DEF) :
         case (Token_Type::ISOLATED_ACTOR_DEF) :
         case (Token_Type::FEATURE_DEF) : {
@@ -818,7 +820,7 @@ void Analyzer::analyze_var_type_and_scope(Program *program, Token *token, Scope 
 
         return;
     }
-    else if (token->type == Token_Type::EXTERN_FUN_DEF) {
+    else if ((token->type == Token_Type::EXTERN_FUN_DEF) || (token->type == Token_Type::ENUM_DEF)) {
         return;
     }
 
@@ -1059,6 +1061,10 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
             return;
         }
         else if (token->type == Token_Type::USE_CALL) {
+            return;
+        }
+        else if (token->type == Token_Type::ENUM_DEF) {
+            scope->local_enums[token->children[1]->contents] = token;
             return;
         }
         else if (token->type == Token_Type::IF_BLOCK) {

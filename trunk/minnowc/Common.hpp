@@ -230,6 +230,7 @@ public:
     std::map<std::string, unsigned int> local_funs;
     std::map<std::string, unsigned int> local_types;
     std::map<std::string, unsigned int> local_vars;
+    std::map<std::string, Token*> local_enums;
     std::map<std::string, Scope*> namespaces;
 
     Token *owner;  //For reverse lookup back to the owner of the scope

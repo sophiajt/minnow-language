@@ -1007,7 +1007,11 @@ void Codegen::codegen_for(Program *p, Token *t, std::ostringstream &output) {
     output << "goto forjmp" << block_start2 << ";" << std::endl;
 
     output << "forjmp" << block_end2 << ":" << std::endl;
-    output << "  if ((timeslice__ - var__" << t->definition_number+1 << ") < 0) { timeslice__ = 1;}" << std::endl;
+
+    output << "  timeslice__ -= var__" << t->definition_number+1 << ";" << std::endl;
+
+    output << "  if (timeslice__ <= 0) { timeslice__ = 1;}" << std::endl;
+
 
     //output << "timeslice__ = 1;" << std::endl;
     codegen_continuation_site(p, t->children[4], output);
@@ -1746,7 +1750,7 @@ void Codegen::codegen_action_decl(Program *p, Token *t, std::ostringstream &outp
                 output << "BOOL fun__" << i << "(Message__ *m__)" << std::endl;
                 output << "{" << std::endl;
                 output << "unsigned int cont_id__ = 0;" << std::endl;
-                output << "unsigned int timeslice__ = ((Actor__*)m__->recipient)->timeslice_remaining;" << std::endl;
+                output << "int timeslice__ = ((Actor__*)m__->recipient)->timeslice_remaining;" << std::endl;
 
                 if (fd->token->children.size() > 2) {
                     Scope *scope_var = fd->token->children[2]->scope;
@@ -1984,7 +1988,7 @@ void Codegen::codegen_fun_decl(Program *p, Token *t, std::ostringstream &output)
                 }
                 output << ")" << std::endl;
                 output << "{" << std::endl;
-                output << "unsigned int timeslice__ = ((Actor__*)m__->recipient)->timeslice_remaining;" << std::endl;
+                output << "int timeslice__ = ((Actor__*)m__->recipient)->timeslice_remaining;" << std::endl;
                 output << "unsigned int cont_id__ = 0;" << std::endl;
 
                 if (fd->token->children.size() > 2) {

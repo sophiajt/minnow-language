@@ -767,7 +767,33 @@ Token *Lex_Parser::lexparse_for(std::string::iterator &curr, std::string::iterat
 Token *Lex_Parser::lexparse_enum(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
     Position start = p;
 
-    return NULL;
+    Token *enum_block = new Token(Token_Type::ENUM_DEF);
+
+    enum_block->children.push_back(id);
+    enum_block->start_pos = id->start_pos;
+
+    Token *t = lexparse_primary(curr, end, p);
+    if (t->type != Token_Type::FUN_CALL) {
+        throw Compiler_Exception("Enumeration not followed with enumerated values", start, p);
+    }
+    else if (t->children.size() != 2) {
+        throw Compiler_Exception("Enumeration not followed with enumerated values", start, p);
+    }
+    else {
+        enum_block->children.push_back(t->children[0]);
+        //unwind the enumerated values
+        Token *child = t->children[1];
+        if (child->contents == ",") {
+            while (child->contents == ",") {
+                enum_block->children.insert(enum_block->children.begin() + 2, child->children[1]);
+                child = child->children[0];
+            }
+        }
+        enum_block->children.insert(enum_block->children.begin() + 2, child);
+        enum_block->end_pos = t->end_pos;
+    }
+
+    return enum_block;
 }
 
 Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
