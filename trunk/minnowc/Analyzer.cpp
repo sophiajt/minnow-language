@@ -937,6 +937,13 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
                     return;
                 }
                 else {
+                    Scope *ns_scope = find_namespace(program, token->children[0], false);
+
+                    if (ns_scope != NULL) {
+                        analyze_token_types(program, token->children[1], ns_scope);
+                        *token = *token->children[1];
+                        return;
+                    }
                     analyze_token_types(program, token->children[0], scope);
 
                     if (token->children[0]->type == Token_Type::ENUM_CALL) {
@@ -951,6 +958,9 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
                             }
                         }
                         throw Compiler_Exception("Unknown enumerated value", token->start_pos, token->end_pos);
+                    }
+                    else {
+                        std::cout << "TYPE: " << token->children[0]->type << std::endl;
                     }
 
 
