@@ -880,6 +880,8 @@ void Codegen::codegen_try(Program *p, Token *t, std::ostringstream &output) {
     this->catch_jmp_name = prev_catch;
 
     output << catch_name.str() << ":" << std::endl;
+    output << "exception__ = ((Actor__*)m__->recipient)->exception;" << std::endl;
+    output << "((Actor__*)m__->recipient)->exception = NULL;" << std::endl;
     for (unsigned int i = 1; i < t->children[2]->children.size(); ++i) {
         codegen_token(p, t->children[2]->children[i], output);
         output << ";" << std::endl;
@@ -1313,6 +1315,7 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
 
         output << "if (((Actor__*)m__->recipient)->exception != NULL) {" << std::endl;
         if (this->catch_jmp_name != "") {
+            output << "timeslice__ = 2000;" << std::endl;
             output << "goto " << this->catch_jmp_name << ";" << std::endl;
         }
         else {
@@ -1420,6 +1423,8 @@ void Codegen::codegen_token(Program *p, Token *t, std::ostringstream &output) {
         case (Token_Type::FLOAT) :
         case (Token_Type::INT) :
         case (Token_Type::QUOTED_STRING) : output << t->contents; break;
+        //case (Token_Type::EXCEPTION) : output << "((Actor__*)m__->recipient)->exception"; break;
+        case  (Token_Type::EXCEPTION) : output << "exception__"; break;
         case (Token_Type::BOOL) : if (t->contents == "true") { output << "TRUE"; } else { output << "FALSE"; }; break;
         case (Token_Type::SINGLE_QUOTED_STRING) : output << "'" << t->contents << "'"; break;
         case (Token_Type::QUOTED_STRING_CONST) : output << "create_char_string_from_char_ptr__(\"" << t->contents << "\")"; break;
@@ -1829,6 +1834,7 @@ void Codegen::codegen_action_decl(Program *p, Token *t, std::ostringstream &outp
             if (fd->token->type == Token_Type::ACTION_DEF) {
                 output << "BOOL fun__" << i << "(Message__ *m__)" << std::endl;
                 output << "{" << std::endl;
+                output << "void *exception__;" << std::endl;
                 output << "unsigned int cont_id__ = 0;" << std::endl;
                 output << "int timeslice__ = ((Actor__*)m__->recipient)->timeslice_remaining;" << std::endl;
 
@@ -2068,6 +2074,7 @@ void Codegen::codegen_fun_decl(Program *p, Token *t, std::ostringstream &output)
                 }
                 output << ")" << std::endl;
                 output << "{" << std::endl;
+                output << "void *exception__;" << std::endl;
                 output << "int timeslice__ = ((Actor__*)m__->recipient)->timeslice_remaining;" << std::endl;
                 output << "unsigned int cont_id__ = 0;" << std::endl;
 

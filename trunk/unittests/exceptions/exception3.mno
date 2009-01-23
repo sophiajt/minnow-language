@@ -5,12 +5,16 @@ feature Exception
   end
 end
 
+def break_something()
+  print("Hello ")
+  o : object <+ new Exception("I cry")
+  throw(o)
+  print("World ")
+end
+
 action main
   try
-    print("Hello ")
-    o : object <+ new Exception("I cry")
-    throw(o)
-    print("World ")
+    break_something()
   catch
     print("Fail:" + exception.Exception.reason)
   end
