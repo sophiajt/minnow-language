@@ -5,7 +5,7 @@
 
 #include "Char_String.hpp"
 
-Typeless_Vector__ *create_char_string__(unsigned int num_elems) {
+Typeless_Vector__ *create_char_string__(int num_elems) {
     return create_typeless_vector__(sizeof(char), num_elems);
 }
 

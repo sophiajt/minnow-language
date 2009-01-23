@@ -14,7 +14,7 @@ extern "C" {
  * \addtogroup Functions
  */
 /*@{*/
-Typeless_Vector__ *create_char_string__(unsigned int num_elems);
+Typeless_Vector__ *create_char_string__(int num_elems);
 Typeless_Vector__ *create_char_string_from_char_ptr__(char *source);
 void initialize_char_string__(Typeless_Vector__ *container, unsigned int num_elems);
 char char_in_char_string__(Typeless_Vector__ *container, int pos);

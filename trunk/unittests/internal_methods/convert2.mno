@@ -1,9 +1,9 @@
 action main
-  f : float
+  d : double
   i : int = 4
-  i.to_float()
-  f.from_int(i)
-  print(f)
+  i.to_double()
+  d.from_int(i)
+  print(d)
   print("\n")
   print("10".to_int() + 5)
   Sys.exit()

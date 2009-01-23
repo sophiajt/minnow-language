@@ -30,7 +30,7 @@ extern def convert_c_to_s__(c : char) : string
 extern def convert_c_to_f__(c : char) : float
 extern def convert_c_to_d__(c : char) : double
 extern def convert_c_to_i__(c : char) : int
-extern def create_char_string__(num_elems : uint) : string
+extern def create_char_string__(num_elems : int) : string
 extern def num_hw_threads__() : int
 extern def substr_s_i_i__(s:string, from:int, to:int) : string
 

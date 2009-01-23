@@ -1834,7 +1834,7 @@ void Codegen::codegen_action_decl(Program *p, Token *t, std::ostringstream &outp
             if (fd->token->type == Token_Type::ACTION_DEF) {
                 output << "BOOL fun__" << i << "(Message__ *m__)" << std::endl;
                 output << "{" << std::endl;
-                output << "void *exception__;" << std::endl;
+                output << "void *exception__ = ((Actor__*)m__->recipient)->exception;" << std::endl;
                 output << "unsigned int cont_id__ = 0;" << std::endl;
                 output << "int timeslice__ = ((Actor__*)m__->recipient)->timeslice_remaining;" << std::endl;
 
@@ -2074,7 +2074,7 @@ void Codegen::codegen_fun_decl(Program *p, Token *t, std::ostringstream &output)
                 }
                 output << ")" << std::endl;
                 output << "{" << std::endl;
-                output << "void *exception__;" << std::endl;
+                output << "void *exception__ = ((Actor__*)m__->recipient)->exception;" << std::endl;
                 output << "int timeslice__ = ((Actor__*)m__->recipient)->timeslice_remaining;" << std::endl;
                 output << "unsigned int cont_id__ = 0;" << std::endl;
 
