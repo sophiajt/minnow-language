@@ -959,9 +959,11 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
                         }
                         throw Compiler_Exception("Unknown enumerated value", token->start_pos, token->end_pos);
                     }
+                    /*
                     else {
                         std::cout << "TYPE: " << token->children[0]->type << std::endl;
                     }
+                    */
 
 
                     Scope *orig = scope;
@@ -1133,6 +1135,16 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
                 analyze_token_types(program, token->children[i], scope);
             }
         }
+        else if (token->type == Token_Type::TRY_BLOCK) {
+            for (unsigned int i = 1; i < token->children.size(); ++i) {
+                analyze_token_types(program, token->children[i], scope);
+            }
+        }
+        else if (token->type == Token_Type::CATCH_BLOCK) {
+            for (unsigned int i = 1; i < token->children.size(); ++i) {
+                analyze_token_types(program, token->children[i], scope);
+            }
+        }
         else if (token->type == Token_Type::WHILE_BLOCK) {
             for (unsigned int i = 1; i < token->children.size(); ++i) {
                 analyze_token_types(program, token->children[i], scope);
@@ -1198,6 +1210,10 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
             scope = scope->parent;
         }
         throw Compiler_Exception("Variable '" + token->contents + "' not found", token->start_pos, token->end_pos);
+    }
+    else if (token->type == Token_Type::EXCEPTION) {
+        token->type_def_num = program->global->local_types["object"];
+        return;
     }
     else if (token->type == Token_Type::THIS) {
         while (scope != NULL) {

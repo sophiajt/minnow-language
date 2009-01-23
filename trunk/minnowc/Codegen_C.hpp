@@ -27,7 +27,7 @@ class Codegen {
     Function_Def *current_fun;
 
     std::string break_jmp_name;
-
+    std::string catch_jmp_name;
 public:
     void codegen_typesig(Program *p, unsigned int type_def_num, std::ostringstream &output);
     void codegen_typesig_no_tail(Program *p, unsigned int type_def_num, std::ostringstream &output);
@@ -45,6 +45,7 @@ public:
     void codegen_symbol(Program *p, Token *t, std::ostringstream &output);
 
     void codegen_if(Program *p, Token *t, std::ostringstream &output);
+    void codegen_try(Program *p, Token *t, std::ostringstream &output);
     void codegen_while(Program *p, Token *t, std::ostringstream &output);
     void codegen_for(Program *p, Token *t, std::ostringstream &output);
 
@@ -82,7 +83,7 @@ public:
 
     void codegen(Program *p, Token *t, std::ostringstream &output);
 
-    Codegen() : cont_id(0), temp_num(0) { }
+    Codegen() : cont_id(0), temp_num(0) { break_jmp_name = ""; catch_jmp_name = ""; }
 };
 
 #endif /* CODEGEN_HPP_ */

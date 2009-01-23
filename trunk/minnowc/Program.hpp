@@ -173,6 +173,18 @@ public:
         global->local_funs[name.str()] = funs.size() - 1;
     }
 
+    void build_throw_func() {
+        std::ostringstream name;
+
+        Function_Def *throw_fd = new Function_Def(true);
+        throw_fd->return_type_def_num = global->local_types["void"];
+        throw_fd->arg_def_nums.push_back(global->local_types["object"]);
+        funs.push_back(throw_fd);
+
+        name << "throw__" << global->local_types["object"];
+        global->local_funs[name.str()] = funs.size() - 1;
+    }
+
     void add_default_funcs() {
         unsigned int int_def_num = global->local_types["int"];
         unsigned int bool_def_num = global->local_types["bool"];
@@ -181,6 +193,8 @@ public:
         unsigned int double_def_num = global->local_types["double"];
         unsigned int string_def_num = global->local_types["string"];
         unsigned int char_def_num = global->local_types["char"];
+
+        build_throw_func();
 
         build_internal_func(int_def_num, int_def_num, int_def_num, "=");
         build_internal_func(int_def_num, int_def_num, int_def_num, "+");

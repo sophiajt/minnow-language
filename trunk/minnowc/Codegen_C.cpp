@@ -129,7 +129,31 @@ void Codegen::codegen_block(Program *p, Token *t, std::ostringstream &output) {
 void Codegen::codegen_fun_call(Program *p, Token *t, std::ostringstream &output) {
     Function_Def *fd = p->funs[t->definition_number];
 
-    if (fd->external_name != "") {
+    if (fd->is_internal == true) {
+        Function_Def *owner = this->current_fun;
+
+        if (t->children[0]->contents == "throw") {
+            output << "((Actor__*)m__->recipient)->exception = ";
+            codegen_token(p, t->children[1], output);
+            output << ";" << std::endl;
+            if (this->catch_jmp_name != "") {
+                output << "goto " << this->catch_jmp_name << ";" << std::endl;
+            }
+            else {
+                output << "((Actor__*)m__->recipient)->timeslice_remaining = 0;" << std::endl;
+                if (owner->token->type == Token_Type::ACTION_DEF) {
+                    output << "print_s__(create_char_string_from_char_ptr__(\"Uncaught exception\\n\"));" << std::endl;
+                    output << "exit__(1); " << std::endl;
+                }
+                else {
+                    output << "return ";
+                    codegen_default_value(p, owner->return_type_def_num, output);
+                    output << ";" << std::endl;
+                }
+            }
+        }
+    }
+    else if (fd->external_name != "") {
         output << fd->external_name << "(";
         if (t->children.size() > 1) {
             codegen_token(p, t->children[1], output);
@@ -838,6 +862,31 @@ void Codegen::codegen_if(Program *p, Token *t, std::ostringstream &output) {
     }
     output << "ifjmp" << block_end << ":" << std::endl;
 }
+
+void Codegen::codegen_try(Program *p, Token *t, std::ostringstream &output) {
+    std::ostringstream catch_name;
+    unsigned int catch_start = this->temp_num++;
+    unsigned int catch_end = this->temp_num++;
+    std::string prev_catch = this->catch_jmp_name;
+    catch_name << "catchjmp" << catch_start;
+    this->catch_jmp_name = catch_name.str();
+
+    for (unsigned int i = 0; i < t->children[1]->children.size(); ++i) {
+        codegen_token(p, t->children[1]->children[i], output);
+        output << ";" << std::endl;
+    }
+    output << "goto catchjmp" << catch_end << ";" << std::endl;
+
+    this->catch_jmp_name = prev_catch;
+
+    output << catch_name.str() << ":" << std::endl;
+    for (unsigned int i = 1; i < t->children[2]->children.size(); ++i) {
+        codegen_token(p, t->children[2]->children[i], output);
+        output << ";" << std::endl;
+    }
+    output << "catchjmp" << catch_end << ":" << std::endl;
+    output << "((Actor__*)m__->recipient)->exception = NULL;" << std::endl;
+}
 /*
 void Codegen::codegen_while(Program *p, Token *t, std::ostringstream &output) {
     unsigned int top = this->temp_num++;
@@ -1262,6 +1311,23 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
         output << "timeslice__ = ((Actor__*)m__->recipient)->timeslice_remaining;" << std::endl;
         output << "if (timeslice__ == 0) {" << std::endl;
 
+        output << "if (((Actor__*)m__->recipient)->exception != NULL) {" << std::endl;
+        if (this->catch_jmp_name != "") {
+            output << "goto " << this->catch_jmp_name << ";" << std::endl;
+        }
+        else {
+            if (owner->token->type == Token_Type::ACTION_DEF) {
+                output << "print_s__(create_char_string_from_char_ptr__(\"Uncaught exception\\n\"));" << std::endl;
+                output << "exit__(1); " << std::endl;
+            }
+            else {
+                output << "return ";
+                codegen_default_value(p, owner->return_type_def_num, output);
+                output << ";" << std::endl;
+            }
+        }
+        output << "}" << std::endl;
+
         if (t->definition_number != -1) {
             for (unsigned int i = 0; i < p->var_sites[t->definition_number].size(); ++i) {
                 output << "push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &var__" << p->var_sites[t->definition_number][i] << ");" << std::endl;
@@ -1385,6 +1451,7 @@ void Codegen::codegen_token(Program *p, Token *t, std::ostringstream &output) {
         case (Token_Type::RETURN_CALL) : codegen_return(p, t, output); break;
         case (Token_Type::BREAK) : if (break_jmp_name != "") { output << "goto " << break_jmp_name << ";" << std::endl;} break;
         case (Token_Type::IF_BLOCK) : codegen_if(p, t, output); break;
+        case (Token_Type::TRY_BLOCK) : codegen_try(p, t, output); break;
         case (Token_Type::WHILE_BLOCK) : codegen_while(p, t, output); break;
         case (Token_Type::FOR_BLOCK) : codegen_for(p, t, output); break;
         case (Token_Type::NEW_ALLOC) : codegen_new(p, t, output); break;

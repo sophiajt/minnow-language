@@ -695,6 +695,34 @@ Token *Lex_Parser::lexparse_if(std::string::iterator &curr, std::string::iterato
     }
 }
 
+Token *Lex_Parser::lexparse_try(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
+    Position start = p;
+
+    Token *try_block = new Token(Token_Type::TRY_BLOCK, id->start_pos, id->end_pos);
+    try_block->children.push_back(id);
+
+    Token *continuation = NULL;
+    Token *block = lexparse_tryblock(curr, end, p, &continuation);
+    try_block->children.push_back(block);
+
+    if ((continuation != NULL) && (continuation->contents == "catch")) {
+        Token *block = lexparse_block(curr, end, p);
+        Token *catch_block = new Token(Token_Type::CATCH_BLOCK, continuation->start_pos, continuation->end_pos);
+        catch_block->children.push_back(continuation);
+        catch_block->children.push_back(block);
+
+        try_block->children.push_back(catch_block);
+        try_block->end_pos = p;
+        continuation = NULL;
+    }
+    else {
+        throw Compiler_Exception("'try' block not followed by 'catch' block", start, p);
+        continuation = NULL;
+    }
+
+    return try_block;
+}
+
 Token *Lex_Parser::lexparse_while(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
     Position start = p;
 
@@ -834,11 +862,17 @@ Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::i
 
         return this_val;
     }
-    else if (id->contents == "break") {
-        Token *this_val = id;
-        this_val->type = Token_Type::BREAK;
+    else if (id->contents == "exception") {
+        Token *ex_val = id;
+        ex_val->type = Token_Type::EXCEPTION;
 
-        return this_val;
+        return ex_val;
+    }
+    else if (id->contents == "break") {
+        Token *break_val = id;
+        break_val->type = Token_Type::BREAK;
+
+        return break_val;
     }
     else if (id->contents == "new") {
         return lexparse_new(curr, end, p, id);
@@ -875,6 +909,12 @@ Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::i
     }
     else if (id->contents == "if") {
         return lexparse_if(curr, end, p, id);
+    }
+    else if (id->contents == "try") {
+        return lexparse_try(curr, end, p, id);
+    }
+    else if (id->contents == "catch") {
+        return id;
     }
     else if (id->contents == "while") {
         return lexparse_while(curr, end, p, id);
@@ -1252,6 +1292,50 @@ Token *Lex_Parser::lexparse_ifblock(std::string::iterator &curr, std::string::it
     }
     if (curr == end) {
         throw Compiler_Exception("Incomplete if block", block->start_pos, block->start_pos);
+    }
+    block->end_pos = p;
+    return block;
+}
+
+Token *Lex_Parser::lexparse_tryblock(std::string::iterator &curr, std::string::iterator &end, Position &p, Token **continuation) {
+    Token *block = new Token(Token_Type::BLOCK);
+    block->start_pos = p;
+
+    while (curr != end) {
+        if (lexparse_comment(curr, end, p)) {
+            continue;
+        }
+        Token *child = lexparse_expression(curr, end, p);
+        if (child != NULL) {
+            if (child->contents == "end") {
+                //todo: FIX THIS!!!
+                block->end_pos = p;
+                delete child;
+                return block;
+            }
+            else if (child->contents == "catch") {
+                //todo: FIX THIS!!!
+                block->end_pos = p;
+                *continuation = child;
+                return block;
+            }
+
+            block->children.push_back(child);
+            continue;
+        }
+        if (lexparse_whitespace(curr, end, p)) {
+            continue;
+        }
+        child = lexparse_eol(curr, end, p);
+        if (child != NULL){
+            block->children.push_back(child);
+            continue;
+        }
+
+        throw Compiler_Exception("Can not parse element", p, p);
+    }
+    if (curr == end) {
+        throw Compiler_Exception("Incomplete try block", block->start_pos, block->start_pos);
     }
     block->end_pos = p;
     return block;

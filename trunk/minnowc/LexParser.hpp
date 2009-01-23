@@ -39,6 +39,7 @@ public:
     Token *lexparse_feature(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
     Token *lexparse_return(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
     Token *lexparse_if(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
+    Token *lexparse_try(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
     Token *lexparse_while(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
     Token *lexparse_enum(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
     Token *lexparse_for(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
@@ -52,6 +53,7 @@ public:
     Token *lexparse_expression(std::string::iterator &curr, std::string::iterator &end, Position &p, unsigned int precedence);
     Token *lexparse_block(std::string::iterator &curr, std::string::iterator &end, Position &p);
     Token *lexparse_ifblock(std::string::iterator &curr, std::string::iterator &end, Position &p, Token **continuation);
+    Token *lexparse_tryblock(std::string::iterator &curr, std::string::iterator &end, Position &p, Token **continuation);
 
     Token *lexparse_file(std::string &name, std::string &contents);
 };
