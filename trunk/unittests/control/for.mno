@@ -1,0 +1,7 @@
+action main
+  x : int
+  for x = 1 to 5
+    print(x)
+  end
+  Sys.exit()
+end

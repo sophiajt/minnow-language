@@ -43,18 +43,18 @@ $language_data = array (
     'ESCAPE_CHAR' => '\\',
     'KEYWORDS' => array(
         1 => array(
-                'actor', 'action', 'break', 
+                'actor', 'action', 'break', 'catch',
                 'def', 'done', 'else', 'elseif', 'end', 'extern', 'feature', 
-                'if', 'in', 'isolated', 'new', 'spawn', 'while', 'var', 
-                'namespace', 'use'
+                'for', 'if', 'in', 'isolated', 'new', 'spawn', 'while', 'var', 
+                'namespace', 'use', 'to', 'throw', 'try'
             ),
         2 => array(
-                '__FILE__', '__LINE__', 'false', 'nil', 'self', 'true',
-                'return', 'int', 'uint', 'float', 'double', 'char', 'bool', 'object', 'pointer', 'string'
+                '__FILE__', '__LINE__', 'false', 'this', 'true', 'enum',
+                'return', 'int', 'uint', 'float', 'long', 'double', 'char', 'bool', 'object', 'pointer', 'string'
             ),
         3 => array('List', 'Array'
             ),
-        4 => array('global', 'copy', 'delete'
+        4 => array('global', 'copy', 'delete', 'exception'
             ),
         ),
     'SYMBOLS' => array(
