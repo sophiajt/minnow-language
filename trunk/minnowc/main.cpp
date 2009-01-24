@@ -213,7 +213,7 @@ public:
 
         //debug_print_extents(p);
 
-        //debug_print_def(p, t, "");
+        debug_print_def(p, t, "");
         //debug_print_vars(p, t);
         //debug_print(p, "");
 

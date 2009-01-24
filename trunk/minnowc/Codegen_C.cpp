@@ -880,14 +880,15 @@ void Codegen::codegen_try(Program *p, Token *t, std::ostringstream &output) {
     this->catch_jmp_name = prev_catch;
 
     output << catch_name.str() << ":" << std::endl;
+    output << "delete__(m__, exception__, " << p->global->local_types["object"] << ");" << std::endl;
     output << "exception__ = ((Actor__*)m__->recipient)->exception;" << std::endl;
     output << "((Actor__*)m__->recipient)->exception = NULL;" << std::endl;
     for (unsigned int i = 1; i < t->children[2]->children.size(); ++i) {
         codegen_token(p, t->children[2]->children[i], output);
         output << ";" << std::endl;
     }
+    output << "delete__(m__, exception__, " << p->global->local_types["object"] << "); exception__ = NULL;" << std::endl;
     output << "catchjmp" << catch_end << ":" << std::endl;
-    output << "((Actor__*)m__->recipient)->exception = NULL;" << std::endl;
 }
 /*
 void Codegen::codegen_while(Program *p, Token *t, std::ostringstream &output) {

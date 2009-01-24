@@ -35,7 +35,7 @@ function! GetMinnowIndent()
   let ind = indent(lnum)
   let flag = 0
   let prevline = getline(lnum)
-  if prevline =~ '^\s*\%(def\>\|if\>\|while\>\|actor\>\|else\>\|elseif\>\|action\>\|feature\>\)'
+  if prevline =~ '^\s*\%(def\>\|if\>\|while\>\|actor\>\|else\>\|elseif\>\|action\>\|feature\>\|for\>\|try\>\|catch\>\)'
        
     let ind = ind + &shiftwidth
     let flag = 1
@@ -49,7 +49,7 @@ function! GetMinnowIndent()
 
   " Subtract a 'shiftwidth' on end, else (and elseif), until and '}'
   " This is the part that requires 'indentkeys'.
-  if getline(v:lnum) =~ '^\s*\%(end\|else\)'
+  if getline(v:lnum) =~ '^\s*\%(end\|else\|catch\)'
     let ind = ind - &shiftwidth
   endif
 

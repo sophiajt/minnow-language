@@ -644,6 +644,11 @@ void Analyzer::analyze_fun_blocks(Program *program, Token *token, Scope **scope)
                 fd->is_port_of_exit = true;
             }
 
+            if ((token->contents == "&&") || (token->contents == "||")) {
+                throw Compiler_Exception("Operators '&&' and '||' can not be overloaded", token->children[1]->start_pos,
+                        token->children[1]->end_pos);
+            }
+
             //Build function def using the prototype
             std::string full_fn_name = build_function_def(program, token, new_scope, fd);
             if (token->type == Token_Type::EXTERN_FUN_DEF) {
