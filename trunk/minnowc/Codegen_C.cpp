@@ -133,6 +133,7 @@ void Codegen::codegen_fun_call(Program *p, Token *t, std::ostringstream &output)
         Function_Def *owner = this->current_fun;
 
         if (t->children[0]->contents == "throw") {
+            output << "delete__(m__, ((Actor__*)m__->recipient)->exception, " << p->global->local_types["object"] << ");" << std::endl;
             output << "((Actor__*)m__->recipient)->exception = ";
             codegen_token(p, t->children[1], output);
             output << ";" << std::endl;
@@ -1193,6 +1194,7 @@ void Codegen::codegen_return(Program *p, Token *t, std::ostringstream &output) {
         else {
             output << "((Actor__*)m__->recipient)->actor_state = ACTOR_STATE_WAITING_FOR_ACTION__;" << std::endl;
         }
+        output << "delete__(m__, exception__, " << p->global->local_types["object"] << "); exception__ = NULL;" << std::endl;
         output << "return FALSE;" << std::endl;
     }
     else {
