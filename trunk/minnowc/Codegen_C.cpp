@@ -836,7 +836,7 @@ void Codegen::codegen_if(Program *p, Token *t, std::ostringstream &output) {
                         output << ";" << std::endl;
                     }
                     output << "if (";
-                    codegen_token(p, child->children[1]->children[child->children.size() - 1], output);
+                    codegen_token(p, child->children[1]->children[child->children[1]->children.size() - 1], output);
                     output << ") goto ifjmp" << ei_block_start << "; else goto ifjmp" << ei_block_skip << ";" << std::endl;
                 }
                 else {
