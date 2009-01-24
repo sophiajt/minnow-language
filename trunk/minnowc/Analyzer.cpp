@@ -3145,6 +3145,32 @@ void Analyzer::examine_equation_for_copy_delete(Program *program, Token *block, 
 
         examine_port_of_exit(program, token->children[1], bounds);
     }
+    else if (token->children[1]->type == Token_Type::ARRAY_INIT) {
+        for (unsigned int j = 0; j < token->children[1]->children.size(); ++j) {
+            Token *arg = token->children[1]->children[j];
+            if (arg->type == Token_Type::VAR_CALL) {
+                Var_Def *vd = program->vars[arg->definition_number];
+
+                if (((vd->is_removed == false) || (vd->is_dependent == false))
+                        && (is_complex_var(program, arg->definition_number))) {
+
+
+                    if ((vd->usage_end == token->children[1]->end_pos) && (vd->is_dependent == true)) {
+                        vd->is_removed = true;
+                    }
+                    else {
+                        Token *copy_t = new Token(Token_Type::COPY);
+                        copy_t->start_pos = token->children[1]->children[j]->start_pos;
+                        copy_t->end_pos = token->children[1]->children[j]->end_pos;
+                        copy_t->type_def_num = token->children[1]->children[j]->type_def_num;
+                        copy_t->children.push_back(token->children[1]->children[j]);
+
+                        token->children[1]->children[j] = copy_t;
+                    }
+                }
+            }
+        }
+    }
 
     if ((token->children[0]->type == Token_Type::VAR_CALL) || (token->children[0]->type == Token_Type::VAR_DECL)) {
         Var_Def *vd = program->vars[token->children[0]->definition_number];
