@@ -574,6 +574,26 @@ void Codegen::codegen_symbol(Program *p, Token *t, std::ostringstream &output) {
             codegen_token(p, t->children[1], output);
             output << ", " << t->children[0]->type_def_num << ")";
         }
+        else if (t->children[1]->type == Token_Type::ARRAY_INIT) {
+            Token *child = t->children[1];
+            codegen_token(p, t->children[0], output);
+            output << "=";
+            output << "create_typeless_vector__(sizeof(";
+            codegen_typesig(p, child->children[0]->type_def_num, output);
+            output << "), " << child->children.size() << ");" << std::endl;
+            codegen_token(p, t->children[0], output);
+            output << "->current_size = " << child->children.size() << ";" << std::endl;
+
+            for (unsigned int k = 0; k < child->children.size(); ++k) {
+                output << "INDEX_AT__(";
+                codegen_token(p, t->children[0], output);
+                output << ", " << k << ", ";
+                codegen_typesig(p, child->children[0]->type_def_num, output);
+                output << ") = ";
+                codegen_token(p, child->children[k], output);
+                output << ";" << std::endl;
+            }
+        }
         else {
             codegen_token(p, t->children[0], output);
             output << t->contents;

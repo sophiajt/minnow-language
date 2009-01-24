@@ -959,9 +959,7 @@ Token *Lex_Parser::lexparse_primary(std::string::iterator &curr, std::string::it
                 Token *array_args = lexparse_square_brackets(curr, end, p);
                 Token *array_call = new Token(Token_Type::ARRAY_CALL, result->start_pos, p);
                 array_call->children.push_back(result);
-                if (array_args != NULL) {
-                    array_call->children.push_back(array_args);
-                }
+                array_call->children.push_back(array_args);
                 while (*curr == '[') {
                     ++curr;
                     ++p.col;
@@ -982,6 +980,27 @@ Token *Lex_Parser::lexparse_primary(std::string::iterator &curr, std::string::it
         ++curr;
         ++p.col;
         return lexparse_parens(curr, end, p);
+    }
+    else if (*curr == '[') {
+        Position start_pos = p;
+        ++curr;
+        ++p.col;
+        Token *array_args = lexparse_square_brackets(curr, end, p);
+        Token *array_init = new Token(Token_Type::ARRAY_INIT, start_pos, p);
+        if (array_args != NULL) {
+            Token *tmp = array_args;
+            //unwind args into children
+            while (tmp->contents == ",") {
+                array_init->children.insert(array_init->children.begin(), tmp->children[1]);
+                tmp = tmp->children[0];
+            }
+            array_init->children.insert(array_init->children.begin(), tmp);
+        }
+        else {
+            throw Compiler_Exception("Empty array value has no meaning", start_pos, p);
+        }
+
+        return array_init;
     }
     else if (*curr == '"') {
         ++curr;

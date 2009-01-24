@@ -177,6 +177,39 @@ unsigned int Analyzer::find_type(Program *program, Token *ns, Scope *scope) {
                 }
             }
         }
+        else if (ns->type == Token_Type::ARRAY_INIT) {
+            std::ostringstream containername;
+            int contained_type;
+
+            contained_type = ns->children[0]->type_def_num;
+
+            containername << "Con___" << contained_type;
+            if (program->global->local_types.find(containername.str()) != program->global->local_types.end()) {
+                ns->definition_number = program->global->local_types[containername.str()];
+                ns->type_def_num = ns->definition_number;
+                return ns->definition_number;
+            }
+            else {
+                //It doesn't exist yet, so let's create it
+                Type_Def *container = new Type_Def();
+                container->container = Container_Type::ARRAY;
+                container->contained_type_def_nums.push_back(contained_type);
+                container->token = new Token(Token_Type::EMPTY); //todo: set this to something reasonable
+                container->token->scope = new Scope();
+                container->token->scope->owner = container->token;
+                program->types.push_back(container);
+
+                unsigned int def_num = program->types.size() - 1;
+
+                program->global->local_types[containername.str()] = def_num;
+                ns->definition_number = def_num;
+                ns->type_def_num = def_num;
+
+                program->build_internal_array_methods(container, def_num);
+
+                return ns->definition_number;
+            }
+        }
         else if (ns->contents == ".") {
             scope = find_namespace(program, ns->children[0], true);
             if (ns->contents != ".") {
@@ -1166,6 +1199,24 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
         }
         else if (token->type == Token_Type::FUN_CALL) {
             check_fun_call(program, token, scope, scope);
+        }
+        else if (token->type == Token_Type::ARRAY_INIT) {
+            int guarded_type_def = -1;
+            for (unsigned int i = 0; i < token->children.size(); ++i) {
+                analyze_token_types(program, token->children[i], scope);
+                if (i == 0) {
+                    guarded_type_def = token->children[i]->type_def_num;
+                }
+                else {
+                    if (token->children[i]->type_def_num != guarded_type_def) {
+                        throw Compiler_Exception("Array initialization types don't match", token->children[i]->start_pos,
+                                token->children[i]->end_pos);
+                    }
+                }
+            }
+            //todo: Add check to make sure array is all the same type
+            token->type_def_num = find_type(program, token, scope);
+            return;
         }
         else if (token->type == Token_Type::BLOCK) {
             for (unsigned int i = 0; i < token->children.size(); ++i) {
@@ -2436,6 +2487,28 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Token *b
                 }
                 else {
                     return NULL;
+                }
+            }
+            else if (token->type == Token_Type::ARRAY_INIT) {
+                for (unsigned int j = 0; j < token->children.size(); ++j) {
+                    Token *child = analyze_ports_of_entry(program, token->children[j], bounds, scope, is_lhs, is_block_bound);
+                    if (child != NULL) {
+                        return child;
+                    }
+                }
+
+                if (is_lhs == false) {
+                    if (token->type_def_num != (int)program->global->local_types["void"]) {
+                        Token *replacement = create_temp_replacement(program, token, bounds, scope, token->type_def_num, true);
+                        *token = *replacement;
+                        return program->vars[token->definition_number]->token;
+                    }
+                    else {
+                        return NULL;
+                    }
+                }
+                else {
+                    throw Compiler_Exception("Array initialization can not be on the left hand side of an equation", token->start_pos, token->end_pos);
                 }
             }
             else if (token->type == Token_Type::FUN_CALL) {
