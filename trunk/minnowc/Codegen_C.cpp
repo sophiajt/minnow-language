@@ -1476,11 +1476,21 @@ void Codegen::codegen_token(Program *p, Token *t, std::ostringstream &output) {
         case (Token_Type::THIS) : output << "this_ptr__"; break;
         case (Token_Type::CONCATENATE) : codegen_concatenate(p, t, output); break;
         case (Token_Type::CONCATENATE_ARRAY) : {
-            output << "concatenate_new_typeless_vector__(";
-            codegen_token(p, t->children[0], output);
-            output << ", ";
-            codegen_token(p, t->children[1], output);
-            output << ")";
+            Type_Def *container = p->types[t->children[0]->type_def_num];
+            if (is_complex_type(p, container->contained_type_def_nums[0])) {
+                output << "concatenate_new_complex_array__(m__, ";
+                codegen_token(p, t->children[0], output);
+                output << ", ";
+                codegen_token(p, t->children[1], output);
+                output << ", " << container->contained_type_def_nums[0] << ")";
+            }
+            else {
+                output << "concatenate_new_typeless_vector__(";
+                codegen_token(p, t->children[0], output);
+                output << ", ";
+                codegen_token(p, t->children[1], output);
+                output << ")";
+            }
         } break;
         case (Token_Type::SYMBOL) : codegen_symbol(p, t, output); break;
         case (Token_Type::RETURN_CALL) : codegen_return(p, t, output); break;
@@ -2500,6 +2510,23 @@ void Codegen::codegen_main_action(Program *p, std::ostringstream &output) {
     output << "}" << std::endl;
 }
 
+void Codegen::codegen_array_concat_decl(Program *p, std::ostringstream &output) {
+    output << "Typeless_Vector__ *concatenate_new_complex_array__(Message__ * m__, Typeless_Vector__ *tv1, Typeless_Vector__ *tv2, int type_def) {" << std::endl;
+    output << "  int i;" << std::endl;
+    output << "  Typeless_Vector__ *output = create_typeless_vector__(tv1->elem_size, 0);" << std::endl;
+    output << "  void *tmp;" << std::endl;
+    output << "  for (i = 0; i < tv1->current_size; ++i) {" << std::endl;
+    output << "    tmp = copy__(m__, INDEX_AT__(tv1, i, void*), type_def);" << std::endl;
+    output << "    push_onto_typeless_vector__(output, &tmp);" << std::endl;;
+    output << "  }" << std::endl;
+    output << "  for (i = 0; i < tv2->current_size; ++i) {" << std::endl;
+    output << "    tmp = copy__(m__, INDEX_AT__(tv2, i, void*), type_def);" << std::endl;
+    output << "    push_onto_typeless_vector__(output, &tmp);" << std::endl;;
+    output << "  }" << std::endl;
+    output << "  return output;" << std::endl;
+    output << "}" << std::endl;
+}
+
 void Codegen::codegen(Program *p, Token *t, std::ostringstream &output) {
     internal_type_map[p->global->local_types["void"]] = Internal_Type::VOID;
     internal_type_map[p->global->local_types["int"]] = Internal_Type::INT;
@@ -2523,6 +2550,8 @@ void Codegen::codegen(Program *p, Token *t, std::ostringstream &output) {
     codegen_copy_predecl(p, 0, output);
     codegen_delete_predecl(p, output);
     codegen_safe_eq_predecl(p, t, output);
+
+    codegen_array_concat_decl(p, output);
 
     codegen_class_decl(p, t, output);
     codegen_constructor_internal_decl(p, t, output);

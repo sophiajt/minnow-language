@@ -78,6 +78,7 @@ public:
     void codegen_action_decl(Program *p, Token *t, std::ostringstream &output);
     void codegen_fun_predecl(Program *p, Token *t, std::ostringstream &output);
     void codegen_fun_decl(Program *p, Token *t, std::ostringstream &output);
+    void codegen_array_concat_decl(Program *p, std::ostringstream &output);
 
     void codegen_main_action(Program *p, std::ostringstream &output);
 

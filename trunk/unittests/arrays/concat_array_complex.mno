@@ -1,0 +1,9 @@
+action main
+  a : var = [[1, 2]]
+  b : var = [[3, 4]]
+
+  c : var = a ++ b
+  print(c[1][0])
+  print(c.size())
+  Sys.exit()
+end
