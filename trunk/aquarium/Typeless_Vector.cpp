@@ -118,8 +118,12 @@ Typeless_Vector__ *concatenate_new_typeless_vector__(Typeless_Vector__ *tv1, Typ
         printf("Memory exhausted during vector concatentation\n");
         exit(0);
     }
-    memcpy(new_c->contents, tv1->contents, total_1);
-    memcpy((char *)new_c->contents + total_1, tv2->contents, total_2);
+    if (total_1 > 0) {
+        memcpy(new_c->contents, tv1->contents, total_1);
+    }
+    if (total_2 > 0) {
+        memcpy((char *)new_c->contents + total_1, tv2->contents, total_2);
+    }
     new_c->current_size = tv1->current_size + tv2->current_size;
 
     return new_c;
