@@ -2,6 +2,7 @@
 // See LICENSE.TXT for details.
 
 #include <stdio.h>
+#include <string.h>
 #include "Aquarium.hpp"
 #include "Threading.hpp"
 
@@ -104,7 +105,6 @@ void recycle_memblock__(void *sched, void *memblock, unsigned int size) {
         }
     }
 }
-
 
 /**
  * Increments the local actor list rev id, which helps actors know if their cache is out of date.
