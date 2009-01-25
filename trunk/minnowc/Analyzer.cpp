@@ -3272,7 +3272,7 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Token *bounds
 
 
                 //While handles analysis differently, so we check for that here
-                if (child->type != Token_Type::WHILE_BLOCK) {
+                if ((child->type != Token_Type::WHILE_BLOCK) && (child->type != Token_Type::FOR_BLOCK)) {
                     analyze_copy_delete(program, token->children[i], bounds, scope);
                 }
 
@@ -3302,7 +3302,7 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Token *bounds
                     }
 
                 }
-                else if (child->type == Token_Type::WHILE_BLOCK) {
+                else if ((child->type == Token_Type::WHILE_BLOCK) || (child->type == Token_Type::FOR_BLOCK)) {
                     std::vector<int> delete_site = build_delete_list(program, scope, child->start_pos);
                     analyze_copy_delete(program, token->children[i], bounds, scope);
                     if (delete_site.size() > 0) {
