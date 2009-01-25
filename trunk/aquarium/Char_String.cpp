@@ -38,12 +38,15 @@ Typeless_Vector__ *concatenate_char_string__(Typeless_Vector__ *container, Typel
 }
 
 Typeless_Vector__ *concatenate_new_char_string__(Typeless_Vector__ *string1, Typeless_Vector__ *string2) {
+    /*
     Typeless_Vector__ *new_c = create_char_string__(0);
 
     concatenate_char_string__(new_c, string1);
     concatenate_char_string__(new_c, string2);
 
     return new_c;
+    */
+    return concatenate_new_typeless_vector__(string1, string2);
 }
 
 Typeless_Vector__ *concatenate_char_ptr__(Typeless_Vector__ *container, char *source) {

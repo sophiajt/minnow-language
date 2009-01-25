@@ -1475,6 +1475,13 @@ void Codegen::codegen_token(Program *p, Token *t, std::ostringstream &output) {
         case (Token_Type::DELETION_SITE) : codegen_deletion_site(p, t, output); break;
         case (Token_Type::THIS) : output << "this_ptr__"; break;
         case (Token_Type::CONCATENATE) : codegen_concatenate(p, t, output); break;
+        case (Token_Type::CONCATENATE_ARRAY) : {
+            output << "concatenate_new_typeless_vector__(";
+            codegen_token(p, t->children[0], output);
+            output << ", ";
+            codegen_token(p, t->children[1], output);
+            output << ")";
+        } break;
         case (Token_Type::SYMBOL) : codegen_symbol(p, t, output); break;
         case (Token_Type::RETURN_CALL) : codegen_return(p, t, output); break;
         case (Token_Type::BREAK) : if (break_jmp_name != "") { output << "goto " << break_jmp_name << ";" << std::endl;} break;

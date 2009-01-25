@@ -1,0 +1,9 @@
+action main
+  x : var = [1, 2]
+  y : var = [3, 4]
+  z : var = x ++ y
+
+  print(z[2])
+  print(z.size())
+  Sys.exit()
+end

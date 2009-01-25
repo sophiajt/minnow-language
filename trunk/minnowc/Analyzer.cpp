@@ -1110,6 +1110,24 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
                 return;
             }
         }
+        else if (token->contents == "++") {
+            analyze_token_types(program, token->children[0], scope);
+            analyze_token_types(program, token->children[1], scope);
+
+            token->type = Token_Type::CONCATENATE_ARRAY;
+
+            if (token->children[0]->type_def_num != token->children[1]->type_def_num) {
+                throw Compiler_Exception("Mismatched arrays in concatenation", token->start_pos, token->end_pos);
+            }
+            if (token->children[0]->type_def_num >= 0) {
+                Type_Def *td = program->types[token->children[0]->type_def_num];
+                if (td->container != Container_Type::ARRAY) {
+                    throw Compiler_Exception("Array concatenation operator used on non-array", token->start_pos, token->end_pos);
+                }
+            }
+            token->type_def_num = token->children[0]->type_def_num;
+            return;
+        }
         else if (token->contents == ":") {
             //analyze_token_types(token->children[0], program, scope);
             token->type_def_num = program->vars[token->definition_number]->type_def_num;
@@ -2248,6 +2266,7 @@ void Analyzer::find_var_endpoints(Program *program, Token *token, Token *bounds,
                 case (Token_Type::ACTION_CALL) :
                 case (Token_Type::ARRAY_CALL) :
                 case (Token_Type::CONCATENATE) :
+                case (Token_Type::CONCATENATE_ARRAY) :
                 case (Token_Type::CONSTRUCTOR_CALL) :
                 case (Token_Type::FUN_CALL) :
                 case (Token_Type::METHOD_CALL) :
@@ -2628,7 +2647,7 @@ Token *Analyzer::analyze_ports_of_entry(Program *program, Token *token, Token *b
                 *token = *replacement;
                 return program->vars[token->definition_number]->token;
             }
-            else if (token->type == Token_Type::CONCATENATE) {
+            else if ((token->type == Token_Type::CONCATENATE) || (token->type == Token_Type::CONCATENATE_ARRAY)) {
                 for (unsigned int j = 0; j < token->children.size(); ++j) {
                     Token *child = analyze_ports_of_entry(program, token->children[j], bounds, scope, is_lhs, is_block_bound);
                     if (child != NULL) {
@@ -3208,6 +3227,7 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Token *bounds
             case (Token_Type::ACTION_CALL) :
             case (Token_Type::ARRAY_CALL) :
             case (Token_Type::CONCATENATE) :
+            case (Token_Type::CONCATENATE_ARRAY) :
             case (Token_Type::CONSTRUCTOR_CALL) :
             case (Token_Type::FUN_CALL) :
             case (Token_Type::METHOD_CALL) :
@@ -3257,6 +3277,7 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Token *bounds
                         case (Token_Type::ACTION_CALL) :
                         case (Token_Type::ARRAY_CALL) :
                         case (Token_Type::CONCATENATE) :
+                        case (Token_Type::CONCATENATE_ARRAY) :
                         case (Token_Type::CONSTRUCTOR_CALL) :
                         case (Token_Type::FUN_CALL) :
                         case (Token_Type::METHOD_CALL) :

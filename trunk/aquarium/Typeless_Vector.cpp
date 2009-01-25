@@ -108,6 +108,22 @@ void push_onto_typeless_vector__(Typeless_Vector__ *container, void *value) {
     ++(container->current_size);
 }
 
+Typeless_Vector__ *concatenate_new_typeless_vector__(Typeless_Vector__ *tv1, Typeless_Vector__ *tv2) {
+    Typeless_Vector__ *new_c = create_typeless_vector__(tv1->elem_size, 0);
+
+    unsigned int total_1 = tv1->elem_size * tv1->current_size;
+    unsigned int total_2 = tv2->elem_size + tv2->current_size;
+    new_c->contents = realloc(new_c->contents, total_1 + total_2);
+    if (new_c->contents == NULL) {
+        printf("Memory exhausted during vector concatentation\n");
+        exit(0);
+    }
+    memcpy(new_c->contents, tv1->contents, total_1);
+    memcpy((char *)new_c->contents + total_1, tv2->contents, total_2);
+    new_c->current_size = tv1->current_size + tv2->current_size;
+
+    return new_c;
+}
 /**
  * Pops a value off the vector
  * @param container The container to pop off

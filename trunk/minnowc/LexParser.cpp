@@ -60,7 +60,7 @@ unsigned int get_precedence(Token *token) {
             (token->contents == ">") || (token->contents == "<")) {
         return 70;
     }
-    else if ((token->contents == "+") || (token->contents == "-")) {
+    else if ((token->contents == "+") || (token->contents == "-") || (token->contents == "++")) {
         return 80;
     }
     else if ((token->contents == "*") || (token->contents == "/") || (token->contents == "%")) {

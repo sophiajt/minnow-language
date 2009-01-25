@@ -34,6 +34,7 @@ Typeless_Vector__ *create_typeless_vector__(unsigned int elem_size, unsigned int
 void initialize_typeless_vector__(Typeless_Vector__ *container, unsigned int elem_size, unsigned int num_elems);
 void delete_typeless_vector__(Typeless_Vector__ *container);
 void push_onto_typeless_vector__(Typeless_Vector__ *container, void *value);
+Typeless_Vector__ *concatenate_new_typeless_vector__(Typeless_Vector__ *string1, Typeless_Vector__ *string2);
 Type_Union__ pop_off_typeless_vector__(Typeless_Vector__ *container);
 void insert_into_typeless_vector__(Typeless_Vector__ *container, void* value, unsigned int pos);
 Type_Union__ delete_from_typeless_vector__(Typeless_Vector__ *container, unsigned int pos);
