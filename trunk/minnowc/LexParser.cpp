@@ -1124,6 +1124,10 @@ bool Lex_Parser::lexparse_whitespace(std::string::iterator &curr, std::string::i
                     //we found the ellipses, so we should find a carriage return, if not we have a prob.
                     ++p.col;
                     ++curr;
+                    while ((curr != end) && ((*curr == ' ') || (*curr == '\t'))) {
+                        ++p.col;
+                        ++curr;
+                    }
 
                     Token *eol = lexparse_eol(curr, end, p);
                     if (eol == NULL) {
@@ -1164,6 +1168,10 @@ bool Lex_Parser::lexparse_whitespace(std::string::iterator &curr, std::string::i
                     //we found the ellipses, so we should find a carriage return, if not we have a prob.
                     ++p.col;
                     ++curr;
+                    while ((curr != end) && ((*curr == ' ') || (*curr == '\t'))) {
+                        ++p.col;
+                        ++curr;
+                    }
 
                     Token *eol = lexparse_eol(curr, end, p);
                     if (eol == NULL) {
