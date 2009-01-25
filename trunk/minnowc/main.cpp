@@ -246,7 +246,7 @@ public:
             }
 
             if (system(exe_cmdline.str().c_str()) == 0) {
-                remove("tmpXXXXX.cpp");
+                remove("tmpXXXXX.c");
             }
             else {
                 std::cout << "For commandline: ";
@@ -338,13 +338,14 @@ void print_help() {
     printf("-O <level>      : set the optimization level\n");
     printf("-L <lib dir>    : add a library directory to the library search path\n");
     printf("-l <library>    : add a library to link against\n");
+    printf("-C              : output the generated C file to the stdout\n");
     printf("-h              : this help\n");
 }
 
 int main(int argc, char *argv[]) {
     Compiler compiler;
 
-    char *output_file = NULL;
+    char *output_file = "noname";
     std::string current_bin = argv[0];
 
     if (argc < 2) {
@@ -440,6 +441,10 @@ int main(int argc, char *argv[]) {
                                 output_file = (char *)(argv[i] + 2);
                                 ++i;
                             }
+                        break;
+                        case ('C'):
+                            output_file = NULL;
+                            ++i;
                         break;
                         case ('L') :
                             if (arglen == 2) {
