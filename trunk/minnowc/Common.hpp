@@ -9,6 +9,8 @@
 #include <sstream>
 #include <string.h>
 
+#define USE_MEMBLOCK_CACHE
+
 class Scope;
 
 class Token_Type {

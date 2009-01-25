@@ -8,6 +8,9 @@
 const unsigned int TIMESLICE_QUANTUM__= 2000;
 const unsigned int MSG_CACHE_MAX__ = 1000;
 
+const unsigned int MAX_MEMBLOCK_SIZE__ = 500;
+const unsigned int MAX_MEMBLOCK_DEPTH__ = 1000;
+
 /**
  * Gets a message from the cache of recycled messages, or creates one if there aren't enough.
  * @param sched The scheduler to use
@@ -54,6 +57,54 @@ void recycle_msg__(void *sched, Message__ *msg) {
         free(msg);
     }
 }
+
+void *get_memblock_from_cache__(void *sched, unsigned int size) {
+    Scheduler__ *s = (Scheduler__ *)sched;
+
+    if (size > MAX_MEMBLOCK_SIZE__) {
+        return malloc(size);
+    }
+    else {
+        Typeless_Vector__ *cache_block = INDEX_AT__(s->mem_cache_blocks, size, Typeless_Vector__*);
+
+        if (cache_block == NULL) {
+             cache_block = create_typeless_vector__(sizeof(void*), 0);
+             INDEX_AT__(s->mem_cache_blocks, size, Typeless_Vector__*) = cache_block;
+        }
+
+        if (cache_block->current_size == 0) {
+            return malloc(size);
+        }
+        else {
+            void *v = pop_off_typeless_vector__(cache_block).VoidPtr;
+            return v;
+        }
+    }
+}
+
+void recycle_memblock__(void *sched, void *memblock, unsigned int size) {
+    Scheduler__ *s = (Scheduler__ *)sched;
+
+    if (size > MAX_MEMBLOCK_SIZE__) {
+        free(memblock);
+    }
+    else {
+        Typeless_Vector__ *cache_block = INDEX_AT__(s->mem_cache_blocks, size, Typeless_Vector__*);
+
+        if (cache_block == NULL) {
+             cache_block = create_typeless_vector__(sizeof(void*), 0);
+             INDEX_AT__(s->mem_cache_blocks, size, Typeless_Vector__*) = cache_block;
+        }
+
+        if (cache_block->current_size >= MAX_MEMBLOCK_DEPTH__) {
+            free(memblock);
+        }
+        else {
+            push_onto_typeless_vector__(cache_block, &memblock);
+        }
+    }
+}
+
 
 /**
  * Increments the local actor list rev id, which helps actors know if their cache is out of date.
@@ -334,6 +385,17 @@ Scheduler__ *create_scheduler__(unsigned int scheduler_type) {
     return_val->local_actors = create_typeless_vector__(sizeof(Actor__*), 0);
     return_val->incoming_channel = create_message_channel__();
     return_val->outgoing_channel = create_message_channel__();
+
+    return_val->mem_cache_blocks = create_typeless_vector__(sizeof(Typeless_Vector__*), MAX_MEMBLOCK_SIZE__+1);
+    /*
+    for (unsigned int i = 0; i < MAX_MEMBLOCK_SIZE__+1; ++i) {
+        Typeless_Vector__ *tv = create_typeless_vector__(sizeof(void*), 0);
+        //tv->current_size = 4;
+        INDEX_AT__(return_val->mem_cache_blocks, i, Typeless_Vector__*) = tv;
+    }
+    */
+    return_val->mem_cache_blocks->current_size = MAX_MEMBLOCK_SIZE__+1;
+    memset(return_val->mem_cache_blocks->contents, MAX_MEMBLOCK_SIZE__+1, sizeof(Typeless_Vector__*));
 
     return return_val;
 }

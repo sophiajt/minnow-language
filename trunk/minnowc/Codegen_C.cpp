@@ -1639,17 +1639,13 @@ void Codegen::codegen_constructor_internal_decl(Program *p, Token *t, std::ostri
                         (scope->owner->type != Token_Type::ISOLATED_ACTOR_DEF)) {
                     scope = scope->parent;
                 }
-                //output << "type__" << scope->owner->definition_number << "*";
                 codegen_typesig(p, scope->owner->definition_number, output);
                 output << " ctr__" << i << "(Message__ *m__)" << std::endl <<"{" << std::endl;
                 if (scope->owner->type == Token_Type::ACTOR_DEF) {
-                    //output << "type__" << scope->owner->definition_number << "*";
                     codegen_typesig(p, scope->owner->definition_number, output);
                     output << " ret_val__ = (";
-                    //output << "type__" << scope->owner->definition_number << "*";
                     codegen_typesig(p, scope->owner->definition_number, output);
                     output << ")create_actor__(sizeof(";
-                    //output << "type__" << scope->owner->definition_number;
                     codegen_typesig_no_tail(p, scope->owner->definition_number, output);
                     output << "));" << std::endl;
                     for (std::map<std::string, unsigned int>::iterator iter = scope->local_vars.begin(),
@@ -1662,13 +1658,10 @@ void Codegen::codegen_constructor_internal_decl(Program *p, Token *t, std::ostri
                     output << "add_actor_to_sched__((Scheduler__*)m__->sched, (Actor__*)ret_val__);" << std::endl;
                 }
                 else if (scope->owner->type == Token_Type::ISOLATED_ACTOR_DEF) {
-                    //output << "type__" << scope->owner->definition_number << "*";
                     codegen_typesig(p, scope->owner->definition_number, output);
                     output << " ret_val__ = (";
-                    //output << "type__" << scope->owner->definition_number << "*";
                     codegen_typesig(p, scope->owner->definition_number, output);
                     output << ")create_actor__(sizeof(";
-                    //output << "type__" << scope->owner->definition_number;
                     codegen_typesig_no_tail(p, scope->owner->definition_number, output);
                     output << "));" << std::endl;
                     for (std::map<std::string, unsigned int>::iterator iter = scope->local_vars.begin(),
@@ -1686,12 +1679,14 @@ void Codegen::codegen_constructor_internal_decl(Program *p, Token *t, std::ostri
                     output << "send_messages__(((Scheduler__*)m__->sched)->outgoing_channel, msg__);" << std::endl;
                 }
                 else if (scope->owner->type == Token_Type::FEATURE_DEF) {
-                    //output << "type__" << scope->owner->definition_number << "*";
                     codegen_typesig(p, scope->owner->definition_number, output);
                     output << " ret_val__ = (";
-                    //output << "type__" << scope->owner->definition_number << "*";
                     codegen_typesig(p, scope->owner->definition_number, output);
+#ifdef USE_MEMBLOCK_CACHE
+                    output << ")get_memblock_from_cache__(m__->sched,sizeof(";
+#else
                     output << ")malloc(sizeof(";
+#endif
                     codegen_typesig_no_tail(p, scope->owner->definition_number, output);
                     output << "));" << std::endl;
                     output << "initialize_feature__(&ret_val__->base__, " << scope->owner->definition_number << ");" << std::endl;
@@ -1723,10 +1718,8 @@ void Codegen::codegen_constructor_not_internal_decl(Program *p, Token *t, std::o
                         (scope->owner->type != Token_Type::ISOLATED_ACTOR_DEF)) {
                     scope = scope->parent;
                 }
-                //output << "type__" << scope->owner->definition_number << "*";
                 codegen_typesig(p, scope->owner->definition_number, output);
                 output << " ctr__" << i << "(";
-                //output << "type__" << scope->owner->definition_number << "* this_ptr__, ";
 
                 unsigned int argsize = fd->arg_def_nums.size();
                 if (argsize == 0) {
@@ -1748,13 +1741,10 @@ void Codegen::codegen_constructor_not_internal_decl(Program *p, Token *t, std::o
                 output << "unsigned int timeslice__ = ((Actor__*)m__->recipient)->timeslice_remaining;" << std::endl;
 
                 if (scope->owner->type == Token_Type::ACTOR_DEF) {
-                    //output << "type__" << scope->owner->definition_number << "*";
                     codegen_typesig(p, scope->owner->definition_number, output);
                     output << " ret_val__ = (";
-                    //output << "type__" << scope->owner->definition_number << "*";
                     codegen_typesig(p, scope->owner->definition_number, output);
                     output << ")create_actor__(sizeof(";
-                    //output << "type__" << scope->owner->definition_number;
                     codegen_typesig_no_tail(p, scope->owner->definition_number, output);
                     output << "));" << std::endl;
                     for (std::map<std::string, unsigned int>::iterator iter = scope->local_vars.begin(),
@@ -1779,13 +1769,10 @@ void Codegen::codegen_constructor_not_internal_decl(Program *p, Token *t, std::o
                     output << "add_actor_to_sched__((Scheduler__*)m__->sched, (Actor__*)ret_val__);" << std::endl;
                 }
                 else if (scope->owner->type == Token_Type::ISOLATED_ACTOR_DEF) {
-                    //output << "type__" << scope->owner->definition_number << "*";
                     codegen_typesig(p, scope->owner->definition_number, output);
                     output << " ret_val__ = (";
-                    //output << "type__" << scope->owner->definition_number << "*";
                     codegen_typesig(p, scope->owner->definition_number, output);
                     output << ")create_actor__(sizeof(";
-                    //output << "type__" << scope->owner->definition_number;
                     codegen_typesig_no_tail(p, scope->owner->definition_number, output);
                     output << "));" << std::endl;
                     for (std::map<std::string, unsigned int>::iterator iter = scope->local_vars.begin(),
@@ -1813,14 +1800,18 @@ void Codegen::codegen_constructor_not_internal_decl(Program *p, Token *t, std::o
                     output << "send_messages__(((Scheduler__*)m__->sched)->outgoing_channel, msg__);" << std::endl;
                 }
                 else if (scope->owner->type == Token_Type::FEATURE_DEF) {
-                    //output << "type__" << scope->owner->definition_number << "*";
                     codegen_typesig(p, scope->owner->definition_number, output);
                     output << " ret_val__ = (";
-                    //output << "type__" << scope->owner->definition_number << "*";
                     codegen_typesig(p, scope->owner->definition_number, output);
+#ifdef USE_MEMBLOCK_CACHE
+                    output << ")get_memblock_from_cache__(m__->sched, sizeof(";
+                    codegen_typesig_no_tail(p, scope->owner->definition_number, output);
+                    output << "));" << std::endl;
+#else
                     output << ")malloc(sizeof(";
                     codegen_typesig_no_tail(p, scope->owner->definition_number, output);
                     output << "));" << std::endl;
+#endif
                     output << "initialize_feature__(&ret_val__->base__, " << scope->owner->definition_number << ");" << std::endl;
                     for (std::map<std::string, unsigned int>::iterator iter = scope->local_vars.begin(),
                             end = scope->local_vars.end(); iter != end; ++iter) {
@@ -2275,10 +2266,17 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
             output << "  return v__;" << std::endl;
         }
         else if (td->token->type == Token_Type::FEATURE_DEF) {
+
+#ifdef USE_MEMBLOCK_CACHE
+            output << "  Object_Feature__ *ret_val__ = (Object_Feature__ *)get_memblock_from_cache__(m__->sched, sizeof(";
+            codegen_typesig_no_tail(p, i, output);
+            output << "));" << std::endl;
+            output << "  initialize_feature__(ret_val__, " << i << ");" << std::endl;
+#else
             output << "  Object_Feature__ *ret_val__ = (Object_Feature__ *)create_feature__(sizeof(";
             codegen_typesig_no_tail(p, i, output);
             output << "), " << i << ");" << std::endl;
-
+#endif
             std::ostringstream copy_fn;
             copy_fn << "copy__" << i;
 
@@ -2391,7 +2389,13 @@ void Codegen::codegen_delete_decl(Program *p, std::ostringstream &output) {
             output << "  if (((Object_Feature__*)v__)->next != NULL) {" << std::endl;
             output << "    delete__(m__,  ((Object_Feature__*)v__)->next, ((Object_Feature__*)(((Object_Feature__*)v__)->next))->feature_id);" << std::endl;
             output << "  }" << std::endl;
+#ifdef USE_MEMBLOCK_CACHE
+            output << "  recycle_memblock__(m__->sched, v__, sizeof(";
+            codegen_typesig_no_tail(p, i, output);
+            output << "));" << std::endl;
+#else
             output << "  free(v__);" << std::endl;
+#endif
         }
         output << "  }; break;" << std::endl;
     }

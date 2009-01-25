@@ -33,6 +33,7 @@ typedef struct {
     Message__ *maint; /**< The maint message that will run maintenance functions on the scheduler */
     Message__ *msg_cache; /**< The cache of recycled messages for the scheduler */
     unsigned int msg_cache_size; /**< The current size of the cache of recycled messages */
+    Typeless_Vector__ *mem_cache_blocks; /**< Cache of recycled memory blocks */
     unsigned int prev_active_actor_count; /**< Previous actor count.  When this changes, we have to notify the kernel */
     Message_Channel__ *incoming_channel; /**< Channel of incoming messages */
     Message_Channel__ *outgoing_channel; /**< Channel of outgoing messages */
@@ -51,6 +52,8 @@ extern "C" {
 /*@{*/
 Message__ *get_msg_from_cache__(void *sched);
 void recycle_msg__(void *sched, Message__ *msg);
+void *get_memblock_from_cache__(void *sched, unsigned int size); //todo: should this be long long int?
+void recycle_memblock__(void *sched, void *memblock, unsigned int size);
 Scheduler__ *create_scheduler__(unsigned int scheduler_type);
 void add_actor_to_sched__(Scheduler__ *s, Actor__ *new_actor);
 void mail_to_actor__(Message__ *msg, Actor__ *sender);
