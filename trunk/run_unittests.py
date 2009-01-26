@@ -50,11 +50,11 @@ def test_directory(d):
       err_cmp = ""
 
       if (os.path.isfile(tst)):
-        tst_file = open(tst, 'r')
+        tst_file = open(tst, 'rU')
         tst_cmp = tst_file.read()
 
       if (os.path.isfile(err)):
-        err_file = open(err, 'r')
+        err_file = open(err, 'rU')
         err_cmp = err_file.read()
 
       output = Popen([compiler_bin, s,  "-o", out_bin], stdout=PIPE, stderr=PIPE).communicate()
@@ -67,7 +67,7 @@ def test_directory(d):
           tick_good()
       else:
         if (os.path.isfile(tst)):
-          tst_file = open(tst, 'r')
+          tst_file = open(tst, 'rU')
           tst_cmp = tst_file.read()
 
           bin_output = Popen([out_bin], stdout=PIPE, stderr=PIPE).communicate()

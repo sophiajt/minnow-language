@@ -140,7 +140,9 @@ public:
                 }
             }
 
-            if ((strcmp(internal_types[i], "string") == 0) || (strcmp(internal_types[i], "object") == 0)) {
+            if ((strcmp(internal_types[i], "string") == 0) ||
+                    (strcmp(internal_types[i], "pointer") == 0) ||
+                    (strcmp(internal_types[i], "object") == 0)) {
                 //Add a check for null method for each type
                 Function_Def *null_check = new Function_Def(true);
                 null_check->return_type_def_num = global->local_types["bool"];

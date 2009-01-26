@@ -33,15 +33,28 @@ void print_f__(float f) {
 /*
  * todo: do a proper file open
  */
-void* file_open_file_s__(Typeless_Vector__ *s) {
+void* file_open_read_file_s__(Typeless_Vector__ *s) {
     FILE *in;
 
     push_onto_char_string__(s, 0);
     in = fopen((char *)(s->contents), "rb");
     if (in == NULL) {
-        printf("Can not open file: ");
-        print_s__(s);
-        exit(0);
+        return NULL;
+    }
+    pop_off_char_string__(s);
+    return in;
+}
+
+/*
+ * todo: do a proper file open
+ */
+void* file_open_write_file_s__(Typeless_Vector__ *s) {
+    FILE *in;
+
+    push_onto_char_string__(s, 0);
+    in = fopen((char *)(s->contents), "wb");
+    if (in == NULL) {
+        return NULL;
     }
     pop_off_char_string__(s);
     return in;
@@ -82,11 +95,72 @@ Typeless_Vector__ *file_read_all_p__(void *p) {
 
     int read = fread(tv->contents, length, 1, in);
 
-    if (read != length) {
-        printf("Warning: file contents could not be completely read.\n");
+    if (read != 1) {
+        //printf("Warning: file contents could not be completely read.\n");
+        delete_char_string__(tv);
+        return NULL;
     }
 
     return tv;
+}
+
+Typeless_Vector__ *file_read_line_p__(void *p) {
+    if (p == NULL) return NULL;
+
+    FILE *in = (FILE*)p;
+    if (feof(in)) {
+        return NULL;
+    }
+
+    Typeless_Vector__ *tv = create_char_string__(0);
+
+    char c = fgetc(in);
+    while (!feof(in)) {
+        push_onto_char_string__(tv, c);
+        c = getc(in);
+        if (c == '\n') {
+            return tv;
+        }
+        else if (c == '\r') {
+            if (!feof(in)) {
+                c = fgetc(in);
+
+                if (c == '\n') {
+                    return tv;
+                }
+                else {
+                    push_onto_char_string__(tv, '\r');
+                }
+            }
+        }
+    }
+
+    return tv;
+}
+
+BOOL file_write_p_s__(void *p, Typeless_Vector__ *tv) {
+    if (p == NULL) return FALSE;
+
+    FILE *out = (FILE*)p;
+
+    if (fwrite(tv->contents, tv->current_size, 1, out) != 1) {
+        return FALSE;
+    }
+    else {
+        return TRUE;
+    }
+}
+
+BOOL file_eof_p__(void *p) {
+    if (p == NULL) {
+        return TRUE;
+    }
+    if (feof((FILE*)p)) {
+        return TRUE;
+    }
+    else {
+        return FALSE;
+    }
 }
 
 void exit_i__(int i) {

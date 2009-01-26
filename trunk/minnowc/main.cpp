@@ -501,6 +501,11 @@ int main(int argc, char *argv[]) {
                                 ++i;
                             }
                         break;
+                        default:
+                            printf("Unknown option '%c'\n", argv[i][1]);
+                            print_help();
+                            exit(0);
+
                     }
                 }
 

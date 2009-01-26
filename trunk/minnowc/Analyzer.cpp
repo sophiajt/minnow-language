@@ -526,6 +526,7 @@ void Analyzer::analyze_strays(Token *token) {
                     else {
                         saw_non_eol = true;
                     }
+
                     ++i;
                 }
             }

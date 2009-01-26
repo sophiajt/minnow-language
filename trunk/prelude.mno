@@ -4,10 +4,14 @@ extern def print_s__(s : string)
 extern def print_d__(d : double)
 extern def print_c__(c : char)
 extern def print_f__(f : float)
-extern def file_open_file_s__(s : string) : pointer
+extern def file_open_read_file_s__(s : string) : pointer
+extern def file_open_write_file_s__(s : string) : pointer
 extern def file_close_file_p__(p : pointer)
 extern def file_length_p__(p : pointer) : int
 extern def file_read_all_p__(p : pointer) : string
+extern def file_read_line_p__(p : pointer) : string
+extern def file_write_p_s__(p : pointer, s : string) : bool
+extern def file_eof_p__(p : pointer) : bool
 extern def exit_i__(i : int)
 extern def exit__()
 extern def convert_s_to_i__(s : string) : int
@@ -147,27 +151,81 @@ def `**`(x:double, y:int) : double
   return x ** y.to_double()
 end
 
+//----EXCEPTIONS----
+/*
+  We make exceptions global because otherwise they'd be a pain to type.  We're explicit, yet general, so hopefully it's a good compromise.
+*/
+feature File_Exception
+  filename : string
+  reason : string
+
+  def File_Exception(fn : string, r:string)
+    filename = fn
+    reason = r
+  end
+end
+
+
 //----SYS----
 
 namespace Sys
 
+enum Open_Mode(READ, WRITE, READWRITE, APPEND)
+enum File_Type(TEXT, BINARY)
+
 feature File
   handle : pointer
+  filename : string
 
-  def open(fname : string)
-    handle = Sys.Externals.file_open_file_s__(fname)
+  def open(fname : string, dir : Sys.Open_Mode)
+    o : object
+    filename = fname
+    if (dir == Sys.Open_Mode.READ)
+      handle = Sys.Externals.file_open_read_file_s__(fname)
+      if (handle.is_null())
+        throw(o <+ new File_Exception(filename, "Can not open file"))
+      end
+    elseif (dir == Sys.Open_Mode.WRITE)
+      handle = Sys.Externals.file_open_write_file_s__(fname)
+      if (handle.is_null())
+        throw(o <+ new File_Exception(filename, "Can not open file"))
+      end
+    end
   end
 
   def read_all() : string
-    return Sys.Externals.file_read_all_p__(handle)
+    s:var = Sys.Externals.file_read_all_p__(handle)
+    if (s.is_null())
+      throw(o:object <+ new File_Exception(filename, "Can not read entire file"))
+    end
+    return s
   end
 
+  def read_line() : string
+    s:var = Sys.Externals.file_read_line_p__(handle)
+    if (s.is_null())
+      throw(o:object <+ new File_Exception(filename, "Can not read line"))
+    end
+    return s
+  end
+
+  def write(s : string) 
+    b : bool = Sys.Externals.file_write_p_s__(handle, s)
+    if (b == false)
+      throw(o:object <+ new File_Exception(filename, "Can not write string"))
+    end
+  end
+      
   def length() : int
     return Sys.Externals.file_length_p__(handle)
   end
 
   def close() 
     Sys.Externals.file_close_file_p__(handle)
+  end
+
+  def eof() : bool
+    return Sys.Externals.file_eof_p__(handle)
   end
 end
 
