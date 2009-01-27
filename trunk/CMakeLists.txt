@@ -8,6 +8,8 @@ SET(CMAKE_BUILD_TYPE gdb)
 SET(CMAKE_CXX_FLAGS_GDB " -Wall -ggdb -O3")
 SET(CMAKE_C_FLAGS_GDB " -Wall -ggdb -O3")
 
+SET(INCLUDE_TESTS true)
+
 PROJECT (minnow)
 
 INCLUDE (FindDoxygen)
@@ -53,6 +55,8 @@ IF (UNIX)
   IF (CMAKE_SYSTEM_NAME STREQUAL "SunOS")
     SET (AQUARIUM_SRCS ${AQUARIUM_SRCS} aquarium/Solaris/Threading.cpp)
     SET (AQUARIUM_LIBS ${AQUARIUM_LIBS} pthread)
+    #issues with the C compiler not handling a C++ library.  
+    SET(INCLUDE_TESTS false)
   ENDIF (CMAKE_SYSTEM_NAME STREQUAL "SunOS")
 
   IF (CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -80,42 +84,43 @@ INSTALL(FILES aquarium/Actor.hpp aquarium/Aquarium.hpp aquarium/Char_String.hpp
  aquarium/Minnow_Prelude.hpp DESTINATION include/minnow)
 INSTALL(FILES prelude.mno DESTINATION share/minnow)
 
-ADD_EXECUTABLE (bin/tests/Test_Threading aquarium/tests/Test_Threading.cpp)
-TARGET_LINK_LIBRARIES (bin/tests/Test_Threading aquarium)
+IF(INCLUDE_TESTS) 
+  ADD_EXECUTABLE (bin/tests/Test_Threading aquarium/tests/Test_Threading.cpp)
+  TARGET_LINK_LIBRARIES (bin/tests/Test_Threading aquarium)
 
-ADD_EXECUTABLE (bin/tests/Test_Typeless_Vector aquarium/tests/Test_Typeless_Vector.c)
-TARGET_LINK_LIBRARIES (bin/tests/Test_Typeless_Vector aquarium)
+  ADD_EXECUTABLE (bin/tests/Test_Typeless_Vector aquarium/tests/Test_Typeless_Vector.c)
+  TARGET_LINK_LIBRARIES (bin/tests/Test_Typeless_Vector aquarium)
 
-ADD_EXECUTABLE (bin/tests/Test_Cmd_Line aquarium/tests/Test_Cmd_Line.c)
-TARGET_LINK_LIBRARIES (bin/tests/Test_Cmd_Line aquarium)
+  ADD_EXECUTABLE (bin/tests/Test_Cmd_Line aquarium/tests/Test_Cmd_Line.c)
+  TARGET_LINK_LIBRARIES (bin/tests/Test_Cmd_Line aquarium)
 
-ADD_EXECUTABLE (bin/tests/Test_Exceptions aquarium/tests/Test_Exceptions.c)
-TARGET_LINK_LIBRARIES (bin/tests/Test_Exceptions aquarium)
+  ADD_EXECUTABLE (bin/tests/Test_Exceptions aquarium/tests/Test_Exceptions.c)
+  TARGET_LINK_LIBRARIES (bin/tests/Test_Exceptions aquarium)
 
-ADD_EXECUTABLE (bin/tests/Test_Rebalance aquarium/tests/Test_Rebalance.c)
-TARGET_LINK_LIBRARIES (bin/tests/Test_Rebalance aquarium)
+  ADD_EXECUTABLE (bin/tests/Test_Rebalance aquarium/tests/Test_Rebalance.c)
+  TARGET_LINK_LIBRARIES (bin/tests/Test_Rebalance aquarium)
 
-ADD_EXECUTABLE (bin/tests/Test_Msg_Actor aquarium/tests/Test_Msg_Actor.c)
-TARGET_LINK_LIBRARIES (bin/tests/Test_Msg_Actor aquarium)
+  ADD_EXECUTABLE (bin/tests/Test_Msg_Actor aquarium/tests/Test_Msg_Actor.c)
+  TARGET_LINK_LIBRARIES (bin/tests/Test_Msg_Actor aquarium)
 
-ADD_EXECUTABLE (bin/tests/Test_Msg_Isolated_Actor aquarium/tests/Test_Msg_Isolated_Actor.c)
-TARGET_LINK_LIBRARIES (bin/tests/Test_Msg_Isolated_Actor aquarium)
+  ADD_EXECUTABLE (bin/tests/Test_Msg_Isolated_Actor aquarium/tests/Test_Msg_Isolated_Actor.c)
+  TARGET_LINK_LIBRARIES (bin/tests/Test_Msg_Isolated_Actor aquarium)
 
-ADD_EXECUTABLE (bin/tests/Test_Data_Msg_Actor aquarium/tests/Test_Data_Msg_Actor.c)
-TARGET_LINK_LIBRARIES (bin/tests/Test_Data_Msg_Actor aquarium)
+  ADD_EXECUTABLE (bin/tests/Test_Data_Msg_Actor aquarium/tests/Test_Data_Msg_Actor.c)
+  TARGET_LINK_LIBRARIES (bin/tests/Test_Data_Msg_Actor aquarium)
 
-ADD_EXECUTABLE (bin/tests/Test_Threadring aquarium/tests/Test_Threadring.c)
-TARGET_LINK_LIBRARIES (bin/tests/Test_Threadring aquarium)
+  ADD_EXECUTABLE (bin/tests/Test_Threadring aquarium/tests/Test_Threadring.c)
+  TARGET_LINK_LIBRARIES (bin/tests/Test_Threadring aquarium)
 
-ADD_EXECUTABLE (bin/tests/Test_Data_Threadring aquarium/tests/Test_Data_Threadring.c)
-TARGET_LINK_LIBRARIES (bin/tests/Test_Data_Threadring aquarium)
+  ADD_EXECUTABLE (bin/tests/Test_Data_Threadring aquarium/tests/Test_Data_Threadring.c)
+  TARGET_LINK_LIBRARIES (bin/tests/Test_Data_Threadring aquarium)
 
-ADD_EXECUTABLE (bin/tests/Test_Big_Bang aquarium/tests/Test_Big_Bang.c)
-TARGET_LINK_LIBRARIES (bin/tests/Test_Big_Bang aquarium)
+  ADD_EXECUTABLE (bin/tests/Test_Big_Bang aquarium/tests/Test_Big_Bang.c)
+  TARGET_LINK_LIBRARIES (bin/tests/Test_Big_Bang aquarium)
 
-ADD_EXECUTABLE (bin/tests/Test_Char_String aquarium/tests/Test_Char_String.c)
-TARGET_LINK_LIBRARIES (bin/tests/Test_Char_String aquarium)
+  ADD_EXECUTABLE (bin/tests/Test_Char_String aquarium/tests/Test_Char_String.c)
+  TARGET_LINK_LIBRARIES (bin/tests/Test_Char_String aquarium)
 
-ADD_EXECUTABLE (bin/tests/Test_Object_Feature aquarium/tests/Test_Object_Feature.c)
-TARGET_LINK_LIBRARIES (bin/tests/Test_Object_Feature aquarium)
-
+  ADD_EXECUTABLE (bin/tests/Test_Object_Feature aquarium/tests/Test_Object_Feature.c)
+  TARGET_LINK_LIBRARIES (bin/tests/Test_Object_Feature aquarium)
+ENDIF(INCLUDE_TESTS) 
