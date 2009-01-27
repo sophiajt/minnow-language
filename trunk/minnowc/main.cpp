@@ -348,7 +348,10 @@ void print_help() {
 int main(int argc, char *argv[]) {
     Compiler compiler;
 
-    char *output_file = "noname";
+    char *output_file;
+    output_file = (char*)malloc(sizeof(char) * 7);
+    strcpy(output_file, "noname");
+
     std::string current_bin = argv[0];
 
     if (argc < 2) {
