@@ -7,7 +7,7 @@
 
 #include "Common.hpp"
 #include "Typeless_Vector.hpp"
-
+#include "Minnow_Prelude.hpp"
 /**
  * Creates a default typeless vector
  * @param elem_size The size of each element in the vector
@@ -112,7 +112,8 @@ Typeless_Vector__ *concatenate_new_typeless_vector__(Typeless_Vector__ *tv1, Typ
     Typeless_Vector__ *new_c = create_typeless_vector__(tv1->elem_size, 0);
 
     unsigned int total_1 = tv1->elem_size * tv1->current_size;
-    unsigned int total_2 = tv2->elem_size + tv2->current_size;
+    unsigned int total_2 = tv2->elem_size * tv2->current_size;
+
     new_c->contents = realloc(new_c->contents, total_1 + total_2);
     if (new_c->contents == NULL) {
         printf("Memory exhausted during vector concatentation\n");
@@ -125,6 +126,7 @@ Typeless_Vector__ *concatenate_new_typeless_vector__(Typeless_Vector__ *tv1, Typ
         memcpy((char *)new_c->contents + total_1, tv2->contents, total_2);
     }
     new_c->current_size = tv1->current_size + tv2->current_size;
+    new_c->buffer_size = tv1->current_size + tv2->current_size;
 
     return new_c;
 }

@@ -234,8 +234,11 @@ public:
             outfile.close();
             std::ostringstream exe_cmdline;
 
-            exe_cmdline << "gcc -ggdb -O" << optimization_level << " -o \"" << output_file << "\" tmpXXXXX.c -Werror -I\"" << include_dir
-                << "\" ";
+#if defined (__SVR4) && defined (__sun)
+            exe_cmdline << "g++ -ggdb -O" << optimization_level << " -o \"" << output_file << "\" tmpXXXXX.c -Werror -I\"" << include_dir << "\" ";
+#else
+            exe_cmdline << "gcc -ggdb -O" << optimization_level << " -o \"" << output_file << "\" tmpXXXXX.c -Werror -I\"" << include_dir << "\" ";
+#endif
 
             for (unsigned int i = 0; i < lib_dirs.size(); ++i) {
                 exe_cmdline << "-L\"" << lib_dirs[i] << "\" ";

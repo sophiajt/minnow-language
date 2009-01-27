@@ -4,6 +4,7 @@
 #ifndef THREADING_HPP_
 #define THREADING_HPP_
 
+#ifdef __cplusplus
 /**
  * Internal simple mutex
  */
@@ -63,6 +64,7 @@ public:
     void exit();
 
 };
+#endif
 
 #ifdef __cplusplus
 extern "C" {

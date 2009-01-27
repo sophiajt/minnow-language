@@ -291,7 +291,9 @@ void Codegen::codegen_method_call(Program *p, Token *t, std::ostringstream &outp
         }
         else if (child->children[0]->contents == "copy") {
             codegen_token(p, t->children[0], output);
-            output << " = copy__(m__, ";
+            output << " = (";
+            codegen_typesig(p, t->children[0]->type_def_num, output);
+            output << ")copy__(m__, ";
             codegen_token(p, child->children[1], output);
             output << ", " << t->children[0]->type_def_num;
             output << "); ";
@@ -706,6 +708,9 @@ void Codegen::codegen_symbol(Program *p, Token *t, std::ostringstream &output) {
         codegen_token(p, t->children[0], output);
     }
     else if (t->contents == "**") {
+        output << "(";
+        codegen_typesig(p, t->children[0]->type_def_num, output);
+        output << ")";
         output << "pow(";
         codegen_token(p, t->children[0], output);
         output << ",";
@@ -1622,7 +1627,11 @@ void Codegen::codegen_fun_predecl(Program *p, Token *t, std::ostringstream &outp
         }
         else if ((p->funs[i]->is_internal == false) && (p->funs[i]->external_name != "")) {
             Function_Def *fd = p->funs[i];
+#if defined (__SVR4) && defined (__sun)
+            output << "extern \"C\" ";
+#else
             output << "extern ";
+#endif
             codegen_typesig(p, fd->return_type_def_num, output);
             output << " "  << fd->external_name << "(";
 
