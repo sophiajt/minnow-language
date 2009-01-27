@@ -1212,8 +1212,17 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
             }
         }
         else if (token->type == Token_Type::FOR_BLOCK) {
+            int int_type_def_num = program->global->local_types["int"];
             for (unsigned int i = 1; i < token->children.size(); ++i) {
                 analyze_token_types(program, token->children[i], scope);
+            }
+            if (token->children[1]->type_def_num != int_type_def_num) {
+                throw Compiler_Exception("For loops only accept integer increments", token->children[1]->start_pos,
+                        token->children[1]->end_pos);
+            }
+            if (token->children[2]->type_def_num != int_type_def_num) {
+                throw Compiler_Exception("For loops only accept integer increments", token->children[2]->start_pos,
+                        token->children[2]->end_pos);
             }
         }
         else if (token->type == Token_Type::FUN_CALL) {

@@ -71,7 +71,7 @@ actor Calculator
 
       Ci = (2.0*y.to_double()/m_height - 1.0)
 
-      for x = 0 to m_width-1 
+      for x = 0 to (m_width-1).to_int()
         Zr = 0.0
         Zi = 0.0
         Tr = 0.0
