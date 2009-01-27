@@ -144,7 +144,7 @@ void Codegen::codegen_fun_call(Program *p, Token *t, std::ostringstream &output)
                 output << "((Actor__*)m__->recipient)->timeslice_remaining = 0;" << std::endl;
                 if (owner->token->type == Token_Type::ACTION_DEF) {
                     output << "print_s__(create_char_string_from_char_ptr__(\"Uncaught exception\\n\"));" << std::endl;
-                    output << "exit__(1); " << std::endl;
+                    output << "exit_i__(1); " << std::endl;
                 }
                 else {
                     output << "return ";
@@ -1344,7 +1344,7 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
         else {
             if (owner->token->type == Token_Type::ACTION_DEF) {
                 output << "print_s__(create_char_string_from_char_ptr__(\"Uncaught exception\\n\"));" << std::endl;
-                output << "exit__(1); " << std::endl;
+                output << "exit_i__(1); " << std::endl;
             }
             else {
                 output << "return ";
@@ -1459,6 +1459,9 @@ void Codegen::codegen_token(Program *p, Token *t, std::ostringstream &output) {
         }
         break;
         case (Token_Type::COPY) : {
+            output << "(";
+            codegen_typesig(p, t->children[0]->type_def_num, output);
+            output << ")";
             output << "copy__(m__, ";
             codegen_token(p, t->children[0], output);
             output << ", " << t->children[0]->type_def_num << ")";
