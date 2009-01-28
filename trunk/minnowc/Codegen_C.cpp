@@ -276,13 +276,11 @@ void Codegen::codegen_method_call(Program *p, Token *t, std::ostringstream &outp
             output << ")";
         }
         else if (child->children[0]->contents == "is_null") {
-            //todo: put in check to make sure this is the correct 'is_null'
             output << "(";
             codegen_token(p, t->children[0], output);
             output << " == NULL)";
         }
         else if (child->children[0]->contents == "exists") {
-            //todo: put in check to make sure this is the correct 'exists'
             output << "(";
             codegen_token(p, t->children[0], output);
             output << " != NULL)";
@@ -1374,7 +1372,7 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
         output << "cont_id__ = " << this->cont_id << ";" << std::endl;
         output << "push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &cont_id__);" << std::endl;
         if (owner->token->type == Token_Type::ACTION_DEF) {
-            output << "((Actor__*)m__->recipient)->actor_state = ACTOR_STATE_ACTIVE__;" << std::endl;
+            //output << "((Actor__*)m__->recipient)->actor_state = ACTOR_STATE_ACTIVE__;" << std::endl;
             output << "return TRUE; } " << std::endl;
 
         }
@@ -2398,7 +2396,28 @@ void Codegen::codegen_delete_decl(Program *p, std::ostringstream &output) {
             output << "  delete_typeless_vector__((Typeless_Vector__ *)v__);" << std::endl;
         }
         else if ((td->token->type == Token_Type::ACTOR_DEF) || (td->token->type == Token_Type::ISOLATED_ACTOR_DEF)) {
-            //do nothing
+            std::map<std::string, unsigned int>::iterator del_meth = td->token->scope->local_funs.find("delete");
+
+            if ((del_meth != td->token->scope->local_funs.end()) &&
+                    (p->funs[del_meth->second]->is_internal == false)){
+                //Function_Def *delete_fd = p->funs[td->token->scope->local_funs["delete"]];
+                output << "  fun__" << td->token->scope->local_funs["delete"] << "(m__,  (";
+                codegen_typesig(p, i, output);
+                output << ")v__);" << std::endl;
+            }
+            else {
+                for (std::map<std::string, unsigned int>::iterator iter = td->token->scope->local_vars.begin(),
+                        end = td->token->scope->local_vars.end(); iter != end; ++iter) {
+                    Var_Def *vd = p->vars[iter->second];
+                    //if ((vd->type_def_num >= obj_id) || (vd->type_def_num == string_id)) {
+                    if (is_complex_type(p, vd->type_def_num)) {
+                        output << "  delete__(m__, ((";
+                        codegen_typesig(p, i, output);
+                        output << ")v__)->var__"
+                            << iter->second << ", " << vd->type_def_num << ");" << std::endl;
+                    }
+                }
+            }
         }
         else if (td->token->type == Token_Type::FEATURE_DEF) {
             std::map<std::string, unsigned int>::iterator del_meth = td->token->scope->local_funs.find("delete");
@@ -2414,7 +2433,8 @@ void Codegen::codegen_delete_decl(Program *p, std::ostringstream &output) {
                 for (std::map<std::string, unsigned int>::iterator iter = td->token->scope->local_vars.begin(),
                         end = td->token->scope->local_vars.end(); iter != end; ++iter) {
                     Var_Def *vd = p->vars[iter->second];
-                    if ((vd->type_def_num >= obj_id) || (vd->type_def_num == string_id)) {
+                    //if ((vd->type_def_num >= obj_id) || (vd->type_def_num == string_id)) {
+                    if (is_complex_type(p, vd->type_def_num)) {
                         output << "  delete__(m__, ((";
                         codegen_typesig(p, i, output);
                         output << ")v__)->var__"

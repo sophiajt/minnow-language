@@ -769,8 +769,7 @@ void Analyzer::add_implied_constructors(Program *program) {
 
                 td->token->scope->local_funs[td->token->contents] = program->funs.size() - 1;
             }
-        }
-        if (td->token->type == Token_Type::FEATURE_DEF) {
+
             //Check for delete method
             if (td->token->scope->local_funs.find("delete") == td->token->scope->local_funs.end()) {
                 Function_Def *delete_me = new Function_Def(true);
@@ -782,6 +781,8 @@ void Analyzer::add_implied_constructors(Program *program) {
                 program->funs.push_back(delete_me);
                 td->token->scope->local_funs["delete"] = program->funs.size() - 1;
             }
+        }
+        if (td->token->type == Token_Type::FEATURE_DEF) {
 
             //Check for copy call
             std::ostringstream match;

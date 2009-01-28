@@ -1,0 +1,8 @@
+action main
+  if (not(false))
+    print("True!")
+  else
+    print("False!")
+  end
+  Sys.exit()
+end

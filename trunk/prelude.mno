@@ -111,6 +111,14 @@ def print(b : bool)
   end
 end
 
+def not(x:bool) : bool
+  if (x == false)
+    return true
+  else
+    return false
+  end
+end
+
 def `+`(x:int, y:double) : double
   return x.to_double() + y
 end
