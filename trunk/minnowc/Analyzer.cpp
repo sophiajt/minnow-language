@@ -1238,10 +1238,13 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
                 throw Compiler_Exception("Expected equation in first part of for loop", token->children[1]->start_pos,
                         token->children[1]->end_pos);
             }
+            /*
+            //This shouldn't matter since it's being extracted, right?
             if ((token->children[2]->type == Token_Type::FUN_CALL) || (token->children[2]->type == Token_Type::METHOD_CALL)) {
                 throw Compiler_Exception("For loops allow only simple values for end conditions", token->children[2]->start_pos,
                         token->children[2]->end_pos);
             }
+            */
         }
         else if (token->type == Token_Type::FUN_CALL) {
             check_fun_call(program, token, scope, scope);
