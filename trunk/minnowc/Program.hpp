@@ -206,7 +206,6 @@ public:
         unsigned int char_def_num = global->local_types["char"];
 
         build_throw_func();
-        build_not_func();
 
         build_internal_func(int_def_num, int_def_num, int_def_num, "=");
         build_internal_func(int_def_num, int_def_num, int_def_num, "+");
