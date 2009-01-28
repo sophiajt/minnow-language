@@ -276,9 +276,16 @@ void Codegen::codegen_method_call(Program *p, Token *t, std::ostringstream &outp
             output << ")";
         }
         else if (child->children[0]->contents == "is_null") {
+            //todo: put in check to make sure this is the correct 'is_null'
             output << "(";
             codegen_token(p, t->children[0], output);
             output << " == NULL)";
+        }
+        else if (child->children[0]->contents == "exists") {
+            //todo: put in check to make sure this is the correct 'exists'
+            output << "(";
+            codegen_token(p, t->children[0], output);
+            output << " != NULL)";
         }
 
         else if (child->children[0]->contents == "delete") {

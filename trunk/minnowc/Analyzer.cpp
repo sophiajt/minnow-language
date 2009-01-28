@@ -610,6 +610,15 @@ void Analyzer::analyze_type_blocks(Program *program, Token *token, Scope **scope
                 program->funs.push_back(null_check);
                 new_scope->local_funs["is_null"] = program->funs.size() - 1;
 
+                //Also add "exists", the compliment of is_null, and easier to type
+                Function_Def *exists_check = new Function_Def(true);
+                exists_check->return_type_def_num = program->global->local_types["bool"];
+                exists_check->is_port_of_exit = false;
+                exists_check->token = new Token(Token_Type::FUN_DEF);
+
+                program->funs.push_back(exists_check);
+                new_scope->local_funs["exists"] = program->funs.size() - 1;
+
             }
             *scope = new_scope;
         }
@@ -1222,6 +1231,14 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
             }
             if (token->children[2]->type_def_num != int_type_def_num) {
                 throw Compiler_Exception("For loops only accept integer increments", token->children[2]->start_pos,
+                        token->children[2]->end_pos);
+            }
+            if (token->children[1]->contents != "=") {
+                throw Compiler_Exception("Expected equation in first part of for loop", token->children[1]->start_pos,
+                        token->children[1]->end_pos);
+            }
+            if ((token->children[2]->type == Token_Type::FUN_CALL) || (token->children[2]->type == Token_Type::METHOD_CALL)) {
+                throw Compiler_Exception("For loops allow only simple values for end conditions", token->children[2]->start_pos,
                         token->children[2]->end_pos);
             }
         }
@@ -3378,13 +3395,29 @@ void Analyzer::analyze_copy_delete(Program *program, Token *token, Token *bounds
                             }
                             else {
                                 if (is_complex_type(program, child->children[1]->type_def_num)) {
-                                    Token *copy_t = new Token(Token_Type::COPY);
-                                    copy_t->start_pos = child->children[1]->start_pos;
-                                    copy_t->end_pos = child->children[1]->end_pos;
-                                    copy_t->type_def_num = child->children[1]->type_def_num;
-                                    copy_t->children.push_back(child->children[1]);
+                                    /*
+                                    Scope *trackback = scope;
+                                    bool is_function_arg = false;
+                                    while (trackback != NULL) {
+                                        for (std::map<std::string, unsigned int>::iterator iter = trackback->local_vars.begin(), end =
+                                            trackback->local_vars.end(); iter != end; ++iter) {
+                                            if (iter->second == (unsigned)child->children[1]->definition_number) {
+                                                if (trackback->owner->type == Token_Type::FUN_DEF) {
+                                                    is_function_arg = true;
+                                                }
+                                            }
+                                        }
+                                        trackback = trackback->parent;
+                                    }
+                                    if (!is_function_arg) {*/
+                                        Token *copy_t = new Token(Token_Type::COPY);
+                                        copy_t->start_pos = child->children[1]->start_pos;
+                                        copy_t->end_pos = child->children[1]->end_pos;
+                                        copy_t->type_def_num = child->children[1]->type_def_num;
+                                        copy_t->children.push_back(child->children[1]);
 
-                                    child->children[1] = copy_t;
+                                        child->children[1] = copy_t;
+                                    //}
                                 }
                                 //std::vector<int> delete_site = build_delete_remaining_list(program, scope);
                                 std::vector<int> delete_site = build_delete_list(program, scope, child->end_pos);

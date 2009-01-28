@@ -1,0 +1,10 @@
+feature Bob
+end
+
+action main
+  b : Bob
+  print(b.exists())
+  b = new Bob()
+  print(b.exists())
+  Sys.exit()
+end

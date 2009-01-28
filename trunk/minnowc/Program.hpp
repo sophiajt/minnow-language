@@ -151,6 +151,15 @@ public:
 
                 funs.push_back(null_check);
                 td->token->scope->local_funs["is_null"] = funs.size() - 1;
+
+                //Also add "exists", the compliment of is_null, and easier to type
+                Function_Def *exists_check = new Function_Def(true);
+                exists_check->return_type_def_num = global->local_types["bool"];
+                exists_check->is_port_of_exit = false;
+                exists_check->token = new Token(Token_Type::FUN_DEF);
+
+                funs.push_back(exists_check);
+                td->token->scope->local_funs["exists"] = funs.size() - 1;
             }
             else if (strcmp(internal_types[i], "int") == 0) {
                 build_internal_bit_methods(td);
