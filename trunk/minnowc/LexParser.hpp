@@ -11,10 +11,10 @@
 #include <stdlib.h>
 
 #include "Common.hpp"
-
-void debug_print(Token *token, std::string prepend);
+#include "Program.hpp"
 
 class Lex_Parser {
+    Program *program;
 
 public:
     bool lexparse_whitespace(std::string::iterator &curr, std::string::iterator &end, Position &p);
@@ -56,6 +56,10 @@ public:
     Token *lexparse_tryblock(std::string::iterator &curr, std::string::iterator &end, Position &p, Token **continuation);
 
     Token *lexparse_file(std::string &name, std::string &contents);
+
+    Lex_Parser(Program *p) {
+        program = p;
+    }
 };
 
 #endif /* LEXPARSE_HPP_ */

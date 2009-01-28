@@ -508,13 +508,20 @@ Token *Lex_Parser::lexparse_namespace(std::string::iterator &curr, std::string::
 Token *Lex_Parser::lexparse_use(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
     Position start = p;
 
-    Token *t = lexparse_expression(curr, end, p);
+    Token *t = lexparse_quoted_string(curr, end, p);
     if (t != NULL) {
+        /*
         Token *use_call = new Token(Token_Type::USE_CALL, id->start_pos, t->end_pos);
         use_call->children.push_back(id);
         use_call->children.push_back(t);
+        */
+        std::string filename = t->contents;
+
+        /*
+        program->files.push_back(filename);
 
         return use_call;
+        */
     }
     else {
         throw Compiler_Exception("'use' not followed by file reference", start, p);
