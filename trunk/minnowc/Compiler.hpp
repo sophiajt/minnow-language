@@ -70,7 +70,7 @@ public:
 
         for (unsigned int i = 0; i < use_list.size(); ++i) {
             contents = load_file(use_list[i].c_str());
-            t = lp->lexparse_file(filename, contents, &use_list);
+            t = lp->lexparse_file(use_list[i], contents, &use_list);
             app->children.push_back(t);
             p->files.push_back(t);
         }
