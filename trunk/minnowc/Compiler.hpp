@@ -25,6 +25,8 @@ class Compiler {
     Token *app;
 
 public:
+    std::vector<std::string> search_path;
+
     Compiler() {
         app = new Token(Token_Type::APPLICATION);
         p = new Program();
@@ -33,6 +35,12 @@ public:
 
     std::string load_file(const char *filename) {
         std::ifstream infile (filename, std::ios::in | std::ios::ate);
+        unsigned int i = 0;
+        while ((!infile.is_open()) && (i < search_path.size())) {
+            infile.open((search_path[i] + "/" + std::string(filename)).c_str(), std::ios::in | std::ios::ate);
+            ++i;
+        }
+
         if (!infile.is_open()) {
             std::cerr << "Can not open " << filename << std::endl;
             exit(0);
@@ -52,11 +60,19 @@ public:
     void translate_file(std::string filename) {
         Token *t;
 
-        std::string contents = load_file(filename.c_str());
-        t = lp->lexparse_file(filename, contents);
+        std::vector<std::string> use_list;
 
+        std::string contents = load_file(filename.c_str());
+        t = lp->lexparse_file(filename, contents, &use_list);
         app->children.push_back(t);
         p->files.push_back(t);
+
+        for (unsigned int i = 0; i < use_list.size(); ++i) {
+            contents = load_file(use_list[i].c_str());
+            t = lp->lexparse_file(filename, contents, &use_list);
+            app->children.push_back(t);
+            p->files.push_back(t);
+        }
 
         return;
     }

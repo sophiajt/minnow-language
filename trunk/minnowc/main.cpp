@@ -12,14 +12,22 @@
 
 #include "Compiler.hpp"
 
+#define MINNOW_VERSION "v1.0a3-pre"
+
 void print_help() {
     printf("Usage: minnowc <options> <filename(s)>\n");
     printf("-o <filename>   : compile and output to a binary file\n");
     printf("-O <level>      : set the optimization level\n");
+    printf("-I <source dir> : add a source include directory to your search path\n");
     printf("-L <lib dir>    : add a library directory to the library search path\n");
     printf("-l <library>    : add a library to link against\n");
     printf("-C              : output the generated C file to the stdout\n");
+    printf("-v              : print version\n");
     printf("-h              : this help\n");
+}
+
+void print_version() {
+    printf("Minnow %s\n", MINNOW_VERSION);
 }
 
 int main(int argc, char *argv[]) {
@@ -40,6 +48,8 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> libs;
     libs.push_back("aquarium");
 
+    std::vector<std::string> sources;
+
     std::string prelude_dir = "";
     std::string prefix_dir = "";
     std::string lib_dir = ".";
@@ -57,54 +67,20 @@ int main(int argc, char *argv[]) {
     lib_dirs.push_back(lib_dir);
 
     try {
-        compiler.translate_file(prelude_dir + "prelude.mno");
+        sources.push_back(prelude_dir + "prelude.mno");
 
-        //for (int i = 1; i < argc; ++i) {
         int i = 1;
         while (i < argc) {
-            /*
-            if (strcmp(argv[i], "-o") == 0) {
-                //grab output file
-                if ((i+1) < argc) {
-                    output_file = argv[i+1];
-                    i = i + 2;
-                }
-                else {
-                    printf("Missing output filename:  Use -o <filename> to output a binary\n");
-                    exit(0);
-                }
-            }
-            else if (strcmp(argv[i], "-L") == 0) {
-                //grab output file
-                if ((i+1) < argc) {
-                    std::string libdir = argv[i+1];
-                    lib_dirs.push_back(libdir);
-                    i = i + 2;
-                }
-                else {
-                    printf("Missing library directory:  Use -L <director> to add a library directory\n");
-                    exit(0);
-                }
-            }
-            else if (strcmp(argv[i], "-l") == 0) {
-                //grab output file
-                if ((i+1) < argc) {
-                    std::string libname = argv[i+1];
-                    libs.push_back(libname);
-                    i = i + 2;
-                }
-                else {
-                    printf("Missing library filename:  Use -l <filename> to add a library\n");
-                    exit(0);
-                }
-            }
-            */
             if (argv[i][0] == '-') {
                 int arglen = strlen(argv[i]);
                 if (arglen > 1) {
                     switch(argv[i][1]) {
                         case ('h') :
                             print_help();
+                            exit(0);
+                        break;
+                        case ('v') :
+                            print_version();
                             exit(0);
                         break;
                         case ('o') :
@@ -129,11 +105,30 @@ int main(int argc, char *argv[]) {
                             output_file = NULL;
                             ++i;
                         break;
+                        case ('I') :
+                            if (arglen == 2) {
+                                if ((i+1) < argc) {
+                                    std::string source_dir = argv[i+1];
+                                    compiler.search_path.push_back(source_dir);
+                                    i = i + 2;
+                                }
+                                else {
+                                    printf("Missing include directory:  Use -I <director> to add a source include directory\n");
+                                    exit(0);
+                                }
+                            }
+                            else {
+                                //grab output file
+                                std::string source_dir = (char *)(argv[i] + 2);
+                                compiler.search_path.push_back(source_dir);
+                                ++i;
+                            }
+                        break;
                         case ('L') :
                             if (arglen == 2) {
                                 if ((i+1) < argc) {
-                                    std::string libdir = argv[i+1];
-                                    lib_dirs.push_back(libdir);
+                                    std::string lib_dir = argv[i+1];
+                                    lib_dirs.push_back(lib_dir);
                                     i = i + 2;
                                 }
                                 else {
@@ -143,8 +138,8 @@ int main(int argc, char *argv[]) {
                             }
                             else {
                                 //grab output file
-                                std::string libdir = (char *)(argv[i] + 2);
-                                lib_dirs.push_back(libdir);
+                                std::string lib_dir = (char *)(argv[i] + 2);
+                                lib_dirs.push_back(lib_dir);
                                 ++i;
                             }
                         break;
@@ -194,10 +189,16 @@ int main(int argc, char *argv[]) {
 
             }
             else {
-                compiler.translate_file(argv[i]);
+                sources.push_back(argv[i]);
+
                 ++i;
             }
         }
+
+        for (unsigned int j = 0; j < sources.size(); ++j) {
+            compiler.translate_file(sources[j]);
+        }
+
         //Once we're parsed and ready, analyze what we have
         compiler.analyze_files();
 

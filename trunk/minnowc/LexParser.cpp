@@ -545,20 +545,12 @@ Token *Lex_Parser::lexparse_namespace(std::string::iterator &curr, std::string::
 Token *Lex_Parser::lexparse_use(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
     Position start = p;
 
-    Token *t = lexparse_quoted_string(curr, end, p);
-    if (t != NULL) {
-        /*
-        Token *use_call = new Token(Token_Type::USE_CALL, id->start_pos, t->end_pos);
-        use_call->children.push_back(id);
-        use_call->children.push_back(t);
-        */
-        std::string filename = t->contents;
-
-        /*
-        program->files.push_back(filename);
-
-        return use_call;
-        */
+    Token *t = lexparse_primary(curr, end, p);
+    if ((t != NULL) && (t->type == Token_Type::QUOTED_STRING_CONST)) {
+        id->type = Token_Type::USE_CALL;
+        use_list->push_back(t->contents);
+        delete(t);
+        return id;
     }
     else {
         throw Compiler_Exception("'use' not followed by file reference", start, p);
@@ -1412,10 +1404,11 @@ Token *Lex_Parser::lexparse_tryblock(std::string::iterator &curr, std::string::i
     return block;
 }
 
-Token *Lex_Parser::lexparse_file(std::string &name, std::string &contents) {
+Token *Lex_Parser::lexparse_file(std::string &name, std::string &contents, std::vector<std::string> *included_files) {
     Position p;
 
     //std::cout << "File contents: " << contents << std::endl;
+    use_list = included_files;
 
     char *filename = new char[name.length()+1];
 
@@ -1435,6 +1428,7 @@ Token *Lex_Parser::lexparse_file(std::string &name, std::string &contents) {
             token->children.push_back(block);
         }
     }
+
 
     return token;
 }

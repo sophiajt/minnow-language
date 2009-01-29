@@ -15,6 +15,7 @@
 
 class Lex_Parser {
     Program *program;
+    std::vector<std::string> *use_list;
 
 public:
     bool lexparse_whitespace(std::string::iterator &curr, std::string::iterator &end, Position &p);
@@ -55,7 +56,7 @@ public:
     Token *lexparse_ifblock(std::string::iterator &curr, std::string::iterator &end, Position &p, Token **continuation);
     Token *lexparse_tryblock(std::string::iterator &curr, std::string::iterator &end, Position &p, Token **continuation);
 
-    Token *lexparse_file(std::string &name, std::string &contents);
+    Token *lexparse_file(std::string &name, std::string &contents, std::vector<std::string> *included_files);
 
     Lex_Parser(Program *p) {
         program = p;
