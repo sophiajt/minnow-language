@@ -1462,6 +1462,9 @@ void Codegen::codegen_token(Program *p, Token *t, std::ostringstream &output) {
         case (Token_Type::SINGLE_QUOTED_STRING) : output << "'" << t->contents << "'"; break;
         case (Token_Type::QUOTED_STRING_CONST) : output << "create_char_string_from_char_ptr__(\"" << t->contents << "\")"; break;
         case (Token_Type::REFERENCE_ENUM) : output << t->definition_number; break;
+        case (Token_Type::LIBRARY_EXTERN_BLOCK) :
+            codegen_token(p, t->children[2], output);
+        break;
         case (Token_Type::ATTRIBUTE_CALL) : {
             codegen_token(p, t->children[0], output);
             output << "->";
