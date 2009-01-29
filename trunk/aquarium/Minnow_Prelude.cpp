@@ -19,7 +19,7 @@ void print_s__(Typeless_Vector__ *s) {
 }
 
 void print_d__(double d) {
-    printf("%f", d);
+    printf("%0.9f", d);
 }
 
 void print_c__(char c) {

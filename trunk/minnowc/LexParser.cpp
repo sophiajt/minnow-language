@@ -146,7 +146,7 @@ Token *Lex_Parser::lexparse_number(std::string::iterator &curr, std::string::ite
         bool have_decimal = false;
         std::string::iterator start = initial_c;
         Position start_p = initial_p;
-        while (((*curr >= '0') && (*curr <= '9')) || (*curr == '.')) {
+        while ((curr != end) && (((*curr >= '0') && (*curr <= '9')) || (*curr == '.')) ) {
             if (*curr == '.') {
                 if (have_decimal) {
                     //throw Compiler_Exception("Multiple decimal points.  For functions use (0.0).function() format", p);
@@ -165,6 +165,29 @@ Token *Lex_Parser::lexparse_number(std::string::iterator &curr, std::string::ite
         }
         else {
             ++curr;
+        }
+
+        //Check for e+/-00 notation
+        if ((curr != end) && ((*curr == 'e') || (*curr == 'E'))) {
+            ++curr;
+            ++p.col;
+            bool has_exponent = false;
+            if ((curr != end) && ((*curr == '+') || (*curr == '-'))) {
+                ++curr;
+                ++p.col;
+            }
+            while ((curr != end) && (*curr >= '0') && (*curr <= '9')) {
+                ++curr;
+                ++p.col;
+                has_exponent = true;
+            }
+
+            if (has_exponent == false) {
+                throw Compiler_Exception("Incomplete exponent", initial_p, p);
+            }
+            else {
+                have_decimal = true;
+            }
         }
 
         std::string val(start, curr);
