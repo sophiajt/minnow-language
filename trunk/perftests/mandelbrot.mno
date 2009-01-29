@@ -123,7 +123,7 @@ action main(args : Array[string])
   w : int = args[0].to_int()
   h : int = w
 
-  total_calcs : var = 80 //Sys.num_hw_threads() * 10
+  total_calcs : var = Sys.num_hw_threads() * 10
   o : var = spawn Output(w, h, total_calcs)
   
   i : int = 0

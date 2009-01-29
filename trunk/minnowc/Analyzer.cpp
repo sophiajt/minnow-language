@@ -1168,6 +1168,10 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
         else if (token->type == Token_Type::NAMESPACE) {
             return;
         }
+        else if (token->type == Token_Type::LIBRARY_EXTERN_BLOCK) {
+            analyze_token_types(program, token->children[2], scope);
+            return;
+        }
         else if (token->type == Token_Type::RETURN_CALL) {
             for (unsigned int i = 1; i < token->children.size(); ++i) {
                 analyze_token_types(program, token->children[i], scope);

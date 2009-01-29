@@ -1,11 +1,14 @@
 namespace SDL.Externals
-extern def create_sdl_window_(width : int, height : int, depth : int) : pointer
-extern def create_sdl_surface_(width : int, height : int, depth : int) : pointer
-extern def draw_pixel_(surface_v : pointer, r : int, g : int, b : int, x : int, y : int)
-extern def blit_surface_(screen_v : pointer, surface_v : pointer)
-extern def blit_surface_at_(screen_v : pointer, surface_v : pointer, x : int, y : int)
-extern def delay_(milliseconds : int)
-extern def clear_events_()
+
+library "minnowsdl"
+  extern def create_sdl_window_(width : int, height : int, depth : int) : pointer
+  extern def create_sdl_surface_(width : int, height : int, depth : int) : pointer
+  extern def draw_pixel_(surface_v : pointer, r : int, g : int, b : int, x : int, y : int)
+  extern def blit_surface_(screen_v : pointer, surface_v : pointer)
+  extern def blit_surface_at_(screen_v : pointer, surface_v : pointer, x : int, y : int)
+  extern def delay_(milliseconds : int)
+  extern def clear_events_()
+end
 
 namespace SDL
 
