@@ -142,13 +142,13 @@ end
 action main(args : Array[string])
   n : int = args[0].to_int()
   bodies : var = new NBodySystem()
-  print(bodies.energy())
+  print(bodies.energy(), 9)
   print("\n")
   i : int
   for i = 0 to n-1
     bodies.advance(0.01)
   end
-  print(bodies.energy())
+  print(bodies.energy(), 9)
   print("\n")
   Sys.exit()
 end

@@ -14,6 +14,7 @@ extern "C" {
 void print_i__(int i);
 void print_s__(Typeless_Vector__ *s);
 void print_d__(double d);
+void print_d_i__(double d, int depth);
 void print_c__(char c);
 void print_f__(float f);
 int convert_s_to_i__(Typeless_Vector__ *s);

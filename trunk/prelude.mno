@@ -2,6 +2,7 @@ namespace Sys.Externals
 extern def print_i__(i : int)
 extern def print_s__(s : string)
 extern def print_d__(d : double)
+extern def print_d_i__(d : double, depth:int)
 extern def print_c__(c : char)
 extern def print_f__(f : float)
 extern def file_open_read_file_s__(s : string) : pointer
@@ -93,6 +94,10 @@ end
 
 def print(d : double)
   Sys.Externals.print_d__(d)
+end
+
+def print(d : double, depth:int)
+  Sys.Externals.print_d_i__(d, depth)
 end
 
 def print(c : char)

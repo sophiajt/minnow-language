@@ -22,6 +22,20 @@ void print_d__(double d) {
     printf("%f", d);
 }
 
+void print_d_i__(double d, int depth) {
+    switch (depth) {
+        case (1) : printf("%.1f", d); break;
+        case (2) : printf("%.2f", d); break;
+        case (3) : printf("%.3f", d); break;
+        case (4) : printf("%.4f", d); break;
+        case (5) : printf("%.5f", d); break;
+        case (6) : printf("%.6f", d); break;
+        case (7) : printf("%.7f", d); break;
+        case (8) : printf("%.8f", d); break;
+        case (9) : printf("%.9f", d); break;
+    }
+}
+
 void print_c__(char c) {
     printf("%c", c);
 }
