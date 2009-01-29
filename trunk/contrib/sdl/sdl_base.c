@@ -1,19 +1,14 @@
 #include <SDL.h>
 
-#define SCREEN_WIDTH 320
-#define SCREEN_HEIGHT 240
-#define SCREEN_DEPTH 8
+//#define SCREEN_WIDTH 32
+//#define SCREEN_HEIGHT 240
+//#define SCREEN_DEPTH 8
 
 void *create_sdl_window_(int width, int height, int depth) {
   SDL_Surface *screen;
 
   SDL_Init(SDL_INIT_VIDEO);
   screen = SDL_SetVideoMode(width, height, depth, SDL_SWSURFACE);
-  if (screen == NULL) {
-    //TODO: Throw exception here instead
-    fprintf(stderr, "Unable to set resolution to %ix%i - %s\n", width, height, SDL_GetError());
-    exit(1);
-  }
   return screen;
 }
 
@@ -21,12 +16,6 @@ void *create_sdl_surface_(int width, int height, int depth) {
   SDL_Surface *surface;
   
   surface = SDL_CreateRGBSurface(SDL_SWSURFACE, width, height, depth, 0, 0, 0, 0);
-  if (surface == NULL) {
-    //TODO: Throw exception here instead
-    fprintf(stderr, "Unable to create surface of %ix%i - %s\n", width, height, SDL_GetError());
-    exit(1);
-  }
-  
   return surface;
 }
 

@@ -10,6 +10,15 @@ library "minnowsdl"
   extern def clear_events_()
 end
 
+namespace global
+
+feature SDLException
+  reason : string
+  def SDLException(r : string)
+    reason = r
+  end
+end
+
 namespace SDL
 
 feature Surface
@@ -17,10 +26,16 @@ feature Surface
  
   def create_main_window(width : int, height : int, depth : int)
     surface = SDL.Externals.create_sdl_window_(width, height, depth)
+    if (surface.is_null())
+      throw(o:object <+ new SDLException("Can't create window"));
+    end
   end
   
   def create_surface(width : int, height : int, depth : int) 
     surface = SDL.Externals.create_sdl_surface_(width, height, depth)
+    if (surface.is_null())
+      throw(o:object <+ new SDLException("Can't create surface"));
+    end
   end
   
   def draw_pixel(r : int, g : int, b : int, x : int, y : int)
