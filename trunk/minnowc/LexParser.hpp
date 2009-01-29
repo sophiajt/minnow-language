@@ -29,6 +29,7 @@ public:
     Token *lexparse_single_quoted_string(std::string::iterator &curr, std::string::iterator &end, Position &p);
 
     Token *lexparse_def(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
+    Token *lexparse_library(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
     Token *lexparse_extern(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
     Token *lexparse_action(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);
     Token *lexparse_isolated(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id);

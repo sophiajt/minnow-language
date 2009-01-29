@@ -20,7 +20,7 @@ void print_help() {
     printf("-O <level>      : set the optimization level\n");
     printf("-I <source dir> : add a source include directory to your search path\n");
     printf("-L <lib dir>    : add a library directory to the library search path\n");
-    printf("-l <library>    : add a library to link against\n");
+    //printf("-l <library>    : add a library to link against\n");
     printf("-C              : output the generated C file to the stdout\n");
     printf("-v              : print version\n");
     printf("-h              : this help\n");
@@ -45,8 +45,8 @@ int main(int argc, char *argv[]) {
         exit(0);
     }
 
-    std::vector<std::string> libs;
-    libs.push_back("aquarium");
+    //std::vector<std::string> libs;
+    //libs.push_back("aquarium");
 
     std::vector<std::string> sources;
 
@@ -143,6 +143,7 @@ int main(int argc, char *argv[]) {
                                 ++i;
                             }
                         break;
+                        /*
                         case ('l') :
                             if (arglen == 2) {
                                 if ((i+1) < argc) {
@@ -162,6 +163,7 @@ int main(int argc, char *argv[]) {
                                 ++i;
                             }
                         break;
+                        */
                         case ('O') :
                             if (arglen == 2) {
                                 if ((i+1) < argc) {
@@ -203,7 +205,7 @@ int main(int argc, char *argv[]) {
         compiler.analyze_files();
 
         //Then, start outputting code
-        compiler.compile_program(argc, argv, output_file, include_dir, lib_dirs, libs, optimization_level);
+        compiler.compile_program(argc, argv, output_file, include_dir, lib_dirs, optimization_level);
 
     }
     catch (Compiler_Exception &ce) {

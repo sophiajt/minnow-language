@@ -6,6 +6,7 @@
 #include <vector>
 #include <string.h>
 #include <stdlib.h>
+#include <algorithm>
 
 #include "LexParser.hpp"
 
@@ -403,6 +404,33 @@ Token *Lex_Parser::lexparse_def(std::string::iterator &curr, std::string::iterat
     }
 }
 
+Token *Lex_Parser::lexparse_library(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
+    Position start = p;
+    Token *t = lexparse_expression(curr, end, p);
+    switch (t->type) {
+        case (Token_Type::QUOTED_STRING_CONST) : { //for return types
+            Token *lib_block = new Token(Token_Type::LIBRARY_EXTERN_BLOCK, id->start_pos, t->end_pos);
+            lib_block->children.push_back(id);
+            lib_block->children.push_back(t);
+
+            Token *name = t;
+            while (name->children.size() > 0) {
+                name = name->children[0];
+            }
+            lib_block->contents = name->contents;
+
+            Token *block = lexparse_block(curr, end, p);
+            lib_block->children.push_back(block);
+            lib_block->end_pos = p;
+
+            return lib_block;
+        }
+        break;
+        default:
+            throw Compiler_Exception("'library' not followed by library name", start, p);
+    }
+}
+
 Token *Lex_Parser::lexparse_extern(std::string::iterator &curr, std::string::iterator &end, Position &p, Token *id) {
     Position start = p;
 
@@ -548,7 +576,10 @@ Token *Lex_Parser::lexparse_use(std::string::iterator &curr, std::string::iterat
     Token *t = lexparse_primary(curr, end, p);
     if ((t != NULL) && (t->type == Token_Type::QUOTED_STRING_CONST)) {
         id->type = Token_Type::USE_CALL;
-        use_list->push_back(t->contents);
+
+        if (std::find(use_list->begin(), use_list->end(), t->contents) == use_list->end()) {
+            use_list->push_back(t->contents);
+        }
         delete(t);
         return id;
     }
@@ -876,6 +907,9 @@ Token *Lex_Parser::lexparse_reserved(std::string::iterator &curr, std::string::i
     Position start = p;
     if (id->contents == "def") {
         return lexparse_def(curr, end, p, id);
+    }
+    else if (id->contents == "library") {
+        return lexparse_library(curr, end, p, id);
     }
     else if (id->contents == "extern") {
         return lexparse_extern(curr, end, p, id);

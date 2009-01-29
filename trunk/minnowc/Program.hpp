@@ -17,6 +17,7 @@ public:
     std::vector<Var_Def*> vars;
     std::vector< std::vector<int> > var_sites;
     std::vector<Token *> files;
+    std::vector<std::string> libs;
 
     Scope *global;
 
@@ -291,6 +292,8 @@ public:
         //Default types
         add_default_types();
         add_default_funcs();
+
+        libs.push_back("aquarium");
     }
 };
 

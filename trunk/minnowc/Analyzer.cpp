@@ -668,6 +668,12 @@ void Analyzer::analyze_fun_blocks(Program *program, Token *token, Scope **scope)
             *scope = token->scope;
         }
         break;
+        case (Token_Type::LIBRARY_EXTERN_BLOCK) : {
+            if (std::find(program->libs.begin(), program->libs.end(), token->children[1]->contents) == program->libs.end()) {
+                program->libs.push_back(token->children[1]->contents);
+            }
+        }
+        break;
         case (Token_Type::FUN_DEF) :
         case (Token_Type::EXTERN_FUN_DEF) :
         case (Token_Type::ACTION_DEF) : {

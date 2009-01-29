@@ -26,6 +26,7 @@ class Compiler {
 
 public:
     std::vector<std::string> search_path;
+    std::vector<std::string> libraries;
 
     Compiler() {
         app = new Token(Token_Type::APPLICATION);
@@ -126,7 +127,7 @@ public:
 
     }
     void compile_program(int argc, char *argv[], char *output_file, std::string include_dir,
-            const std::vector<std::string> &lib_dirs, const std::vector<std::string> &libs, const std::string optimization_level) {
+            const std::vector<std::string> &lib_dirs, const std::string optimization_level) {
 
         std::ostringstream output;
 
@@ -151,8 +152,8 @@ public:
                 exe_cmdline << "-L\"" << lib_dirs[i] << "\" ";
             }
 
-            for (unsigned int i = 0; i < libs.size(); ++i) {
-                exe_cmdline << "-l" << libs[i] << " ";
+            for (unsigned int i = 0; i < p->libs.size(); ++i) {
+                exe_cmdline << "-l" << p->libs[i] << " ";
             }
 
             if (system(exe_cmdline.str().c_str()) == 0) {
