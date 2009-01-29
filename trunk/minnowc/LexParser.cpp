@@ -192,6 +192,20 @@ Token *Lex_Parser::lexparse_number(std::string::iterator &curr, std::string::ite
 
         std::string val(start, curr);
 
+        //Check for hex
+        if ((curr != end) && (*curr == 'x') && (val == "0")) {
+            std::string::iterator hex_start = curr;
+            ++curr;
+            ++p.col;
+            while ((curr != end) && (((*curr >= '0') && (*curr <= '9')) || ((*curr >= 'A') && (*curr <= 'F')) || ((*curr >= 'a') && (*curr <= 'f'))) ) {
+                ++curr;
+                ++p.col;
+            }
+            std::string hex(hex_start, curr);
+            val += hex;
+        }
+
+
         Token *token;
         if (have_decimal) {
             token = new Token(Token_Type::FLOAT, val, start_p, p);
