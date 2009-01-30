@@ -2387,9 +2387,7 @@ void Codegen::codegen_delete_decl(Program *p, std::ostringstream &output) {
         }
         else if (td->container == Container_Type::ARRAY) {
             output << "  unsigned int i;" << std::endl;
-            //Type_Def *contained = p->types[td->contained_type_def_num];
-            //if ((contained->token->type != Token_Type::ACTOR_DEF) && (contained->token->type != Token_Type::ISOLATED_ACTOR_DEF)) {
-            if ((td->contained_type_def_nums[0] >= (signed)obj_id) || (td->contained_type_def_nums[0] == (signed)string_id)) {
+            if (is_complex_type(p, td->contained_type_def_nums[0])) {
                 output << "  for (i = 0; i < ((Typeless_Vector__ *)v__)->current_size; ++i)" << std::endl << "  {" << std::endl;
                 output << "    delete__(m__, INDEX_AT__(((Typeless_Vector__ *)v__), i, ";
                 codegen_typesig(p, td->contained_type_def_nums[0], output);
