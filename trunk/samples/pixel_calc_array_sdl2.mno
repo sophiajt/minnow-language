@@ -1,3 +1,5 @@
+use "contrib/sdl/sdl.mno"
+
 extern def log(x : double) : double
 extern def fabs(x : double) : double
 

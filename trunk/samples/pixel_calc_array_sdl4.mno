@@ -1,3 +1,5 @@
+use "contrib/sdl/sdl.mno"
+
 extern def log(x : double) : double
 extern def fabs(x : double) : double
 
@@ -73,7 +75,7 @@ actor SDLWriter
     m_blocks += 1
     
     if (m_blocks == m_total_blocks)
-      //`Sys.exit()
+      Sys.exit()
       
       while(true)
         SDL.delay(100)
