@@ -13,6 +13,9 @@ out_bin = os.path.join(binary_dir, "unitout")
 compiler_dir = "bin"
 compiler_bin = os.path.join(compiler_dir, "minnowc")
 
+if (not os.path.isdir(binary_dir)):
+  os.mkdir(binary_dir)
+
 total_test_count = 0
 failed_tests = []
 

@@ -14,10 +14,12 @@ out_bin = os.path.join(binary_dir, "perfout")
 compiler_dir = "bin"
 compiler_bin = os.path.join(compiler_dir, "minnowc")
 
+if (not os.path.isdir(binary_dir)):
+  os.mkdir(binary_dir)
+
 total_test_count = 0
 total_time = 0
 failed_tests = []
-
 
 def tick_good():
   sys.stdout.write(".")
