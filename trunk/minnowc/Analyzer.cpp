@@ -448,30 +448,49 @@ void Analyzer::build_function_args(Program *program, Token *token, Scope *scope,
 
 std::string Analyzer::build_function_arg_types(Program *program, Token *token, Scope *scope) {
     std::ostringstream output;
-    int bad_type1 = program->global->local_types["void"];
-    int bad_type2 = program->global->local_types["error"];
+    int void_type = program->global->local_types["void"];
+    int error_type = program->global->local_types["error"];
+    int var_type = program->global->local_types["var"];
+
 
     if (token->contents == ",") {
-        if ((token->children[0]->type_def_num != bad_type1) && (token->children[0]->type_def_num != bad_type2)) {
+        if ((token->children[0]->type_def_num != void_type) && (token->children[0]->type_def_num != error_type) &&
+                (token->children[0]->type_def_num != var_type)) {
             output << build_function_arg_types(program, token->children[0], scope);
         }
         else {
-            throw Compiler_Exception("Functions can not take void arguments", token->children[0]->start_pos, token->children[0]->end_pos);
+            if (token->children[0]->type_def_num == var_type) {
+                throw Compiler_Exception("Functions can not take uninitialized var arguments", token->children[0]->start_pos, token->children[0]->end_pos);
+            }
+            else {
+                throw Compiler_Exception("Functions can not take void arguments", token->children[0]->start_pos, token->children[0]->end_pos);
+            }
         }
         output << "__";
-        if ((token->children[1]->type_def_num != bad_type1) && (token->children[1]->type_def_num != bad_type2)) {
+        if ((token->children[1]->type_def_num != void_type) && (token->children[1]->type_def_num != error_type) &&
+                (token->children[1]->type_def_num != var_type)) {
             output << build_function_arg_types(program, token->children[1], scope);
         }
         else {
-            throw Compiler_Exception("Functions can not take void arguments", token->children[1]->start_pos, token->children[1]->end_pos);
+            if (token->children[1]->type_def_num == var_type) {
+                throw Compiler_Exception("Functions can not take uninitialized var arguments", token->children[1]->start_pos, token->children[1]->end_pos);
+            }
+            else {
+                throw Compiler_Exception("Functions can not take void arguments", token->children[1]->start_pos, token->children[1]->end_pos);
+            }
         }
     }
     else {
-        if ((token->type_def_num != bad_type1) && (token->type_def_num != bad_type2)) {
+        if ((token->type_def_num != void_type) && (token->type_def_num != error_type) && (token->type_def_num != var_type)) {
             output << token->type_def_num;
         }
         else {
-            throw Compiler_Exception("Functions can not take void arguments", token->start_pos, token->end_pos);
+            if (token->type_def_num == var_type) {
+                throw Compiler_Exception("Functions can not take uninitialized var arguments", token->start_pos, token->end_pos);
+            }
+            else {
+                throw Compiler_Exception("Functions can not take void arguments", token->start_pos, token->end_pos);
+            }
         }
     }
     return output.str();
