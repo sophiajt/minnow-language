@@ -1092,7 +1092,26 @@ Token *Lex_Parser::lexparse_operator(std::string::iterator &curr, std::string::i
     //Skip all the comments
     while (lexparse_comment(curr, end, p));
 
-    if (is_symbol(*curr)) {
+    if (*curr == '`') {
+        std::string::iterator start = curr;
+        Position start_p = p;
+        ++curr;
+        ++p.col;
+        while ((curr != end) && (*curr != '`')) {
+            ++curr;
+            ++p.col;
+        }
+        if ((start+1) == (curr)) {
+            throw Compiler_Exception("Empty special identifier", start_p, p);
+        }
+        std::string val(start+1, curr);
+
+        ++curr;
+        ++p.col;
+        Token *token = new Token(Token_Type::SYMBOL, val, start_p, p);
+        return token;
+    }
+    else if (is_symbol(*curr)) {
         std::string::iterator start = curr;
         Position start_p = p;
 

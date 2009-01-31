@@ -1,0 +1,18 @@
+def bob(x:int, y:int) : int
+  return x+y+1
+end
+/*
+def elem(x:int, y:Array[int]) : bool
+  for i:int = 0 to y.size()
+    if (x == y[i])
+      return true
+    end
+  end
+  return false
+end
+*/
+action main
+  print(1 `bob` 2)
+  //print(4 `elem` [0, 1, 2])
+  Sys.exit()
+end

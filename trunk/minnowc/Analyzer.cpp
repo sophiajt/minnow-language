@@ -448,13 +448,31 @@ void Analyzer::build_function_args(Program *program, Token *token, Scope *scope,
 
 std::string Analyzer::build_function_arg_types(Program *program, Token *token, Scope *scope) {
     std::ostringstream output;
+    int bad_type1 = program->global->local_types["void"];
+    int bad_type2 = program->global->local_types["error"];
+
     if (token->contents == ",") {
-        output << build_function_arg_types(program, token->children[0], scope);
+        if ((token->children[0]->type_def_num != bad_type1) && (token->children[0]->type_def_num != bad_type2)) {
+            output << build_function_arg_types(program, token->children[0], scope);
+        }
+        else {
+            throw Compiler_Exception("Functions can not take void arguments", token->children[0]->start_pos, token->children[0]->end_pos);
+        }
         output << "__";
-        output << build_function_arg_types(program, token->children[1], scope);
+        if ((token->children[1]->type_def_num != bad_type1) && (token->children[1]->type_def_num != bad_type2)) {
+            output << build_function_arg_types(program, token->children[1], scope);
+        }
+        else {
+            throw Compiler_Exception("Functions can not take void arguments", token->children[1]->start_pos, token->children[1]->end_pos);
+        }
     }
     else {
-        output << token->type_def_num;
+        if ((token->type_def_num != bad_type1) && (token->type_def_num != bad_type2)) {
+            output << token->type_def_num;
+        }
+        else {
+            throw Compiler_Exception("Functions can not take void arguments", token->start_pos, token->end_pos);
+        }
     }
     return output.str();
 }
