@@ -1,0 +1,4 @@
+action main
+  print << 1 << 2.2 << " " << (9.99999, 2) << 'c'
+  Sys.exit()
+end

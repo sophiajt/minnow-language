@@ -405,7 +405,10 @@ unsigned int Analyzer::build_var_def(Program *program, Token *token, Scope *scop
 void Analyzer::build_function_args(Program *program, Token *token, Scope *scope, Function_Def *fd) {
     unsigned int var_def_num;
 
-    if (token->contents == ",") {
+    if (token->type == Token_Type::QUICK_VAR_DECL) {
+        throw Compiler_Exception("Quick variable declarations like $var are not allowed as parameters", token->start_pos, token->end_pos);
+    }
+    else if (token->contents == ",") {
         build_function_args(program, token->children[0], scope, fd);
         build_function_args(program, token->children[1], scope, fd);
     }
@@ -875,6 +878,36 @@ void Analyzer::analyze_var_type_and_scope(Program *program, Token *token, Scope 
             }
         }
     }
+    else if (token->type == Token_Type::QUICK_VAR_DECL) {
+        int implied_type = program->global->local_types["var"];
+
+        Var_Def *vd = new Var_Def();
+        vd->token = token;
+        vd->type_def_num = implied_type;
+        vd->usage_start = token->start_pos;
+        vd->usage_end = token->end_pos;
+        program->vars.push_back(vd);
+
+        unsigned int var_def_num = program->vars.size() - 1;
+
+        token->definition_number = var_def_num;
+        token->type_def_num = implied_type;
+        std::string var_name = token->contents.substr(1, token->contents.length()-1);
+
+        if (scope->local_vars.find(var_name) != scope->local_vars.end()) {
+            Token *dupe = program->vars[scope->local_vars[var_name]]->token;
+            std::ostringstream msg;
+            msg << "Redefined variable '" << token->contents << "' (see also line " << dupe->start_pos.line
+                << " of " << dupe->start_pos.filename << ")";
+
+            throw Compiler_Exception(msg.str(), token->start_pos, token->end_pos);
+        }
+        else {
+            //std::cout << "Added: " << token->children[0]->contents << " to " << scope << std::endl;
+            scope->local_vars[var_name] = program->vars.size() - 1;
+            token->type = Token_Type::VAR_DECL;
+        }
+    }
 
     if (token->type == Token_Type::FOR_BLOCK) {
         //for blocks need their own vars for constraint management
@@ -944,11 +977,62 @@ void Analyzer::analyze_var_type_and_scope(Program *program, Token *token, Scope 
         }
     }
     else {
-        for (unsigned int i = 0; i < token->children.size(); ++i) {
+        //for (unsigned int i = 0; i < token->children.size(); ++i) {
+        unsigned int i = 0;
+        while (i < token->children.size()) {
             analyze_var_type_and_scope(program, token->children[i], scope);
+            ++i;
         }
     }
 
+}
+
+void Analyzer::analyze_stacked_fun_call(Program *program, Token *token, Scope *scope) {
+    unsigned int i = 0;
+    while (i < token->children.size()) {
+        Token *child = token->children[i];
+        if (child->contents == "<<") {
+            //unstack the stacked function call
+
+            //first, find the function call, which should be the left-most token
+            Token *fun_token = child;
+            std::vector<Token*> arg_stack;
+            while (fun_token->contents == "<<") {
+                arg_stack.push_back(new Token(*(fun_token->children[1])));
+                fun_token = fun_token->children[0];
+            }
+
+            while (arg_stack.size()) {
+                Token *fun_call = new Token(Token_Type::FUN_CALL, arg_stack.back()->start_pos, arg_stack.back()->end_pos);
+                if (fun_token->contents==".") {
+                    fun_call->children.push_back(new Token(*(fun_token->children[1])));
+                    fun_call->children.push_back(arg_stack.back());
+
+                    Token *dot_call = new Token(Token_Type::SYMBOL, arg_stack.back()->start_pos, arg_stack.back()->end_pos);
+                    dot_call->contents = ".";
+                    dot_call->children.push_back(new Token(*(fun_token->children[0])));
+                    dot_call->children.push_back(fun_call);
+                    fun_call = dot_call;
+                }
+                else {
+                    fun_call->children.push_back(new Token(*fun_token));
+                    fun_call->children.push_back(arg_stack.back());
+                }
+                arg_stack.pop_back();
+                token->children.insert(token->children.begin() + i, fun_call);
+                ++i;
+            }
+            token->children.erase(token->children.begin() + i);
+
+            //todo: this probably leaks children
+            delete(fun_token);
+            //++i;
+        }
+        else {
+            analyze_stacked_fun_call(program, child, scope);
+            ++i;
+        }
+    }
 }
 
 void Analyzer::check_fun_call(Program *program, Token *token, Scope *fun_scope, Scope *parm_scope) {
@@ -1418,7 +1502,6 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
             }
             else {
                 //std::cout << "ERROR: " << token->children[0]->type_def_num << " " << token->children[1]->type_def_num << std::endl;
-
                 throw Compiler_Exception("Mismatched types in equation", token->start_pos, token->end_pos);
             }
         }
@@ -1500,6 +1583,15 @@ void Analyzer::analyze_token_types(Program *program, Token *token, Scope *scope)
                 scope = scope->parent;
             }
         }
+
+        int implied_type = program->global->local_types["var"];
+        if (token->children[0]->type_def_num == implied_type) {
+            throw Compiler_Exception("Implied type variable used without being set to a value", token->children[0]->start_pos, token->children[0]->end_pos);
+        }
+        if (token->children[1]->type_def_num == implied_type) {
+            throw Compiler_Exception("Implied type variable used without being set to a value", token->children[1]->start_pos, token->children[1]->end_pos);
+        }
+
         throw Compiler_Exception("Can not understand usage of '" + token->contents + "'", token->start_pos,
                 token->end_pos);
     }

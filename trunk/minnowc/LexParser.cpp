@@ -30,7 +30,7 @@ void debug_print(Token *token, std::string prepend) {
 }
 
 bool is_symbol(char c) {
-    if (strchr("!@#$%^&*<>,.?/:|\\-+=~", c) != NULL) {
+    if (strchr("!@#%^&*<>,.?/:|\\-+=~", c) != NULL) {
         return true;
     }
     else {
@@ -228,9 +228,19 @@ Token *Lex_Parser::lexparse_id(std::string::iterator &curr, std::string::iterato
     lexparse_whitespace(curr, end, p);
     if (curr == end) return NULL;
 
+    std::string::iterator start = curr;
+    Position start_p = p;
+
+    bool is_quick_var_decl = false;
+
+    if (*curr == '$') {
+        ++curr;
+        ++p.col;
+        is_quick_var_decl = true;
+    }
+    if (curr == end) return NULL;
+
     if (*curr == '`') {
-        std::string::iterator start = curr;
-        Position start_p = p;
         ++curr;
         ++p.col;
         while ((curr != end) && (*curr != '`')) {
@@ -244,20 +254,29 @@ Token *Lex_Parser::lexparse_id(std::string::iterator &curr, std::string::iterato
 
         ++curr;
         ++p.col;
-        Token *token = new Token(Token_Type::ID, val, start_p, p);
-        return token;
+        if (is_quick_var_decl == false) {
+            Token *token = new Token(Token_Type::ID, val, start_p, p);
+            return token;
+        }
+        else {
+            Token *token = new Token(Token_Type::QUICK_VAR_DECL, val, start_p, p);
+            return token;
+        }
     }
     else if (((*curr >= 'A') && (*curr <= 'Z')) || ((*curr >= 'a') && (*curr <= 'z')) || (*curr == '_')) {
-        //starting on a number
-        std::string::iterator start = curr;
-        Position start_p = p;
         while ((curr != end) && (((*curr >= 'A') && (*curr <= 'Z')) || ((*curr >= 'a') && (*curr <= 'z')) || (*curr == '_') || ((*curr >= '0') && (*curr <= '9')))) {
             ++curr;
             ++p.col;
         }
         std::string val(start, curr);
-        Token *token = new Token(Token_Type::ID, val, start_p, p);
-        return token;
+        if (is_quick_var_decl == false) {
+            Token *token = new Token(Token_Type::ID, val, start_p, p);
+            return token;
+        }
+        else {
+            Token *token = new Token(Token_Type::QUICK_VAR_DECL, val, start_p, p);
+            return token;
+        }
     }
     else {
         return NULL;
@@ -299,6 +318,10 @@ Token *Lex_Parser::lexparse_square_brackets(std::string::iterator &curr, std::st
 Token *Lex_Parser::lexparse_quoted_string(std::string::iterator &curr, std::string::iterator &end, Position &p) {
     std::string contents = "";
     Position start = p;
+
+    ++curr;
+    ++p.col;
+
     while ((curr != end) && (*curr != '\"') && (*curr != '\n')) {
 
         if (*curr == '\\') {
@@ -344,6 +367,10 @@ Token *Lex_Parser::lexparse_quoted_string(std::string::iterator &curr, std::stri
 Token *Lex_Parser::lexparse_single_quoted_string(std::string::iterator &curr, std::string::iterator &end, Position &p) {
     std::string contents = "";
     Position start = p;
+
+    ++curr;
+    ++p.col;
+
     while ((curr != end) && (*curr != '\'')) {
         if (*curr == '\\') {
             contents.append(1, *curr);
@@ -1073,13 +1100,13 @@ Token *Lex_Parser::lexparse_primary(std::string::iterator &curr, std::string::it
         return array_init;
     }
     else if (*curr == '"') {
-        ++curr;
-        ++p.col;
+        //++curr;
+        //++p.col;
         return lexparse_quoted_string(curr, end, p);
     }
     else if (*curr == '\'') {
-        ++curr;
-        ++p.col;
+        //++curr;
+        //++p.col;
         return lexparse_single_quoted_string(curr, end, p);
     }
     return NULL;

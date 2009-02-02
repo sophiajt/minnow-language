@@ -29,6 +29,7 @@ public:
 
     void add_implied_constructors(Program *program);
 
+    void analyze_stacked_fun_call(Program *program, Token *token, Scope *scope);
     void analyze_var_type_and_scope(Program *program, Token *token, Scope *scope);
 
     void check_fun_call(Program *program, Token *token, Scope *fun_scope, Scope *parm_scope);

@@ -106,6 +106,9 @@ public:
 
         an.add_implied_constructors(p);
         an.analyze_var_type_and_scope(p, t, p->global);
+        an.analyze_stacked_fun_call(p, t, p->global);
+
+        //debug_print_def(p, t, "");
 
         an.analyze_token_types(p, t, p->global);
 
