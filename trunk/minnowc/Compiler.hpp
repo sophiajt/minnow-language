@@ -6,7 +6,8 @@
 
 #include "Common.hpp"
 #include "LexParser.hpp"
-#include "Analyzer.hpp"
+#include "Var_Scope_Analyzer.hpp"
+#include "Type_Analyzer.hpp"
 #include "Codegen_C.hpp"
 
 void debug_print(Program *p, Scope *ns, std::string prepend);
@@ -17,7 +18,8 @@ void debug_print_position(Position &pos);
 void debug_print_extents(Program *p);
 
 class Compiler {
-    Analyzer an;
+    Var_Scope_Analyzer an;
+    Type_Analyzer ta;
     Lex_Parser *lp;
     Codegen c;
     Program *p;
@@ -84,11 +86,11 @@ public:
         for (unsigned int i = 0; i < p->files.size(); ++i) {
             Token *t = p->files[i];
 
-            an.analyze_strays(t);
+            ta.analyze_strays(t);
 
             //Start building app
             start = p->global;
-            an.analyze_type_blocks(p, t, &start);
+            ta.analyze_type_blocks(p, t, &start);
         }
 
 
@@ -96,7 +98,7 @@ public:
             Token *t = p->files[i];
 
             start = p->global;
-            an.analyze_fun_blocks(p, t, &start);
+            ta.analyze_fun_blocks(p, t, &start);
         }
 
 
@@ -104,17 +106,17 @@ public:
 
         //start = p->global;
 
-        an.add_implied_constructors(p);
-        an.analyze_var_type_and_scope(p, t, p->global);
-        an.analyze_stacked_fun_call(p, t, p->global);
+        ta.add_implied_constructors(p);
+        ta.analyze_var_type_and_scope(p, t, p->global);
+        ta.analyze_stacked_fun_call(p, t, p->global);
 
-        //debug_print_def(p, t, "");
+        debug_print_def(p, t, "");
 
-        an.analyze_token_types(p, t, p->global);
+        ta.analyze_token_types(p, t, p->global);
 
         an.analyze_ports_of_entry(p, t, NULL, p->global, false, false);
-        an.analyze_implied_this(p, t, p->global);
-        an.analyze_return_calls(p, t, 0);
+        ta.analyze_implied_this(p, t, p->global);
+        ta.analyze_return_calls(p, t, 0);
         an.analyze_var_visibility(p, t);
         an.analyze_freeze_resume(p, t, p->global);
         an.analyze_copy_delete(p, t, NULL, p->global);

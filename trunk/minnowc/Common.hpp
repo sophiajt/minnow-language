@@ -108,6 +108,28 @@ public:
         type(ttype), contents(content), definition_number(-1), type_def_num(-1), scope(NULL) { }
 
     Token(Token_Type::Type ttype) : type(ttype), definition_number(-1), type_def_num(-1), scope(NULL) { }
+
+    Token(Token &t) {
+        type = t.type;
+        contents = t.contents;
+        start_pos = t.start_pos;
+        end_pos = t.end_pos;
+        for (unsigned int i = 0; i < t.children.size(); ++i) {
+            children.push_back(new Token(*(t.children[i])));
+        }
+        definition_number = t.definition_number;
+        type_def_num = t.type_def_num;
+        //todo: what do I do with this?!
+        scope = t.scope;
+    }
+    //todo: I should probably have something like this, but before I add it I want to make sure I don't share references
+    /*
+    ~Token() {
+        for (unsigned int i = 0; i < children.size(); ++i) {
+            delete(children[i]);
+        }
+    }
+    */
 };
 
 class Compiler_Exception {

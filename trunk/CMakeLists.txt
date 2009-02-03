@@ -21,7 +21,7 @@ ENDIF (DOXYGEN_FOUND)
 
 INCLUDE_DIRECTORIES(aquarium minnow)
 SET (AQUARIUM_SRCS aquarium/Aquarium.cpp aquarium/Typeless_Vector.cpp aquarium/Char_String.cpp aquarium/Object_Feature.cpp aquarium/Scheduler.cpp aquarium/Message_Channel.cpp aquarium/Actor.cpp aquarium/Minnow_Prelude.cpp)
-SET (MINNOW_SRCS minnowc/main.cpp minnowc/Analyzer.cpp minnowc/Codegen_C.cpp minnowc/LexParser.cpp minnowc/Program.cpp minnowc/Compiler.cpp)
+SET (MINNOW_SRCS minnowc/main.cpp minnowc/Var_Scope_Analyzer.cpp minnowc/Type_Analyzer.cpp minnowc/Codegen_C.cpp minnowc/LexParser.cpp minnowc/Program.cpp minnowc/Compiler.cpp)
 
 SET (AQUARIUM_LIBS )
 #Platform ident hackery
