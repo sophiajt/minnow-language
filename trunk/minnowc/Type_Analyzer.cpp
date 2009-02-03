@@ -1,6 +1,8 @@
 // This file is distributed under the BSD License.
 // See LICENSE.TXT for details.
 
+#include <algorithm>
+
 #include "Common.hpp"
 #include "Var_Scope_Analyzer.hpp"
 #include "Type_Analyzer.hpp"
