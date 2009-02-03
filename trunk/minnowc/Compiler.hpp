@@ -4,6 +4,8 @@
 #ifndef COMPILER_HPP_
 #define COMPILER_HPP_
 
+#include <iostream>
+
 #include "Common.hpp"
 #include "LexParser.hpp"
 #include "Var_Scope_Analyzer.hpp"

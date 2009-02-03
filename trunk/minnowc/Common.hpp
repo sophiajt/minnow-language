@@ -147,6 +147,7 @@ public:
     Token *token;
     unsigned int return_type_def_num;
     std::vector<unsigned int> arg_def_nums;
+    bool is_used;
     bool is_internal;
     bool is_constructor;
     bool is_port_of_entry; //if this function can yield return values that the scope is responsible for
@@ -154,14 +155,14 @@ public:
     std::string external_name; //if set use this name instead in codegen
     std::vector<int> continuation_sites;
 
-    Function_Def() : token(NULL), is_internal(false), is_constructor(false), is_port_of_entry(true), is_port_of_exit(false) {
+    Function_Def() : token(NULL), is_used(true), is_internal(false), is_constructor(false), is_port_of_entry(true), is_port_of_exit(false) {
         continuation_sites.push_back(-1);
     }
-    Function_Def(bool internal) : token(NULL), is_internal(internal), is_constructor(false), is_port_of_entry(true), is_port_of_exit(false) {
+    Function_Def(bool internal) : token(NULL), is_used(true), is_internal(internal), is_constructor(false), is_port_of_entry(true), is_port_of_exit(false) {
         continuation_sites.push_back(-1);
     }
     Function_Def(bool internal, unsigned int return_type, unsigned int lhs, unsigned int rhs) : token(NULL), return_type_def_num(return_type),
-        is_internal(internal), is_constructor(false), is_port_of_entry(true), is_port_of_exit(false) {
+        is_used(true), is_internal(internal), is_constructor(false), is_port_of_entry(true), is_port_of_exit(false) {
 
         continuation_sites.push_back(-1);
 

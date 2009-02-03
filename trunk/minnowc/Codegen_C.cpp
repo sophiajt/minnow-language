@@ -1544,6 +1544,10 @@ void Codegen::codegen_constructor_internal_predecl(Program *p, Token *t, std::os
 
 void Codegen::codegen_constructor_not_internal_predecl(Program *p, Token *t, std::ostringstream &output) {
     for (unsigned int i = 0; i < p->funs.size(); ++i) {
+        if (p->funs[i]->is_used == false) {
+            continue;
+        }
+
         if (p->funs[i]->is_constructor) {
             //If it's internal, it's an implied constructor and doesn't need an inner call
             if (p->funs[i]->is_internal == false) {
@@ -1579,6 +1583,10 @@ void Codegen::codegen_constructor_not_internal_predecl(Program *p, Token *t, std
 
 void Codegen::codegen_action_predecl(Program *p, Token *t, std::ostringstream &output) {
     for (unsigned int i = 0; i < p->funs.size(); ++i) {
+        if (p->funs[i]->is_used == false) {
+            continue;
+        }
+
         if ((p->funs[i]->is_internal == false) && (p->funs[i]->external_name == "")) {
             Function_Def *fd = p->funs[i];
             if (fd->token->type == Token_Type::ACTION_DEF) {
@@ -1590,6 +1598,10 @@ void Codegen::codegen_action_predecl(Program *p, Token *t, std::ostringstream &o
 
 void Codegen::codegen_fun_predecl(Program *p, Token *t, std::ostringstream &output) {
     for (unsigned int i = 0; i < p->funs.size(); ++i) {
+        if (p->funs[i]->is_used == false) {
+            continue;
+        }
+
         if ((p->funs[i]->is_internal == false) && (p->funs[i]->external_name == "")) {
             Function_Def *fd = p->funs[i];
             if (fd->token->type == Token_Type::FUN_DEF) {
@@ -1744,6 +1756,9 @@ void Codegen::codegen_constructor_internal_decl(Program *p, Token *t, std::ostri
 void Codegen::codegen_constructor_not_internal_decl(Program *p, Token *t, std::ostringstream &output) {
     for (unsigned int i = 0; i < p->funs.size(); ++i) {
         this->current_fun = p->funs[i];
+        if (p->funs[i]->is_used == false) {
+            continue;
+        }
 
         if (p->funs[i]->is_constructor) {
             //If it's not internal, it needs an inner call
@@ -1879,6 +1894,9 @@ void Codegen::codegen_constructor_not_internal_decl(Program *p, Token *t, std::o
 void Codegen::codegen_action_decl(Program *p, Token *t, std::ostringstream &output) {
     for (unsigned int i = 0; i < p->funs.size(); ++i) {
         this->current_fun = p->funs[i];
+        if (p->funs[i]->is_used == false) {
+            continue;
+        }
         if ((p->funs[i]->is_internal == false) && (p->funs[i]->external_name == "")) {
             Function_Def *fd = p->funs[i];
 
@@ -2068,6 +2086,9 @@ void Codegen::codegen_action_decl(Program *p, Token *t, std::ostringstream &outp
 void Codegen::codegen_fun_decl(Program *p, Token *t, std::ostringstream &output) {
     for (unsigned int i = 0; i < p->funs.size(); ++i) {
         this->current_fun = p->funs[i];
+        if (p->funs[i]->is_used == false) {
+            continue;
+        }
         if ((p->funs[i]->is_internal == false) && (p->funs[i]->external_name == "")) {
 
             Function_Def *fd = p->funs[i];

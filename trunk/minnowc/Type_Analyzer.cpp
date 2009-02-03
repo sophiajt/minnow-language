@@ -2,6 +2,7 @@
 // See LICENSE.TXT for details.
 
 #include <algorithm>
+#include <iostream>
 
 #include "Common.hpp"
 #include "Var_Scope_Analyzer.hpp"
@@ -408,13 +409,51 @@ void Type_Analyzer::build_function_args(Program *program, Token *token, Scope *s
         build_function_args(program, token->children[0], scope, fd);
         build_function_args(program, token->children[1], scope, fd);
     }
+    /*
+    else if (token->type == Token_Type::ID) {
+        int implied_type = program->global->local_types["var"];
+        Var_Def *vd = new Var_Def();
+        vd->token = token;
+        vd->type_def_num = implied_type;
+        vd->usage_start = token->start_pos;
+        vd->usage_end = token->end_pos;
+        program->vars.push_back(vd);
+
+        unsigned int var_def_num = program->vars.size() - 1;
+
+        token->definition_number = var_def_num;
+        //If this is an arg into an actor, make sure we know we're responsible for it
+        {
+            Var_Def *vd = program->vars[var_def_num];
+            if (fd->token->type == Token_Type::ACTION_DEF) {
+                vd->is_dependent = true;
+            }
+            else {
+                vd->is_dependent = false;
+            }
+        }
+
+        fd->arg_def_nums.push_back(var_def_num);
+        if (scope->local_vars.find(token->contents) != scope->local_vars.end()) {
+            Var_Def *redux = program->vars[scope->local_vars[token->contents]];
+            std::ostringstream msg;
+            msg << "Redefined variable '" << token->contents << "' (see also line "
+                << redux->token->start_pos.line << " of " << redux->token->start_pos.filename << ")";
+
+            throw Compiler_Exception(msg.str(), token->start_pos, token->end_pos);
+        }
+        scope->local_vars[token->contents] = var_def_num;
+    }
+    */
     else if (token->contents == ":") {
         //push the furthest lhs first
+        /*
         if (token->children[1]->contents == "var") {
             //Workaround because functions are not allowed to have var types (yet?)
             throw Compiler_Exception("Implied types not allowed in function header", token->children[1]->start_pos,
                     token->children[1]->end_pos);
         }
+        */
         var_def_num = build_var_def(program, token, scope);
         //If this is an arg into an actor, make sure we know we're responsible for it
         {
@@ -518,9 +557,10 @@ std::string Type_Analyzer::build_function_def(Program *program, Token *token, Sc
 
     if (token->children[1]->contents == ":") {
         //We have a return type
-        if (token->children[1]->children[1]->contents == "var") {
+
+        if ((token->children[1]->children[1]->contents == "var") && (token->type == Token_Type::EXTERN_FUN_DEF)) {
             //Workaround because functions are not allowed to have var types (yet?)
-            throw Compiler_Exception("Implied types are not allowed as function return types",
+            throw Compiler_Exception("Implied types are not allowed in extern def",
                     token->children[1]->start_pos, token->children[1]->end_pos);
         }
 
@@ -722,11 +762,18 @@ void Type_Analyzer::analyze_fun_blocks(Program *program, Token *token, Scope **s
             new_scope_block->owner = token;
 
             Function_Def *fd = new Function_Def();
-            fd->token = token;
             new_scope->owner = token;
+            fd->token = token;
             token->scope = new_scope;
             if (token->type == Token_Type::ACTION_DEF) {
                 fd->is_port_of_exit = true;
+                if (token->contents == "main") {
+                    fd->is_used = true;
+                }
+            }
+
+            if (fd->is_constructor == true) {
+                fd->is_used = true;
             }
 
             if ((token->contents == "&&") || (token->contents == "||")) {
@@ -1031,6 +1078,17 @@ void Type_Analyzer::analyze_stacked_fun_call(Program *program, Token *token, Sco
     }
 }
 
+int look_for_fun_call(Program *program, std::string fullname, Scope *fun_scope) {
+    Scope *scope = fun_scope;
+    while (scope != NULL) {
+        if (scope->local_funs.find(fullname) != scope->local_funs.end()) {
+            return scope->local_funs[fullname];
+        }
+        scope = scope->parent;
+    }
+    return -1;
+}
+
 void Type_Analyzer::check_fun_call(Program *program, Token *token, Scope *fun_scope, Scope *parm_scope) {
     for (unsigned int i = 1; i < token->children.size(); ++i) {
         analyze_token_types(program, token->children[i], parm_scope);
@@ -1038,16 +1096,17 @@ void Type_Analyzer::check_fun_call(Program *program, Token *token, Scope *fun_sc
 
     std::string fullname = build_function_name(program, token, fun_scope);
 
-    Scope *scope = fun_scope;
-    while (scope != NULL) {
-        if (scope->local_funs.find(fullname) != scope->local_funs.end()) {
-            token->definition_number = scope->local_funs[fullname];
-            token->type_def_num = program->funs[token->definition_number]->return_type_def_num;
+    int def_num = look_for_fun_call(program, fullname, fun_scope);
 
-            return;
-        }
-        scope = scope->parent;
+    if (def_num != -1) {
+        token->definition_number = def_num;
+        token->type_def_num = program->funs[token->definition_number]->return_type_def_num;
+
+        Function_Def *fd = program->funs[def_num];
+        fd->is_used = true;
+        return;
     }
+
     throw Compiler_Exception("Can not find usage of '" + fullname.substr(0, fullname.find("__")) + "'",
             token->start_pos, token->end_pos);
 
@@ -1585,6 +1644,8 @@ void Type_Analyzer::analyze_token_types(Program *program, Token *token, Scope *s
             while (scope != NULL) {
                 std::string fullname = name.str();
                 if (scope->local_funs.find(fullname) != scope->local_funs.end()) {
+                    Function_Def *fd = program->funs[scope->local_funs[fullname]];
+                    fd->is_used = true;
                     token->type_def_num = program->funs[scope->local_funs[fullname]]->return_type_def_num;
                     token->definition_number = scope->local_funs[fullname];
                     return;
