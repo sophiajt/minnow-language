@@ -11,28 +11,6 @@
 #include <sstream>
 #include <algorithm>
 
-bool is_complex_type(Program *program, unsigned int type_def_num) {
-    Type_Def *td = program->types[type_def_num];
-
-    if (((type_def_num >= program->global->local_types["object"]) ||
-            (type_def_num == program->global->local_types["string"])) &&
-        (td->token->type != Token_Type::ACTOR_DEF) &&
-        (td->token->type != Token_Type::ISOLATED_ACTOR_DEF) &&
-        (td->token->type != Token_Type::ENUM_DEF)) {
-        return true;
-    }
-    else {
-        return false;
-    }
-
-}
-bool is_complex_var(Program *program, unsigned int definition_number) {
-    Var_Def *vd = program->vars[definition_number];
-
-    return is_complex_type(program, vd->type_def_num);
-}
-
-
 bool Var_Scope_Analyzer::contains_var(Token *token, unsigned int var_def_num) {
     if ((token->type == Token_Type::VAR_CALL) && (token->definition_number == (signed)var_def_num)) {
         return true;

@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include "Common.hpp"
 #include "LexParser.hpp"
-#include "Var_Scope_Analyzer.hpp"
+#include "Type_Analyzer.hpp"
 
 class Internal_Type { public: enum Type { ERROR, VOID, BOOL, INT, CHAR, FLOAT, DOUBLE, UINT, STRING, POINTER, OBJECT }; };
 

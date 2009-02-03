@@ -5,6 +5,7 @@
 #define ANALYZER_HPP_
 
 #include "Common.hpp"
+#include "Type_Analyzer.hpp"
 
 class Var_Scope_Analyzer {
     int next_continuation;
@@ -34,8 +35,5 @@ public:
 
     Var_Scope_Analyzer() : next_continuation(0), next_deletion(0){ }
 };
-
-bool is_complex_type(Program *program, unsigned int type_def_num);
-bool is_complex_var(Program *program, unsigned int definition_number) ;
 
 #endif /* ANALYZER_HPP_ */
