@@ -1501,6 +1501,18 @@ void Type_Analyzer::analyze_token_types(Program *program, Token *token, Scope *s
         }
         else if (token->contents == "<+") {
             //Melding operator
+            if (token->children[0]->type_def_num == (signed)program->global->local_types["var"]) {
+                token->children[0]->type_def_num = (signed)program->global->local_types["object"];
+
+                if (token->children[0]->definition_number != -1) {
+                    //Set the actual type of the implied type based on the witness of the rhs
+                    Var_Def *vd = program->vars[token->children[0]->definition_number];
+                    vd->type_def_num = (signed)program->global->local_types["object"];
+                }
+
+                token->type_def_num = token->children[0]->type_def_num;
+            }
+
             if ((token->children[0]->type_def_num < (signed)program->global->local_types["object"]) ||
                     (program->types[token->children[0]->type_def_num]->token->type == Token_Type::ACTOR_DEF) ||
                     (program->types[token->children[0]->type_def_num]->token->type == Token_Type::ISOLATED_ACTOR_DEF)){
@@ -1513,6 +1525,7 @@ void Type_Analyzer::analyze_token_types(Program *program, Token *token, Scope *s
                 throw Compiler_Exception("Object or feature expected on right hand side of meld operator", token->children[1]->start_pos,
                         token->children[1]->end_pos);
             }
+
             token->type_def_num = token->children[0]->type_def_num;
             return;
         }

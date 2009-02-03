@@ -110,9 +110,8 @@ public:
         ta.analyze_var_type_and_scope(p, t, p->global);
         ta.analyze_stacked_fun_call(p, t, p->global);
 
-        //debug_print_def(p, t, "");
-
         ta.analyze_token_types(p, t, p->global);
+        //debug_print_def(p, t, "");
 
         an.analyze_ports_of_entry(p, t, NULL, p->global, false, false);
         ta.analyze_implied_this(p, t, p->global);

@@ -1,0 +1,12 @@
+feature Bob
+  x:int
+end
+
+action main
+  $b = new Bob()
+  b.x = 5
+
+  $x <+ b
+  print(x.Bob.x)
+  Sys.exit()
+end
