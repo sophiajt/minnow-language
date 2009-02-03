@@ -113,16 +113,25 @@ public:
         ta.analyze_token_types(p, t, p->global);
         //debug_print_def(p, t, "");
 
-        an.analyze_ports_of_entry(p, t, NULL, p->global, false, false);
-        ta.analyze_implied_this(p, t, p->global);
-        ta.analyze_return_calls(p, t, 0);
+        for (unsigned int j = 0; j < p->funs.size(); ++j) {
+            Function_Def *fd = p->funs[j];
+            if ((fd->is_internal == false) && (fd->external_name == "")) {
+                an.analyze_ports_of_entry(p, fd->token, NULL, fd->token->scope, false, false);
+                ta.analyze_implied_this(p, fd->token, fd->token->scope);
+                ta.analyze_return_calls(p, fd->token, 0);
+            }
+        }
 
         an.analyze_var_visibility(p, t);
-        an.analyze_freeze_resume(p, t, p->global);
-        an.analyze_copy_delete(p, t, NULL, p->global);
 
-        an.analyze_usage_extents(p, t, NULL, p->global);
-        an.analyze_usage_extent_colors(p);
+        for (unsigned int j = 0; j < p->funs.size(); ++j) {
+            Function_Def *fd = p->funs[j];
+
+            if ((fd->is_internal == false) && (fd->external_name == "")) {
+                an.analyze_freeze_resume(p, fd->token, fd->token->scope);
+                an.analyze_copy_delete(p, fd->token, NULL, fd->token->scope);
+            }
+        }
 
         //debug_print_extents(p);
 

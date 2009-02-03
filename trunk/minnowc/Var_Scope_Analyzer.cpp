@@ -575,10 +575,12 @@ Token *Var_Scope_Analyzer::analyze_ports_of_entry(Program *program, Token *token
 
         analyze_ports_of_entry(program, token->children[2], bounds, scope, false, false);
     }
+    /*
     else if ((token->type == Token_Type::FEATURE_DEF) || (token->type == Token_Type::ACTOR_DEF) ||
             (token->type == Token_Type::ISOLATED_ACTOR_DEF)) {
         analyze_ports_of_entry(program, token->children[2], bounds, scope, false, false);
     }
+    */
     else if (token->type == Token_Type::EXTERN_FUN_DEF) {
         //do nothing
     }
@@ -844,6 +846,7 @@ void Var_Scope_Analyzer::analyze_freeze_resume(Program *program, Token *token, S
             analyze_freeze_resume(program, token->children[2], scope);
         }
     }
+    /*
     else if ((token->type == Token_Type::FEATURE_DEF) || (token->type == Token_Type::ACTOR_DEF) ||
             (token->type == Token_Type::ISOLATED_ACTOR_DEF)) {
 
@@ -851,6 +854,7 @@ void Var_Scope_Analyzer::analyze_freeze_resume(Program *program, Token *token, S
             analyze_freeze_resume(program, token->children[2], scope);
         }
     }
+    */
     else {
         if ((token->type == Token_Type::EXTERN_FUN_DEF) || (token->type == Token_Type::ACTION_CALL)) {
 
@@ -1422,10 +1426,12 @@ void Var_Scope_Analyzer::analyze_copy_delete(Program *program, Token *token, Tok
             }
         }
     }
+    /*
     else if ((token->type == Token_Type::FEATURE_DEF) || (token->type == Token_Type::ACTOR_DEF) ||
             (token->type == Token_Type::ISOLATED_ACTOR_DEF)) {
         analyze_copy_delete(program, token->children[2], bounds, scope);
     }
+    */
     else {
         if (token->type == Token_Type::BLOCK) {
             unsigned int i = 0;
