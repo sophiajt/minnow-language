@@ -1,0 +1,20 @@
+feature Feature1
+  x:int
+  def Feature1(val:int)
+    x = val
+  end
+end
+
+feature Feature2
+  y:int
+  def Feature2(val:int)
+    y = val
+  end
+end
+
+action main
+  $o <+ new Feature1(10) <+ new Feature2(20)
+  print(o.Feature1.x)
+  print(o.Feature2.y)
+  Sys.exit()
+end
