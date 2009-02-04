@@ -1,0 +1,18 @@
+feature Bob
+  x : Array[int]
+
+  def Bob
+    x = [1, 2, 3]
+    for $i = 0 to x.size()-1
+      print(this.x[i])
+    end
+  end
+end
+
+
+action main
+  b : Bob = new Bob()
+  print(b.x[1])
+  Sys.exit()
+end
+

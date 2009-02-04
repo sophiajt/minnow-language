@@ -1205,6 +1205,7 @@ void Type_Analyzer::check_fun_call(Program *program, Token *token, Scope *fun_sc
         return;
     }
 
+    /*
     def_num = build_or_find_fun_variant(program, token, fun_scope);
 
     if (def_num != -1) {
@@ -1215,6 +1216,7 @@ void Type_Analyzer::check_fun_call(Program *program, Token *token, Scope *fun_sc
         fd->is_used = true;
         return;
     }
+    */
 
     throw Compiler_Exception("Can not find usage of '" + fullname.substr(0, fullname.find("__")) + "'",
             token->start_pos, token->end_pos);
@@ -1274,6 +1276,25 @@ void Type_Analyzer::analyze_token_types(Program *program, Token *token, Scope *s
                                 token->children[1]->end_pos);
                     }
 
+                    return;
+                }
+                else if (token->children[1]->type == Token_Type::ARRAY_CALL) {
+                    // this part of the tree is coming to us with the dot on top, but instead should have the array call on top
+                    Token *prev_lhs = token->children[0];
+                    Token *prev_rhs = token->children[1]->children[0];
+
+                    Token *new_dot = new Token(Token_Type::SYMBOL);
+                    new_dot->contents = ".";
+                    new_dot->start_pos = prev_lhs->start_pos;
+                    new_dot->end_pos = prev_rhs->end_pos;
+                    new_dot->children.push_back(prev_lhs);
+                    new_dot->children.push_back(prev_rhs);
+
+                    *token = *token->children[1];
+                    token->children[0] = new_dot;
+
+                    //Since we're all fixed, reanalyze ourselves
+                    analyze_token_types(program, token, scope);
                     return;
                 }
                 else {
@@ -1348,33 +1369,6 @@ void Type_Analyzer::analyze_token_types(Program *program, Token *token, Scope *s
 
                     token->type = Token_Type::ATTRIBUTE_CALL;
                 }
-
-                else if (token->children[1]->type == Token_Type::ARRAY_CALL) {
-                    analyze_token_types(program, token->children[0], scope);
-                    Type_Def *dot_type = program->types[token->children[0]->type_def_num];
-                    //Scope *dot_scope = dot_type->token->scope;
-
-                    if (((dot_type->token->type == Token_Type::ACTOR_DEF) || (dot_type->token->type == Token_Type::ACTOR_DEF)) && (token->children[0]->type != Token_Type::THIS)) {
-                        throw Compiler_Exception("Actor attributes can not be accessed directly, use actions instead",
-                                token->children[1]->start_pos, token->children[1]->end_pos);
-                    }
-
-                    // this part of the tree is coming to us with the dot on top, but instead should have the array call on top
-                    Token *prev_lhs = token->children[0];
-                    Token *prev_rhs = token->children[1]->children[0];
-
-                    Token *new_dot = new Token(Token_Type::ATTRIBUTE_CALL);
-                    new_dot->start_pos = prev_lhs->start_pos;
-                    new_dot->end_pos = prev_rhs->end_pos;
-                    new_dot->children.push_back(prev_lhs);
-                    new_dot->children.push_back(prev_rhs);
-
-                    *token = *token->children[1];
-                    token->children[0] = new_dot;
-
-                    //token->type = Token_Type::IBUTE_ARRAY_CALL;
-                }
-
             }
             else {
                 analyze_token_types(program, token->children[0], scope);

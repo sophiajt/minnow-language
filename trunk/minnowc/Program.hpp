@@ -104,6 +104,18 @@ public:
         delete_fd->arg_def_nums.push_back(global->local_types["int"]);
         delete_fd->token = new Token(Token_Type::FUN_DEF);
 
+        //Add a check for null method for each type
+        Function_Def *null_check = new Function_Def(true);
+        null_check->return_type_def_num = global->local_types["bool"];
+        null_check->is_port_of_exit = false;
+        null_check->token = new Token(Token_Type::FUN_DEF);
+
+        //Also add "exists", the compliment of is_null, and easier to type
+        Function_Def *exists_check = new Function_Def(true);
+        exists_check->return_type_def_num = global->local_types["bool"];
+        exists_check->is_port_of_exit = false;
+        exists_check->token = new Token(Token_Type::FUN_DEF);
+
         funs.push_back(push_fd);
         owner->token->scope->local_funs[push_name.str()] = funs.size() - 1;
         funs.push_back(pop_fd);
@@ -116,6 +128,10 @@ public:
         owner->token->scope->local_funs[insert_name.str()] = funs.size() - 1;
         funs.push_back(delete_fd);
         owner->token->scope->local_funs[delete_name.str()] = funs.size() - 1;
+        funs.push_back(null_check);
+        owner->token->scope->local_funs["is_null"] = funs.size() - 1;
+        funs.push_back(exists_check);
+        owner->token->scope->local_funs["exists"] = funs.size() - 1;
 
     }
 
