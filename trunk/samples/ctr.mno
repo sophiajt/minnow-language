@@ -7,5 +7,6 @@ end
 
 action main
   z : Bob = new Bob(3)
-  z.y
+  print(z.y)
+  Sys.exit()
 end

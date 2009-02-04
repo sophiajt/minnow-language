@@ -1847,6 +1847,9 @@ void Codegen::codegen_constructor_not_internal_decl(Program *p, Token *t, std::o
                         codegen_default_value(p, p->vars[iter->second]->type_def_num, output);
                         output << ";" << std::endl;
                     }
+                    output << "switch (cont_id__) {" << std::endl;
+                    output << " case(0) : " << std::endl;
+                    output << " case(1) : " << std::endl;
                     output << "fun__" << i << "(m__, ret_val__";
                     if (argsize > 0) {
                         output << ", ";
@@ -1858,7 +1861,11 @@ void Codegen::codegen_constructor_not_internal_decl(Program *p, Token *t, std::o
                         output << " var__" << fd->arg_def_nums[j];
                     }
                     output << ");" << std::endl;
-
+                    output << "if (((Actor__*)m__->recipient)->timeslice_remaining == 0) {" << std::endl;
+                    output << "  cont_id__ = 1;" <<std::endl;
+                    output << "  push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &cont_id__);" << std::endl;
+                    output << "  return NULL;" << std::endl;
+                    output << "}" << std::endl;
                     output << "add_actor_to_sched__((Scheduler__*)m__->sched, (Actor__*)ret_val__);" << std::endl;
                 }
                 else if (scope->owner->type == Token_Type::ISOLATED_ACTOR_DEF) {
@@ -1875,6 +1882,9 @@ void Codegen::codegen_constructor_not_internal_decl(Program *p, Token *t, std::o
                         codegen_default_value(p, p->vars[iter->second]->type_def_num, output);
                         output << ";" << std::endl;
                     }
+                    output << "switch (cont_id__) {" << std::endl;
+                    output << " case(0) : " << std::endl;
+                    output << " case(1) : " << std::endl;
                     output << "fun__" << i << "(m__, ret_val__";
                     if (argsize > 0) {
                         output << ", ";
@@ -1886,6 +1896,11 @@ void Codegen::codegen_constructor_not_internal_decl(Program *p, Token *t, std::o
                         output << " var__" << fd->arg_def_nums[j];
                     }
                     output << ");" << std::endl;
+                    output << "if (((Actor__*)m__->recipient)->timeslice_remaining == 0) {" << std::endl;
+                    output << "  cont_id__ = 1;" <<std::endl;
+                    output << "  push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &cont_id__);" << std::endl;
+                    output << "  return NULL;" << std::endl;
+                    output << "}" << std::endl;
                     output << "Message__ *msg__ = get_msg_from_cache__(m__->sched);" << std::endl;
                     output << "msg__->message_type = MESSAGE_TYPE_CREATE_ISOLATED_ACTOR;" << std::endl;
                     output << "msg__->args[0].VoidPtr = ret_val__;" << std::endl;
@@ -1914,6 +1929,9 @@ void Codegen::codegen_constructor_not_internal_decl(Program *p, Token *t, std::o
                         output << ";" << std::endl;
                     }
 
+                    output << "switch (cont_id__) {" << std::endl;
+                    output << " case(0) : " << std::endl;
+                    output << " case(1) : " << std::endl;
                     output << "fun__" << i << "(m__, ret_val__";
                     if (argsize > 0) {
                         output << ", ";
@@ -1925,7 +1943,13 @@ void Codegen::codegen_constructor_not_internal_decl(Program *p, Token *t, std::o
                         output << " var__" << fd->arg_def_nums[j];
                     }
                     output << ");" << std::endl;
+                    output << "if (((Actor__*)m__->recipient)->timeslice_remaining == 0) {" << std::endl;
+                    output << "  cont_id__ = 1;" <<std::endl;
+                    output << "  push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &cont_id__);" << std::endl;
+                    output << "  return NULL;" << std::endl;
+                    output << "}" << std::endl;
                 }
+                output << "}" << std::endl;
                 output << "return ret_val__;" << std::endl << "}" << std::endl;
             }
         }
