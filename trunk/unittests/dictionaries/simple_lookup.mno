@@ -1,0 +1,6 @@
+action main
+  x : Dict[int] = new Dict[int]
+  x["bob"] = 3
+  print(x["bob"])
+  Sys.exit()
+end

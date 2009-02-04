@@ -10,6 +10,9 @@ void Codegen::codegen_typesig(Program *p, unsigned int type_def_num, std::ostrin
     if (td->container == Container_Type::ARRAY) {
         output << "Typeless_Vector__*";
     }
+    else if (td->container == Container_Type::DICT) {
+        output << "Typeless_Dictionary__*";
+    }
     else if (td->is_internal) {
         switch (internal_type_map[type_def_num]) {
             case (Internal_Type::VOID) : output << "void"; break;
@@ -37,6 +40,9 @@ void Codegen::codegen_typesig_no_tail(Program *p, unsigned int type_def_num, std
 
     if (td->container == Container_Type::ARRAY) {
         output << "Typeless_Vector__";
+    }
+    else if (td->container == Container_Type::DICT) {
+        output << "Typeless_Dictionary__";
     }
     else if (td->is_internal) {
         switch (internal_type_map[type_def_num]) {
@@ -66,6 +72,9 @@ void Codegen::codegen_tu_typesig(Program *p, unsigned int type_def_num, std::ost
     if (td->container == Container_Type::ARRAY) {
         output << "VoidPtr";
     }
+    else if (td->container == Container_Type::DICT) {
+        output << "VoidPtr";
+    }
     else if (td->is_internal) {
         switch (internal_type_map[type_def_num]) {
             case (Internal_Type::BOOL) : output << "Bool"; break;
@@ -90,6 +99,9 @@ void Codegen::codegen_tu_typesig(Program *p, unsigned int type_def_num, std::ost
 void Codegen::codegen_default_value(Program *p, unsigned int type_def_num, std::ostringstream &output) {
     Type_Def *td = p->types[type_def_num];
     if (td->container == Container_Type::ARRAY) {
+        output << "NULL";
+    }
+    else if (td->container == Container_Type::DICT) {
         output << "NULL";
     }
     else if (td->is_internal) {
@@ -1260,13 +1272,25 @@ void Codegen::codegen_array_call(Program *p, Token *t, std::ostringstream &outpu
         throw Compiler_Exception("Internal compiler error with array call", t->start_pos);
     }
     */
-    output << "INDEX_AT__(";
-    codegen_token(p, t->children[0], output);
-    output << ", ";
-    codegen_token(p, t->children[1], output);
-    output << ", ";
-    codegen_typesig(p, t->type_def_num, output);
-    output << ")";
+    Type_Def *td = p->types[t->children[0]->type_def_num];
+    if (td->container == Container_Type::ARRAY) {
+        output << "INDEX_AT__(";
+        codegen_token(p, t->children[0], output);
+        output << ", ";
+        codegen_token(p, t->children[1], output);
+        output << ", ";
+        codegen_typesig(p, t->type_def_num, output);
+        output << ")";
+    }
+    else if (td->container == Container_Type::DICT) {
+        output << "DICT_LOOKUP_AT__(";
+        codegen_token(p, t->children[0], output);
+        output << ", ";
+        codegen_token(p, t->children[1], output);
+        output << ", ";
+        codegen_typesig(p, t->type_def_num, output);
+        output << ")";
+    }
 }
 
 void Codegen::codegen_new(Program *p, Token *t, std::ostringstream &output) {
@@ -1292,6 +1316,11 @@ void Codegen::codegen_new(Program *p, Token *t, std::ostringstream &output) {
         output << "create_typeless_vector__(sizeof(";
         codegen_typesig(p, td->contained_type_def_nums[0], output);
         output << "), 0)";
+    }
+    else if (td->container == Container_Type::DICT) {
+        output << "create_typeless_dictionary__(sizeof(";
+        codegen_typesig(p, td->contained_type_def_nums[0], output);
+        output << "))";
     }
 }
 

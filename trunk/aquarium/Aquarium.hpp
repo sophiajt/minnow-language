@@ -6,6 +6,7 @@
 
 #include "Common.hpp"
 #include "Typeless_Vector.hpp"
+#include "Typeless_Dictionary.hpp"
 #include "Char_String.hpp"
 #include "Actor.hpp"
 #include "Object_Feature.hpp"
