@@ -153,6 +153,9 @@ void Codegen::codegen_fun_call(Program *p, Token *t, std::ostringstream &output)
                 }
             }
         }
+        else if (t->children[0]->contents == "print") {
+            output << "print_enum_" << t->children[1]->type_def_num << "__(var__" << t->children[1]->definition_number << ")";
+        }
     }
     else if (fd->external_name != "") {
         output << fd->external_name << "(";
@@ -2589,6 +2592,25 @@ void Codegen::codegen_array_concat_decl(Program *p, std::ostringstream &output) 
     output << "}" << std::endl;
 }
 
+void Codegen::codegen_enum_pretty_print(Program *p, Token *t, std::ostringstream &output) {
+
+    for (unsigned int i = 0; i < p->types.size(); ++i) {
+        Type_Def *td = p->types[i];
+        if (td->token != NULL) {
+            if (td->token->type == Token_Type::ENUM_DEF) {
+
+                output << "void print_enum_" << i << "__(int val) {" << std::endl;
+                output << "  switch(val) {" << std::endl;
+                for (unsigned int j = 2; j < td->token->children.size(); ++j) {
+                    output << "  case(" << j-2 << "): printf(\""<< td->token->children[j]->contents << "\"); break;" << std::endl;
+                }
+                output << "  }" << std::endl;
+                output << "}" << std::endl;
+            }
+        }
+    }
+}
+
 void Codegen::codegen(Program *p, Token *t, std::ostringstream &output) {
     internal_type_map[p->global->local_types["void"]] = Internal_Type::VOID;
     internal_type_map[p->global->local_types["int"]] = Internal_Type::INT;
@@ -2603,7 +2625,9 @@ void Codegen::codegen(Program *p, Token *t, std::ostringstream &output) {
 
     output << "#include <Aquarium.hpp>" << std::endl;
     output << "#include <math.h>" << std::endl;
+    output << "#include <stdio.h>" << std::endl;
 
+    codegen_enum_pretty_print(p, t, output);
     codegen_class_predecl(p, t, output);
     codegen_constructor_internal_predecl(p, t, output);
     codegen_constructor_not_internal_predecl(p, t, output);

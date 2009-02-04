@@ -2,7 +2,7 @@ namespace NS
 enum Bob(Fred, Sam)
 namespace global
 
-def print(x : NS.Bob)
+def printme(x : NS.Bob)
   if (x == NS.Bob.Fred) 
     print("NS.Bob.Fred")
   elseif (x == NS.Bob.Sam)
@@ -12,6 +12,6 @@ end
 
 action main
   x : var = NS.Bob.Fred
-  print(x)
+  printme(x)
   Sys.exit()
 end

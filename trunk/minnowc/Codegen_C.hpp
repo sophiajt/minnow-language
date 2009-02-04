@@ -82,6 +82,8 @@ public:
 
     void codegen_main_action(Program *p, std::ostringstream &output);
 
+    void codegen_enum_pretty_print(Program *p, Token *t, std::ostringstream &output);
+
     void codegen(Program *p, Token *t, std::ostringstream &output);
 
     Codegen() : cont_id(0), temp_num(0) { break_jmp_name = ""; catch_jmp_name = ""; }

@@ -645,6 +645,16 @@ void Type_Analyzer::analyze_type_blocks(Program *program, Token *token, Scope **
                 token->definition_number = program->types.size() - 1;
                 (*scope)->local_types[td->token->children[1]->contents] = program->types.size() - 1;
                 program->build_internal_func(token->definition_number, token->definition_number, program->global->local_types["bool"], "==");
+
+                Function_Def *print_fd = new Function_Def();
+                print_fd->token = new Token(Token_Type::FUN_DEF);
+                print_fd->is_internal = true;
+                print_fd->arg_def_nums.push_back(token->definition_number);
+                print_fd->return_type_def_num = program->global->local_types["void"];
+                std::ostringstream print_name;
+                print_name << "print__" << token->definition_number;
+                program->funs.push_back(print_fd);
+                program->global->local_funs[print_name.str()] = program->funs.size() - 1;
             }
         }
         break;
