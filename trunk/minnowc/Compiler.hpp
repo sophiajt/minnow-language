@@ -114,6 +114,7 @@ public:
 
         ta.analyze_token_types(p, t, p->global);
         //debug_print_def(p, t, "");
+        //debug_print_vars(p, t);
 
         for (unsigned int j = 0; j < p->funs.size(); ++j) {
             Function_Def *fd = p->funs[j];

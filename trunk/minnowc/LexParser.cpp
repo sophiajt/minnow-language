@@ -356,9 +356,11 @@ Token *Lex_Parser::lexparse_quoted_string(std::string::iterator &curr, std::stri
         ++curr;
         ++p.col;
     }
+    /*
     if (contents.length() == 0) {
         throw Compiler_Exception("Empty quoted string not allowed", start, p);
     }
+    */
 
     Token *t = new Token(Token_Type::QUOTED_STRING_CONST, contents, start, p);
     return t;

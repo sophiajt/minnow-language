@@ -1,0 +1,16 @@
+feature Bob
+  x : Array[int]
+
+  def Bob
+    x = [1, 2, 3]
+    print(this.x[1])
+  end
+end
+
+
+action main
+  b : Bob = new Bob()
+  print(b.x[1])
+  Sys.exit()
+end
+

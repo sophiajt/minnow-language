@@ -1,5 +1,6 @@
 enum Color(red, blue, yellow)
 
+/*
 def print(c : Color)
   if (c == Color.red)
     print("red")
@@ -9,6 +10,7 @@ def print(c : Color)
     print("yellow")
   end
 end
+*/
 
 def compliment(c1 : Color, c2 : Color) : Color
   if (c1 == Color.blue)

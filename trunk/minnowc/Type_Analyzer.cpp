@@ -1336,20 +1336,6 @@ void Type_Analyzer::analyze_token_types(Program *program, Token *token, Scope *s
                     //This is a referenced feature, special case
                     token->type = Token_Type::REFERENCE_FEATURE;
                 }
-                /*
-                else if (token->children[1]->type == Token_Type::FUN_CALL) {
-                    analyze_token_types(program, token->children[0], scope);
-                    Type_Def *dot_type = program->types[token->children[0]->type_def_num];
-                    Scope *dot_scope = dot_type->token->scope;
-
-                    if ((dot_type->token->type == Token_Type::ACTOR_DEF) && (token->children[0]->type != Token_Type::THIS)) {
-                        throw Compiler_Exception("Actor methods can not be accessed directly, use actions instead", token->children[1]->start_pos);
-                    }
-
-                    token->contents = token->children[1]->contents;
-                    token->type = Token_Type::METHOD_CALL;
-                }
-                */
                 else if (token->children[1]->type == Token_Type::VAR_CALL) {
                     analyze_token_types(program, token->children[0], scope);
                     Type_Def *dot_type = program->types[token->children[0]->type_def_num];
@@ -1362,6 +1348,33 @@ void Type_Analyzer::analyze_token_types(Program *program, Token *token, Scope *s
 
                     token->type = Token_Type::ATTRIBUTE_CALL;
                 }
+
+                else if (token->children[1]->type == Token_Type::ARRAY_CALL) {
+                    analyze_token_types(program, token->children[0], scope);
+                    Type_Def *dot_type = program->types[token->children[0]->type_def_num];
+                    //Scope *dot_scope = dot_type->token->scope;
+
+                    if (((dot_type->token->type == Token_Type::ACTOR_DEF) || (dot_type->token->type == Token_Type::ACTOR_DEF)) && (token->children[0]->type != Token_Type::THIS)) {
+                        throw Compiler_Exception("Actor attributes can not be accessed directly, use actions instead",
+                                token->children[1]->start_pos, token->children[1]->end_pos);
+                    }
+
+                    // this part of the tree is coming to us with the dot on top, but instead should have the array call on top
+                    Token *prev_lhs = token->children[0];
+                    Token *prev_rhs = token->children[1]->children[0];
+
+                    Token *new_dot = new Token(Token_Type::ATTRIBUTE_CALL);
+                    new_dot->start_pos = prev_lhs->start_pos;
+                    new_dot->end_pos = prev_rhs->end_pos;
+                    new_dot->children.push_back(prev_lhs);
+                    new_dot->children.push_back(prev_rhs);
+
+                    *token = *token->children[1];
+                    token->children[0] = new_dot;
+
+                    //token->type = Token_Type::IBUTE_ARRAY_CALL;
+                }
+
             }
             else {
                 analyze_token_types(program, token->children[0], scope);
@@ -1873,6 +1886,10 @@ void Type_Analyzer::analyze_implied_this(Program *program, Token *token, Scope *
             }
             throw Compiler_Exception("Internal error involving implied 'this'", token->start_pos, token->end_pos);
         }
+    }
+    else if (token->type == Token_Type::ATTRIBUTE_CALL) {
+        //only allow it to go left, since we know the rhs is correct already
+        analyze_implied_this(program, token->children[0], scope);
     }
     else if ((token->type == Token_Type::ACTION_DEF) || (token->type == Token_Type::FUN_DEF)) {
         for (unsigned int i = 2; i < token->children.size(); ++i) {

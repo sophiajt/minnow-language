@@ -136,12 +136,16 @@ public:
         definition_number = t.definition_number;
         type_def_num = t.type_def_num;
         //todo: what do I do with this?!
+        scope = t.scope;
+        /*
         if (t.scope == NULL) {
             scope = t.scope;
         }
         else {
             scope = new class Scope(*(t.scope));
         }
+        */
+
     }
     //todo: I should probably have something like this, but before I add it I want to make sure I don't share references
     /*
