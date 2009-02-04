@@ -1832,6 +1832,11 @@ void Codegen::codegen_constructor_not_internal_decl(Program *p, Token *t, std::o
 
                 output << "unsigned int cont_id__ = 0;" << std::endl;
                 output << "unsigned int timeslice__ = ((Actor__*)m__->recipient)->timeslice_remaining;" << std::endl;
+                output << "if (((Actor__*)m__->recipient)->continuation_stack->current_size > 0) {" << std::endl;
+                output << "  cont_id__ = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack, ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, unsigned int);" << std::endl;
+                output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
+                output << "}" << std::endl;
+
 
                 if (scope->owner->type == Token_Type::ACTOR_DEF) {
                     codegen_typesig(p, scope->owner->definition_number, output);

@@ -1,0 +1,12 @@
+actor Long
+  def Long
+    for $i = 1 to 5000
+      print(i)
+    end
+  end
+end
+
+action main
+  l : Long = spawn Long()
+  Sys.exit()
+end

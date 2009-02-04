@@ -126,6 +126,7 @@ public:
         }
 
         an.analyze_var_visibility(p, t);
+        //debug_print_def(p, t, "");
 
         for (unsigned int j = 0; j < p->funs.size(); ++j) {
             Function_Def *fd = p->funs[j];

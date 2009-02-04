@@ -861,12 +861,21 @@ void Var_Scope_Analyzer::analyze_freeze_resume(Program *program, Token *token, S
         }
 
 
-        else if ((token->type == Token_Type::FUN_CALL) || (token->type == Token_Type::METHOD_CALL)) {
+        else if ((token->type == Token_Type::FUN_CALL) || (token->type == Token_Type::METHOD_CALL) || (token->type == Token_Type::NEW_ALLOC) ||
+                (token->type == Token_Type::SPAWN_ACTOR)) {
             Function_Def *fun_call;
             if (token->type == Token_Type::FUN_CALL) {
                 fun_call = program->funs[token->definition_number];
             }
             else if (token->type == Token_Type::METHOD_CALL) {
+                fun_call = program->funs[token->children[1]->definition_number];
+                //fun_call = program->funs[token->definition_number];
+            }
+            else if (token->type == Token_Type::NEW_ALLOC) {
+                fun_call = program->funs[token->children[1]->definition_number];
+                //fun_call = program->funs[token->definition_number];
+            }
+            else if (token->type == Token_Type::SPAWN_ACTOR) {
                 fun_call = program->funs[token->children[1]->definition_number];
                 //fun_call = program->funs[token->definition_number];
             }
@@ -902,7 +911,8 @@ void Var_Scope_Analyzer::analyze_freeze_resume(Program *program, Token *token, S
         }
         else if ((token->children.size() > 1) &&
                 ((token->type == Token_Type::SYMBOL)) &&
-                ((token->children[1]->type == Token_Type::FUN_CALL) || (token->children[1]->type == Token_Type::METHOD_CALL)) ) {
+                ((token->children[1]->type == Token_Type::FUN_CALL) || (token->children[1]->type == Token_Type::METHOD_CALL) ||
+                        (token->children[1]->type == Token_Type::NEW_ALLOC) || (token->children[1]->type == Token_Type::SPAWN_ACTOR)) ) {
 
             Function_Def *fun_call;
             if (token->children[1]->type == Token_Type::FUN_CALL) {
@@ -911,6 +921,12 @@ void Var_Scope_Analyzer::analyze_freeze_resume(Program *program, Token *token, S
             else if (token->children[1]->type == Token_Type::METHOD_CALL) {
                 fun_call = program->funs[token->children[1]->children[1]->definition_number];
                 //fun_call = program->funs[token->children[1]->definition_number];
+            }
+            else if (token->children[1]->type == Token_Type::NEW_ALLOC) {
+                fun_call = program->funs[token->children[1]->children[1]->definition_number];
+            }
+            else if (token->children[1]->type == Token_Type::SPAWN_ACTOR) {
+                fun_call = program->funs[token->children[1]->children[1]->definition_number];
             }
             else {
                 throw Compiler_Exception("Internal error in freeze resume symbol analysis", token->start_pos, token->end_pos);
