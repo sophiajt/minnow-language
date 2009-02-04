@@ -154,7 +154,9 @@ void Codegen::codegen_fun_call(Program *p, Token *t, std::ostringstream &output)
             }
         }
         else if (t->children[0]->contents == "print") {
-            output << "print_enum_" << t->children[1]->type_def_num << "__(var__" << t->children[1]->definition_number << ")";
+            output << "print_enum_" << t->children[1]->type_def_num << "__(";
+            codegen_token(p, t->children[1], output);
+            output << ")";
         }
     }
     else if (fd->external_name != "") {
