@@ -2,7 +2,7 @@ action main
   $x = new Dict[int]
 
   x["5"] = 5
-  print(x.contains_key("4"))
-  print(x.contains_key("5"))
+  print(x.has_key("4"))
+  print(x.has_key("5"))
   Sys.exit()
 end

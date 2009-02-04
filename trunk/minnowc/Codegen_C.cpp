@@ -252,7 +252,7 @@ void Codegen::codegen_method_call(Program *p, Token *t, std::ostringstream &outp
             output << ").";
             codegen_tu_typesig(p, td->contained_type_def_nums[0], output);
         }
-        else if ((child->children[0]->contents == "contains_key") && (td->container == Container_Type::DICT)) {
+        else if ((child->children[0]->contents == "has_key") && (td->container == Container_Type::DICT)) {
             output << "contains_key_in_dictionary__(";
             codegen_token(p, t->children[0], output);
             output << ", ";

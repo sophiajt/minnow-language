@@ -136,7 +136,7 @@ public:
 
     void build_internal_dict_methods(Type_Def *owner, unsigned int type_def_num) {
         std::ostringstream contains_key_name;
-        contains_key_name << "contains_key__" << global->local_types["string"];
+        contains_key_name << "has_key__" << global->local_types["string"];
 
         Function_Def *contains_key_fd = new Function_Def(true);
         contains_key_fd->return_type_def_num = global->local_types["bool"];
