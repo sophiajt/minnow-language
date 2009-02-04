@@ -2351,7 +2351,8 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
                 for (std::map<std::string, unsigned int>::iterator iter = td->token->scope->local_vars.begin(),
                     end = td->token->scope->local_vars.end(); iter != end; ++iter) {
                     Var_Def *vd = p->vars[iter->second];
-                    if ((vd->type_def_num >= obj_id) || (vd->type_def_num == string_id)) {
+                    //if ((vd->type_def_num >= obj_id) || (vd->type_def_num == string_id)) {
+                    if (is_complex_var(p, iter->second)) {
                         output << "  ((";
                         codegen_typesig(p, i, output);
                         output << ")ret_val__)->var__" << iter->second << " = (";

@@ -92,6 +92,11 @@ def print(s : string)
   Sys.Externals.print_s__(s)
 end
 
+def printline(s : string)
+  Sys.Externals.print_s__(s)
+  Sys.Externals.print_s__("\n")
+end
+
 def print(d : double)
   Sys.Externals.print_d__(d)
 end
@@ -190,15 +195,22 @@ feature File
   handle : pointer
   filename : string
 
-  def open(fname : string, dir : Sys.Open_Mode)
+  def File()
+  end
+
+  def File(fname : string, direction : Sys.Open_Mode)
+    open(fname, direction)
+  end
+
+  def open(fname : string, direction : Sys.Open_Mode)
     o : object
     filename = fname
-    if (dir == Sys.Open_Mode.READ)
+    if (direction == Sys.Open_Mode.READ)
       handle = Sys.Externals.file_open_read_file_s__(fname)
       if (handle.is_null())
         throw(o <+ new File_Exception(filename, "Can not open file"))
       end
-    elseif (dir == Sys.Open_Mode.WRITE)
+    elseif (direction == Sys.Open_Mode.WRITE)
       handle = Sys.Externals.file_open_write_file_s__(fname)
       if (handle.is_null())
         throw(o <+ new File_Exception(filename, "Can not open file"))

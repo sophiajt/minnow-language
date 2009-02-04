@@ -11,7 +11,23 @@
 
 #define USE_MEMBLOCK_CACHE
 
-class Scope;
+class Token;
+
+class Scope {
+public:
+    Scope *parent;
+    std::map<std::string, unsigned int> local_funs;
+    std::map<std::string, unsigned int> local_types;
+    std::map<std::string, unsigned int> local_vars;
+    std::map<std::string, Scope*> namespaces;
+
+    Token *owner;  //For reverse lookup back to the owner of the scope
+
+    Scope() {
+        parent = NULL;
+        owner = NULL;
+    }
+};
 
 class Token_Type {
 public:
@@ -120,7 +136,12 @@ public:
         definition_number = t.definition_number;
         type_def_num = t.type_def_num;
         //todo: what do I do with this?!
-        scope = t.scope;
+        if (t.scope == NULL) {
+            scope = t.scope;
+        }
+        else {
+            scope = new class Scope(*(t.scope));
+        }
     }
     //todo: I should probably have something like this, but before I add it I want to make sure I don't share references
     /*
@@ -250,21 +271,7 @@ public:
         is_dependent(true), is_temporary(false), extent(NULL), extent_color(NULL) {}
 };
 
-class Scope {
-public:
-    Scope *parent;
-    std::map<std::string, unsigned int> local_funs;
-    std::map<std::string, unsigned int> local_types;
-    std::map<std::string, unsigned int> local_vars;
-    std::map<std::string, Scope*> namespaces;
 
-    Token *owner;  //For reverse lookup back to the owner of the scope
-
-    Scope() {
-        parent = NULL;
-        owner = NULL;
-    }
-};
 
 #include "Program.hpp"
 

@@ -1089,6 +1089,94 @@ int look_for_fun_call(Program *program, std::string fullname, Scope *fun_scope) 
     return -1;
 }
 
+//This isn't used yet.
+int clone_function_with_typeset(Program *program, Function_Def *fd, Scope *scope, std::vector<unsigned int> &types) {
+    //first, clone the function
+    Function_Def *clone_fd = new Function_Def(*fd);
+    clone_fd->token = new Token(*(fd->token));
+
+    //todo: this may not be sufficient
+    clone_fd->token->children[2]->scope = clone_fd->token->scope;
+
+    //then, clone the variables... all of them (just in case)
+    //the function parms:
+    /*
+    for (unsigned int i = 0; i < fd->arg_def_nums.size(); ++i) {
+        Var_Def *vd = program->vars[]
+    }
+    */
+
+    return 0;
+}
+
+int build_or_find_fun_variant(Program *program, Token *token, Scope *fun_scope) {
+    //make a list of functions named the same, with the same number of parameters:
+
+    std::vector<unsigned int> call_parms;
+    Token *child = token->children[1];
+    while (child->contents == ",") {
+        call_parms.insert(call_parms.begin(), child->children[1]->type_def_num);
+        child = child->children[0];
+    }
+    call_parms.insert(call_parms.begin(), child->type_def_num);
+
+    std::vector<Function_Def *> close_matches;
+    std::vector<Scope *> corresponding_scopes;
+    Scope *scope = fun_scope;
+
+    while (scope != NULL) {
+        for (std::map<std::string, unsigned int>::iterator iter = scope->local_funs.begin(), end = scope->local_funs.end(); iter != end; ++iter) {
+            Function_Def *fd = program->funs[iter->second];
+            if (fd->token != NULL) {
+                if ((fd->token->contents == token->children[0]->contents) && (fd->arg_def_nums.size() == call_parms.size())) {
+                    close_matches.push_back(fd);
+                    corresponding_scopes.push_back(scope);
+                }
+            }
+        }
+        scope = scope->parent;
+    }
+
+    if (close_matches.size() == 0) {
+        throw Compiler_Exception("No functions named '" + token->children[0]->contents + "' available", token->start_pos, token->end_pos);
+    }
+    else {
+        //now we should have an array we can match against
+        unsigned int implied_type = program->global->local_types["var"];
+
+        for (long long int l = 1, end = (1 << call_parms.size()); l != end; ++l) {
+            for (unsigned int match = 0; match < close_matches.size(); ++match) {
+                bool found_match = true;
+                Function_Def *fd_match = close_matches[match];
+                for (unsigned int arg = 0; arg < call_parms.size(); ++arg) {
+                    Var_Def *var_arg = program->vars[fd_match->arg_def_nums[arg]];
+
+                    if ( (l | (1 << arg)) != 0) {
+                        if (var_arg->type_def_num != (int)implied_type) {
+                            found_match = false;
+                            break;
+                        }
+                    }
+                    else {
+                        if (var_arg->type_def_num != (int)call_parms[arg]) {
+                            found_match = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (found_match) {
+                    std::cout << "Found match! " << close_matches[match] << std::endl;
+                }
+            }
+        }
+    }
+
+    return -1;
+}
+
+
+
 void Type_Analyzer::check_fun_call(Program *program, Token *token, Scope *fun_scope, Scope *parm_scope) {
     for (unsigned int i = 1; i < token->children.size(); ++i) {
         analyze_token_types(program, token->children[i], parm_scope);
@@ -1097,6 +1185,17 @@ void Type_Analyzer::check_fun_call(Program *program, Token *token, Scope *fun_sc
     std::string fullname = build_function_name(program, token, fun_scope);
 
     int def_num = look_for_fun_call(program, fullname, fun_scope);
+
+    if (def_num != -1) {
+        token->definition_number = def_num;
+        token->type_def_num = program->funs[token->definition_number]->return_type_def_num;
+
+        Function_Def *fd = program->funs[def_num];
+        fd->is_used = true;
+        return;
+    }
+
+    def_num = build_or_find_fun_variant(program, token, fun_scope);
 
     if (def_num != -1) {
         token->definition_number = def_num;
