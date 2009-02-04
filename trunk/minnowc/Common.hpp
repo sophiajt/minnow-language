@@ -198,7 +198,7 @@ public:
 
 class Container_Type {
     public:
-        enum Type { SCALAR, ARRAY, FUNCTOR };
+        enum Type { SCALAR, ARRAY, DICT, FUNCTOR };
 };
 
 class Type_Def {

@@ -2542,7 +2542,7 @@ void Codegen::codegen_main_action(Program *p, std::ostringstream &output) {
 
         //if the blank one isn't find, look for the commandline one
         std::ostringstream typename_t;
-        typename_t << "Con___" << p->global->local_types["string"];
+        typename_t << "Array___" << p->global->local_types["string"];
         std::map<std::string, unsigned int>::iterator iter_t = p->global->local_types.find(typename_t.str());
 
         if (iter_t == p->global->local_types.end()) {

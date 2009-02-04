@@ -139,38 +139,74 @@ unsigned int Type_Analyzer::find_type(Program *program, Token *ns, Scope *scope)
             if (ns->children.size() != 2) {
                 throw Compiler_Exception("Type incomplete", ns->start_pos, ns->end_pos);
             }
-            else if (ns->children[0]->contents != "Array") {
+            else if ((ns->children[0]->contents != "Array") && (ns->children[0]->contents != "Dict")) {
                 throw Compiler_Exception("Unsupported container type", ns->children[0]->start_pos, ns->children[0]->end_pos);
             }
             else {
                 std::ostringstream containername;
-                find_type(program, ns->children[1], scope);
 
-                containername << "Con___" << ns->children[1]->definition_number;
-                if (program->global->local_types.find(containername.str()) != program->global->local_types.end()) {
-                    ns->definition_number = program->global->local_types[containername.str()];
-                    ns->type_def_num = ns->definition_number;
-                    return ns->definition_number;
+                if (ns->children[0]->contents == "Array") {
+                    find_type(program, ns->children[1], scope);
+
+                    containername << "Array___" << ns->children[1]->definition_number;
+                    if (program->global->local_types.find(containername.str()) != program->global->local_types.end()) {
+                        ns->definition_number = program->global->local_types[containername.str()];
+                        ns->type_def_num = ns->definition_number;
+                        return ns->definition_number;
+                    }
+                    else {
+                        //It doesn't exist yet, so let's create it
+                        Type_Def *container = new Type_Def();
+                        container->container = Container_Type::ARRAY;
+                        container->contained_type_def_nums.push_back(ns->children[1]->type_def_num);
+                        container->token = new Token(Token_Type::EMPTY); //todo: set this to something reasonable
+                        container->token->scope = new Scope();
+                        container->token->scope->owner = container->token;
+                        program->types.push_back(container);
+
+                        unsigned int def_num = program->types.size() - 1;
+
+                        program->global->local_types[containername.str()] = def_num;
+                        ns->definition_number = def_num;
+                        ns->type_def_num = def_num;
+
+                        program->build_internal_array_methods(container, def_num);
+
+                        return ns->definition_number;
+                    }
+                }
+                else if (ns->children[0]->contents == "Dict") {
+                    find_type(program, ns->children[1], scope);
+
+                    containername << "Dict___" << ns->children[1]->definition_number;
+                    if (program->global->local_types.find(containername.str()) != program->global->local_types.end()) {
+                        ns->definition_number = program->global->local_types[containername.str()];
+                        ns->type_def_num = ns->definition_number;
+                        return ns->definition_number;
+                    }
+                    else {
+                        //It doesn't exist yet, so let's create it
+                        Type_Def *container = new Type_Def();
+                        container->container = Container_Type::DICT;
+                        container->contained_type_def_nums.push_back(ns->children[1]->type_def_num);
+                        container->token = new Token(Token_Type::EMPTY); //todo: set this to something reasonable
+                        container->token->scope = new Scope();
+                        container->token->scope->owner = container->token;
+                        program->types.push_back(container);
+
+                        unsigned int def_num = program->types.size() - 1;
+
+                        program->global->local_types[containername.str()] = def_num;
+                        ns->definition_number = def_num;
+                        ns->type_def_num = def_num;
+
+                        program->build_internal_array_methods(container, def_num);
+
+                        return ns->definition_number;
+                    }
                 }
                 else {
-                    //It doesn't exist yet, so let's create it
-                    Type_Def *container = new Type_Def();
-                    container->container = Container_Type::ARRAY;
-                    container->contained_type_def_nums.push_back(ns->children[1]->type_def_num);
-                    container->token = new Token(Token_Type::EMPTY); //todo: set this to something reasonable
-                    container->token->scope = new Scope();
-                    container->token->scope->owner = container->token;
-                    program->types.push_back(container);
-
-                    unsigned int def_num = program->types.size() - 1;
-
-                    program->global->local_types[containername.str()] = def_num;
-                    ns->definition_number = def_num;
-                    ns->type_def_num = def_num;
-
-                    program->build_internal_array_methods(container, def_num);
-
-                    return ns->definition_number;
+                    throw Compiler_Exception("Internal container type error", ns->children[0]->start_pos, ns->children[1]->end_pos);
                 }
             }
         }
@@ -180,7 +216,7 @@ unsigned int Type_Analyzer::find_type(Program *program, Token *ns, Scope *scope)
 
             contained_type = ns->children[0]->type_def_num;
 
-            containername << "Con___" << contained_type;
+            containername << "Array___" << contained_type;
             if (program->global->local_types.find(containername.str()) != program->global->local_types.end()) {
                 ns->definition_number = program->global->local_types[containername.str()];
                 ns->type_def_num = ns->definition_number;
@@ -304,38 +340,73 @@ void Type_Analyzer::find_constructor(Program *program, Token *ns, Scope *scope) 
             if (ns->children.size() != 2) {
                 throw Compiler_Exception("Type incomplete", ns->start_pos, ns->end_pos);
             }
-            else if (ns->children[0]->contents != "Array") {
+            else if ((ns->children[0]->contents != "Array") && (ns->children[0]->contents != "Dict")) {
                 throw Compiler_Exception("Unsupported container type", ns->children[0]->start_pos, ns->children[0]->end_pos);
             }
             else {
                 std::ostringstream containername;
-                find_type(program, ns->children[1], scope);
 
-                containername << "Con___" << ns->children[1]->definition_number;
-                if (program->global->local_types.find(containername.str()) != program->global->local_types.end()) {
-                    ns->definition_number = program->global->local_types[containername.str()];
-                    ns->type_def_num = ns->definition_number;
-                    //return ns->definition_number;
+                if (ns->children[0]->contents == "Array") {
+
+                    find_type(program, ns->children[1], scope);
+
+                    containername << "Array___" << ns->children[1]->definition_number;
+                    if (program->global->local_types.find(containername.str()) != program->global->local_types.end()) {
+                        ns->definition_number = program->global->local_types[containername.str()];
+                        ns->type_def_num = ns->definition_number;
+                        //return ns->definition_number;
+                    }
+                    else {
+                        //It doesn't exist yet, so let's create it
+                        Type_Def *container = new Type_Def();
+                        container->container = Container_Type::ARRAY;
+                        container->contained_type_def_nums.push_back(ns->children[1]->type_def_num);
+                        container->token = new Token(Token_Type::EMPTY); //todo: set this to something reasonable
+                        container->token->scope = new Scope();
+                        program->types.push_back(container);
+
+                        unsigned int def_num = program->types.size() - 1;
+
+                        program->global->local_types[containername.str()] = def_num;
+                        ns->definition_number = def_num;
+                        ns->type_def_num = def_num;
+
+                        program->build_internal_array_methods(container, def_num);
+
+                        //return ns->definition_number;
+                    }
                 }
-                else {
-                    //It doesn't exist yet, so let's create it
-                    Type_Def *container = new Type_Def();
-                    container->container = Container_Type::ARRAY;
-                    container->contained_type_def_nums.push_back(ns->children[1]->type_def_num);
-                    container->token = new Token(Token_Type::EMPTY); //todo: set this to something reasonable
-                    container->token->scope = new Scope();
-                    program->types.push_back(container);
+                else if (ns->children[0]->contents == "Dict") {
 
-                    unsigned int def_num = program->types.size() - 1;
+                    find_type(program, ns->children[1], scope);
 
-                    program->global->local_types[containername.str()] = def_num;
-                    ns->definition_number = def_num;
-                    ns->type_def_num = def_num;
+                    containername << "Dict___" << ns->children[1]->definition_number;
+                    if (program->global->local_types.find(containername.str()) != program->global->local_types.end()) {
+                        ns->definition_number = program->global->local_types[containername.str()];
+                        ns->type_def_num = ns->definition_number;
+                        //return ns->definition_number;
+                    }
+                    else {
+                        //It doesn't exist yet, so let's create it
+                        Type_Def *container = new Type_Def();
+                        container->container = Container_Type::DICT;
+                        container->contained_type_def_nums.push_back(ns->children[1]->type_def_num);
+                        container->token = new Token(Token_Type::EMPTY); //todo: set this to something reasonable
+                        container->token->scope = new Scope();
+                        program->types.push_back(container);
 
-                    program->build_internal_array_methods(container, def_num);
+                        unsigned int def_num = program->types.size() - 1;
 
-                    //return ns->definition_number;
+                        program->global->local_types[containername.str()] = def_num;
+                        ns->definition_number = def_num;
+                        ns->type_def_num = def_num;
+
+                        program->build_internal_array_methods(container, def_num);
+
+                        //return ns->definition_number;
+                    }
                 }
+
             }
         }
 
