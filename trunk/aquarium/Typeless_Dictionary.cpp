@@ -74,6 +74,15 @@ void *lookup_key_in_slot__(Typeless_Vector__ *slot, Typeless_Vector__ *key) {
     return &(INDEX_AT__(slot, slot->current_size-1, void*));
 }
 
+BOOL contains_key_in_slot__(Typeless_Vector__ *slot, Typeless_Vector__ *key) {
+    for (unsigned int i = 0; i < slot->current_size; ++i) {
+        if (compare_char_string__(INDEX_AT__(slot, i, Dict_Unit__).key, key) == 0) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 void *lookup_key_in_dictionary__(Typeless_Dictionary__ *container, Typeless_Vector__ *key) {
     unsigned int slot_index = hash_key__(key) % DEFAULT_TYPELESS_DICTIONARY_SIZE__;
 
@@ -84,5 +93,17 @@ void *lookup_key_in_dictionary__(Typeless_Dictionary__ *container, Typeless_Vect
     else {
         container->contents[slot_index] = create_typeless_vector__(sizeof(Dict_Unit__), 0);
         return lookup_key_in_slot__(container->contents[slot_index], key);
+    }
+}
+
+BOOL contains_key_in_dictionary__(Typeless_Dictionary__ *container, Typeless_Vector__ *key) {
+    unsigned int slot_index = hash_key__(key) % DEFAULT_TYPELESS_DICTIONARY_SIZE__;
+
+    Typeless_Vector__ *slot = container->contents[slot_index];
+    if (slot != NULL) {
+        return contains_key_in_slot__(slot, key);
+    }
+    else {
+        return FALSE;
     }
 }

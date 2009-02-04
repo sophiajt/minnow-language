@@ -200,7 +200,7 @@ unsigned int Type_Analyzer::find_type(Program *program, Token *ns, Scope *scope)
                         ns->definition_number = def_num;
                         ns->type_def_num = def_num;
 
-                        program->build_internal_array_methods(container, def_num);
+                        program->build_internal_dict_methods(container, def_num);
 
                         return ns->definition_number;
                     }
@@ -300,7 +300,7 @@ unsigned int Type_Analyzer::find_type(Program *program, Token *ns, Scope *scope)
                 ns->definition_number = def_num;
                 ns->type_def_num = def_num;
 
-                program->build_internal_array_methods(functor, def_num);
+                //program->build_internal_array_methods(functor, def_num);
 
                 return ns->definition_number;
             }
@@ -401,7 +401,7 @@ void Type_Analyzer::find_constructor(Program *program, Token *ns, Scope *scope) 
                         ns->definition_number = def_num;
                         ns->type_def_num = def_num;
 
-                        program->build_internal_array_methods(container, def_num);
+                        program->build_internal_dict_methods(container, def_num);
 
                         //return ns->definition_number;
                     }
