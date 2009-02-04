@@ -1862,7 +1862,26 @@ void Type_Analyzer::analyze_token_types(Program *program, Token *token, Scope *s
         token->type_def_num = program->global->local_types["string"];
     }
     else if (token->type == Token_Type::ARRAY_CALL) {
+        if ((token->children.size() != 2) || (token->children[0] == NULL) || (token->children[1] == NULL) ||
+                (!is_complex_type(program, token->children[0]->type_def_num)) ) {
+            throw Compiler_Exception("Mismatched types for array call", token->start_pos, token->end_pos);
+        }
+
         token->type_def_num = program->types[token->children[0]->type_def_num]->contained_type_def_nums[0];
+        Type_Def *td = program->types[token->children[0]->type_def_num];
+        if (td->container == Container_Type::ARRAY) {
+            if (token->children[1]->type_def_num != (int)program->global->local_types["int"]) {
+                throw Compiler_Exception("Array calls expect 'int' as index", token->children[1]->start_pos, token->children[1]->end_pos);
+            }
+        }
+        else if (td->container == Container_Type::DICT) {
+            if (token->children[1]->type_def_num != (int)program->global->local_types["string"]) {
+                throw Compiler_Exception("Dictionary calls expect 'string' as key", token->children[1]->start_pos, token->children[1]->end_pos);
+            }
+        }
+        else {
+            throw Compiler_Exception("Unsupported type for array reference", token->children[0]->start_pos, token->children[0]->end_pos);
+        }
     }
 }
 

@@ -1,6 +1,9 @@
 // This file is distributed under the BSD License.
 // See LICENSE.TXT for details.
 
+#include <string.h>
+#include <stdio.h>
+
 #include "Common.hpp"
 #include "Typeless_Dictionary.hpp"
 
