@@ -644,6 +644,12 @@ std::string Type_Analyzer::build_function_def(Program *program, Token *token, Sc
         build_function_args(program, token->children[1], scope, fd);
     }
 
+    if (token->type == Token_Type::ACTION_DEF) {
+        if (fd->arg_def_nums.size() > 8) {
+            throw Compiler_Exception("Actions may not exceed 8 arguments", token->children[1]->start_pos, token->children[1]->end_pos);
+        }
+    }
+
     fd->return_type_def_num = return_type;
 
     full_name << token->contents;
