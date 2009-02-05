@@ -1,0 +1,21 @@
+actor Game
+  n : int
+  tmp : Array[double]
+
+  def Game(size : int)
+    n = size
+    tmp = new Array[double]
+
+    for $i = 0 to n-1
+      tmp.push(0.0)
+    end
+    print(tmp.size())
+    Sys.exit()
+  end
+end
+
+action main()
+  $n = 5000
+  $g = spawn Game(n)
+  Sys.exit()
+end
