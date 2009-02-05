@@ -860,6 +860,55 @@ void Var_Scope_Analyzer::analyze_freeze_resume(Program *program, Token *token, S
 
         }
 
+        else if (token->type == Token_Type::CONCATENATE_ARRAY) {
+            Token *continuation = new Token(Token_Type::CONTINUATION_SITE);
+
+            Token *copy = new Token(Token_Type::BOOL);
+            *copy = *token;
+            continuation->children.push_back(copy);
+            continuation->start_pos = token->start_pos;
+            continuation->end_pos = token->end_pos;
+
+            std::vector<int> push_pop = build_push_pop_list(program, scope, token->start_pos, token->end_pos);
+
+
+            if (scope->owner->definition_number < 0) {
+                throw Compiler_Exception("Internal error finding resume function", token->start_pos, token->end_pos);
+            }
+
+
+            Function_Def *owner = program->funs[scope->owner->definition_number];
+            program->var_sites.push_back(push_pop);
+            owner->continuation_sites.push_back(program->var_sites.size() - 1);
+            owner->continuation_sites.push_back(program->var_sites.size() - 1);
+            continuation->definition_number = program->var_sites.size() - 1;
+
+            *token = *continuation;
+        }
+        else if ((token->children.size() > 1) && (token->children[1]->type == Token_Type::CONCATENATE_ARRAY)) {
+            Token *continuation = new Token(Token_Type::CONTINUATION_SITE);
+
+            Token *copy = new Token(Token_Type::BOOL);
+            *copy = *token;
+            continuation->children.push_back(copy);
+            continuation->start_pos = token->start_pos;
+            continuation->end_pos = token->end_pos;
+
+            std::vector<int> push_pop = build_push_pop_list(program, scope, token->start_pos, token->end_pos);
+
+
+            if (scope->owner->definition_number < 0) {
+                throw Compiler_Exception("Internal error finding resume function", token->start_pos, token->end_pos);
+            }
+
+            Function_Def *owner = program->funs[scope->owner->definition_number];
+            program->var_sites.push_back(push_pop);
+            owner->continuation_sites.push_back(program->var_sites.size() - 1);
+            owner->continuation_sites.push_back(program->var_sites.size() - 1);
+            continuation->definition_number = program->var_sites.size() - 1;
+
+            *token = *continuation;
+        }
 
         else if ((token->type == Token_Type::FUN_CALL) || (token->type == Token_Type::METHOD_CALL) || (token->type == Token_Type::NEW_ALLOC) ||
                 (token->type == Token_Type::SPAWN_ACTOR)) {

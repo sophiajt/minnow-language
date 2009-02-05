@@ -2650,17 +2650,83 @@ void Codegen::codegen_main_action(Program *p, std::ostringstream &output) {
 
 void Codegen::codegen_array_concat_decl(Program *p, std::ostringstream &output) {
     output << "Typeless_Vector__ *concatenate_new_complex_array__(Message__ * m__, Typeless_Vector__ *tv1, Typeless_Vector__ *tv2, int type_def) {" << std::endl;
+
     output << "  int i;" << std::endl;
     output << "  Typeless_Vector__ *output = create_typeless_vector__(tv1->elem_size, 0);" << std::endl;
     output << "  void *tmp;" << std::endl;
+
+    output << "unsigned int cont_id__ = 0;" << std::endl;
+    output << "unsigned int timeslice__ = ((Actor__*)m__->recipient)->timeslice_remaining;" << std::endl;
+    output << "if (((Actor__*)m__->recipient)->continuation_stack->current_size > 0) {" << std::endl;
+    output << "  cont_id__ = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack, ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, unsigned int);" << std::endl;
+    output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
+    output << "  i = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack, ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, int);" << std::endl;
+    output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
+    output << "  output = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack, ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, Typeless_Vector__*);" << std::endl;
+    output << "  tmp = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack, ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, void*);" << std::endl;
+    output << "  tv1 = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack, ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, Typeless_Vector__*);" << std::endl;
+    output << "  tv2 = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack, ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, Typeless_Vector__*);" << std::endl;
+    output << "  type_def = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack, ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, int);" << std::endl;
+    output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
+    output << "}" << std::endl;
+
+    output << " switch(cont_id__) {" << std::endl;
+    output << " case(0):" << std::endl;
     output << "  for (i = 0; i < tv1->current_size; ++i) {" << std::endl;
+    output << " case(1):" << std::endl;
     output << "    tmp = copy__(m__, INDEX_AT__(tv1, i, void*), type_def);" << std::endl;
+    output << "if (((Actor__*)m__->recipient)->timeslice_remaining == 0) {" << std::endl;
+    output << "  push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &type_def);" << std::endl;
+    output << "  push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &tv2);" << std::endl;
+    output << "  push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &tv1);" << std::endl;
+    output << "  push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &tmp);" << std::endl;
+    output << "  push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &output);" << std::endl;
+    output << "  push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &i);" << std::endl;
+    output << "  cont_id__ = 1;" <<std::endl;
+    output << "  push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &cont_id__);" << std::endl;
+    output << "  return NULL;" << std::endl;
+    output << "}" << std::endl;
+    /*
+    output << "if (--((Actor__*)m__->recipient)->timeslice_remaining == 0) {" << std::endl;
+    output << "  push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &tmp);" << std::endl;
+    output << "  push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &output);" << std::endl;
+    output << "  push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &i);" << std::endl;
+    output << "  cont_id__ = 2;" <<std::endl;
+    output << "  push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &cont_id__);" << std::endl;
+    output << "  return NULL;" << std::endl;
+    output << "}" << std::endl;
+    output << " case(2):" << std::endl;
+    */
     output << "    push_onto_typeless_vector__(output, &tmp);" << std::endl;;
     output << "  }" << std::endl;
     output << "  for (i = 0; i < tv2->current_size; ++i) {" << std::endl;
+    output << " case(2):" << std::endl;
     output << "    tmp = copy__(m__, INDEX_AT__(tv2, i, void*), type_def);" << std::endl;
+    output << "if (((Actor__*)m__->recipient)->timeslice_remaining == 0) {" << std::endl;
+    output << "  push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &type_def);" << std::endl;
+    output << "  push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &tv2);" << std::endl;
+    output << "  push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &tv1);" << std::endl;
+    output << "  push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &tmp);" << std::endl;
+    output << "  push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &output);" << std::endl;
+    output << "  push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &i);" << std::endl;
+    output << "  cont_id__ = 2;" <<std::endl;
+    output << "  push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &cont_id__);" << std::endl;
+    output << "  return NULL;" << std::endl;
+    output << "}" << std::endl;
+    /*
+    output << "if (--((Actor__*)m__->recipient)->timeslice_remaining == 0) {" << std::endl;
+    output << "  push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &tmp);" << std::endl;
+    output << "  push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &output);" << std::endl;
+    output << "  push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &i);" << std::endl;
+    output << "  cont_id__ = 4;" <<std::endl;
+    output << "  push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &cont_id__);" << std::endl;
+    output << "  return NULL;" << std::endl;
+    output << "}" << std::endl;
+    output << " case(4):" << std::endl;
+    */
     output << "    push_onto_typeless_vector__(output, &tmp);" << std::endl;;
     output << "  }" << std::endl;
+    output << " }" << std::endl;
     output << "  return output;" << std::endl;
     output << "}" << std::endl;
 }
