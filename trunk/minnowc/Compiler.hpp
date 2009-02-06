@@ -122,6 +122,7 @@ public:
                 an.analyze_ports_of_entry(p, fd->token, NULL, fd->token->scope, false, false);
                 ta.analyze_implied_this(p, fd->token, fd->token->scope);
                 ta.analyze_return_calls(p, fd->token, 0);
+                ta.analyze_required_return_calls(p, fd->token);
             }
         }
 

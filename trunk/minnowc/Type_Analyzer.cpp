@@ -2026,3 +2026,32 @@ void Type_Analyzer::analyze_return_calls(Program *program, Token *token, unsigne
     }
 }
 
+bool Type_Analyzer::analyze_required_return_calls(Program *program, Token *token) {
+    if (token->type == Token_Type::FUN_DEF) {
+        if (program->funs[token->definition_number]->return_type_def_num != program->global->local_types["void"]) {
+            bool found_return = false;
+            for (unsigned int i = 0; i < token->children.size(); ++i) {
+                if (analyze_required_return_calls(program, token->children[i])) {
+                    found_return = true;
+                }
+            }
+            if (!found_return) {
+                throw Compiler_Exception("Return call missing in function with return type", token->children[1]->children[1]->start_pos,
+                        token->children[1]->children[1]->end_pos);
+            }
+        }
+        return false;
+    }
+    else if (token->type == Token_Type::RETURN_CALL) {
+        return true;
+    }
+
+    for (unsigned int i = 0; i < token->children.size(); ++i) {
+        if (analyze_required_return_calls(program, token->children[i])) {
+            return true;
+        }
+    }
+    return false;
+}
+
+

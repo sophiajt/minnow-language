@@ -35,6 +35,7 @@ public:
     void analyze_implied_this(Program *program, Token *token, Scope *scope);
 
     void analyze_return_calls(Program *program, Token *token, unsigned int allowed_return_type);
+    bool analyze_required_return_calls(Program *program, Token *token);
 
     Type_Analyzer() : for_inner_var_id(0) { }
 };
