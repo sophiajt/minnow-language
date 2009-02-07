@@ -566,8 +566,8 @@ void Codegen::codegen_action_call(Program *p, Token *t, std::ostringstream &outp
 
     Function_Def *fd = p->funs[t->children[1]->definition_number];
     unsigned int num_args = fd->arg_def_nums.size();
-    Token *arg = t->children[1]->children[1];
     if (num_args > 0) {
+	    Token *arg = t->children[1]->children[1];
         for (int i = (num_args - 1); i >= 0; --i) {
             if (i > 0) {
                 output << "msg__->args[" << i << "].";
@@ -2472,12 +2472,12 @@ void Codegen::codegen_delete_decl(Program *p, std::ostringstream &output) {
     int string_id = p->global->local_types["string"];
 
     output << "void delete__(Message__ *m__, void *v__, unsigned int t__)" << std::endl << "{" << std::endl;
-    output << "if (v__ == NULL) return;" << std::endl;
     //output << "switch(t__)" << "{" << std::endl;
     //output << "  case(" << string_id << "): {" << std::endl;
     output << "  unsigned int i;" << std::endl;
     output << "unsigned int cont_id__ = 0;" << std::endl;
     output << "unsigned int timeslice__ = ((Actor__*)m__->recipient)->timeslice_remaining;" << std::endl;
+    output << "if (v__ == NULL) return;" << std::endl;
     output << "if (((Actor__*)m__->recipient)->continuation_stack->current_size > 0) {" << std::endl;
     output << "  cont_id__ = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack, ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, unsigned int);" << std::endl;
     output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
