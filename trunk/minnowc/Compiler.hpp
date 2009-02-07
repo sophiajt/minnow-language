@@ -164,9 +164,24 @@ public:
 #if defined (__SVR4) && defined (__sun)
             exe_cmdline << "g++ -ggdb -O" << optimization_level << " -o \"" << output_file << "\" tmpXXXXX.c -Werror -I\"" << include_dir << "\" ";
 #else
+  #if _MSC_VER > 1000
+            exe_cmdline << "cl /O" << optimization_level << " /Fo\"" << output_file << "\" tmpXXXXX.c /I\"" << include_dir << "\" ";
+  #else
             exe_cmdline << "gcc -ggdb -O" << optimization_level << " -o \"" << output_file << "\" tmpXXXXX.c -Werror -I\"" << include_dir << "\" ";
+  #endif
 #endif
 
+#if _MSC_VER > 1000
+			/* todo: fix this
+            for (unsigned int i = 0; i < lib_dirs.size(); ++i) {
+                exe_cmdline << "-L\"" << lib_dirs[i] << "\" ";
+            }
+			*/
+
+            for (unsigned int i = 0; i < p->libs.size(); ++i) {
+                exe_cmdline << " " << p->libs[i] << ".lib ";
+            }
+#else
             for (unsigned int i = 0; i < lib_dirs.size(); ++i) {
                 exe_cmdline << "-L\"" << lib_dirs[i] << "\" ";
             }
@@ -174,7 +189,7 @@ public:
             for (unsigned int i = 0; i < p->libs.size(); ++i) {
                 exe_cmdline << "-l" << p->libs[i] << " ";
             }
-
+#endif
             if (system(exe_cmdline.str().c_str()) == 0) {
                 remove("tmpXXXXX.c");
             }

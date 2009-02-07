@@ -2574,7 +2574,7 @@ void Codegen::codegen_safe_eq_decl(Program *p, Token *token, std::ostringstream 
 
 void Codegen::codegen_class_predecl(Program *p, Token *t, std::ostringstream &output) {
     for (unsigned int i = 0; i < p->types.size(); ++i) {
-        if ((p->types[i]->is_internal == false) && (p->types[i]->container == Container_Type::SCALAR)) {
+		if ((p->types[i]->is_internal == false) && (p->types[i]->container == Container_Type::SCALAR) && (p->types[i]->token->type != Token_Type::ENUM_DEF)) {
             output << "struct type__" << i << ";" << std::endl;
         }
     }
@@ -2583,7 +2583,7 @@ void Codegen::codegen_class_predecl(Program *p, Token *t, std::ostringstream &ou
 void Codegen::codegen_class_decl(Program *p, Token *t, std::ostringstream &output) {
     for (unsigned int i = 0; i < p->types.size(); ++i) {
 
-        if ((p->types[i]->is_internal == false) && (p->types[i]->container == Container_Type::SCALAR)) {
+		if ((p->types[i]->is_internal == false) && (p->types[i]->container == Container_Type::SCALAR) && (p->types[i]->token->type != Token_Type::ENUM_DEF)) {
             output << "struct type__" << i << "{" << std::endl;
             if ((p->types[i]->token->type == Token_Type::ACTOR_DEF) || (p->types[i]->token->type == Token_Type::ISOLATED_ACTOR_DEF)) {
                 output << "Actor__ base__;" << std::endl;
