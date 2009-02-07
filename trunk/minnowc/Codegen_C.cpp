@@ -2355,8 +2355,9 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
     output << "void *copy__(Message__ *m__, void *v__, unsigned int t__)" << std::endl << "{" << std::endl;
     output << "if (v__ == NULL) return NULL;" << std::endl;
 
-    output << "switch(t__)" << "{" << std::endl;
-    output << "  case(" << string_id << "): {" << std::endl << "  ";
+    //output << "switch(t__)" << "{" << std::endl;
+    //output << "  case(" << string_id << "): {" << std::endl << "  ";
+    output << "if (t__ == " << string_id << ") {" << std::endl << "  ";
     codegen_typesig(p, string_id, output);
     output << "  ret_val__;" << std::endl;
     output << "  ret_val__ = create_char_string__(0);" << std::endl;
@@ -2364,9 +2365,11 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
     codegen_typesig(p, string_id, output);
     output << ")v__);" << std::endl;
     output << "  return ret_val__;" << std::endl;
-    output << "  }; break;" << std::endl;
+    output << "}" << std::endl;
+    //output << "  }; break;" << std::endl;
     for (unsigned int i = obj_id; i < p->types.size(); ++i) {
-        output << "  case(" << i << "): {" << std::endl;
+        output << "else if (t__ == " << i << ") {" << std::endl << "  ";
+        //output << "  case(" << i << "): {" << std::endl;
         Type_Def *td = p->types[i];
 
         if (i == (unsigned)obj_id) {
@@ -2455,10 +2458,11 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
             output << "  }" << std::endl;
             output << "  return ret_val__;" << std::endl;
         }
-        output << "  }; break;" << std::endl;
+        //output << "  }; break;" << std::endl;
+        output << "}" << std::endl;
     }
 
-    output << "}" << std::endl;
+    //output << "}" << std::endl;
 
     output << "}" << std::endl;
 }
@@ -2469,22 +2473,36 @@ void Codegen::codegen_delete_decl(Program *p, std::ostringstream &output) {
 
     output << "void delete__(Message__ *m__, void *v__, unsigned int t__)" << std::endl << "{" << std::endl;
     output << "if (v__ == NULL) return;" << std::endl;
-    output << "switch(t__)" << "{" << std::endl;
-    output << "  case(" << string_id << "): {" << std::endl;
+    //output << "switch(t__)" << "{" << std::endl;
+    //output << "  case(" << string_id << "): {" << std::endl;
+    output << "  unsigned int i;" << std::endl;
+    output << "unsigned int cont_id__ = 0;" << std::endl;
+    output << "unsigned int timeslice__ = ((Actor__*)m__->recipient)->timeslice_remaining;" << std::endl;
+    output << "if (((Actor__*)m__->recipient)->continuation_stack->current_size > 0) {" << std::endl;
+    output << "  cont_id__ = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack, ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, unsigned int);" << std::endl;
+    output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
+    output << "  i = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack, ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, int);" << std::endl;
+    output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
+    output << "}" << std::endl;
+
+    //output << " switch(cont_id__) {" << std::endl;
+    //output << " case(0):" << std::endl;
+
+    output << "if (t__ == " << string_id << ") {" << std::endl;
     output << "  delete_char_string__ ((";
     codegen_typesig(p, string_id, output);
     output << ")v__);" << std::endl;
-    output << "  }; break;" << std::endl;
-
+    //output << "  }; break;" << std::endl;
+    output << "  }" << std::endl;
     for (unsigned int i = obj_id; i < p->types.size(); ++i) {
-        output << "  case(" << i << "): {" << std::endl;
+        //output << "  case(" << i << "): {" << std::endl;
+        output << "else if (t__ == " << i << ") { " << std::endl;
         Type_Def *td = p->types[i];
 
         if (i == (unsigned)obj_id) {
             output << "  delete__(m__, v__, ((Object_Feature__*)v__)->feature_id);" << std::endl;
         }
         else if (td->container == Container_Type::ARRAY) {
-            output << "  unsigned int i;" << std::endl;
             if (is_complex_type(p, td->contained_type_def_nums[0])) {
                 output << "  for (i = 0; i < ((Typeless_Vector__ *)v__)->current_size; ++i)" << std::endl << "  {" << std::endl;
                 output << "    delete__(m__, INDEX_AT__(((Typeless_Vector__ *)v__), i, ";
@@ -2552,9 +2570,10 @@ void Codegen::codegen_delete_decl(Program *p, std::ostringstream &output) {
             output << "  free(v__);" << std::endl;
 #endif
         }
-        output << "  }; break;" << std::endl;
+        //output << "  }; break;" << std::endl;
+        output << "}" << std::endl;
     }
-    output << "}" << std::endl;
+    //output << "}" << std::endl;
 
     output << "}" << std::endl;
 }
@@ -2663,9 +2682,13 @@ void Codegen::codegen_array_concat_decl(Program *p, std::ostringstream &output) 
     output << "  i = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack, ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, int);" << std::endl;
     output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
     output << "  output = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack, ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, Typeless_Vector__*);" << std::endl;
+    output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
     output << "  tmp = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack, ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, void*);" << std::endl;
+    output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
     output << "  tv1 = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack, ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, Typeless_Vector__*);" << std::endl;
+    output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
     output << "  tv2 = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack, ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, Typeless_Vector__*);" << std::endl;
+    output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
     output << "  type_def = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack, ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, int);" << std::endl;
     output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
     output << "}" << std::endl;

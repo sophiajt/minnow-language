@@ -629,10 +629,10 @@ std::string Type_Analyzer::build_function_def(Program *program, Token *token, Sc
     if (token->children[1]->contents == ":") {
         //We have a return type
 
-        if ((token->children[1]->children[1]->contents == "var") && (token->type == Token_Type::EXTERN_FUN_DEF)) {
+        if (token->children[1]->children[1]->contents == "var") {
             //Workaround because functions are not allowed to have var types (yet?)
-            throw Compiler_Exception("Implied types are not allowed in extern def",
-                    token->children[1]->start_pos, token->children[1]->end_pos);
+            throw Compiler_Exception("Implied types are not allowed as return types",
+                    token->children[1]->children[1]->start_pos, token->children[1]->children[1]->end_pos);
         }
 
         return_type = find_type(program, token->children[1]->children[1], scope);
