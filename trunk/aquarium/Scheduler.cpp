@@ -395,7 +395,7 @@ Scheduler__ *create_scheduler__(unsigned int scheduler_type) {
     }
     */
     return_val->mem_cache_blocks->current_size = MAX_MEMBLOCK_SIZE__+1;
-    memset(return_val->mem_cache_blocks->contents, MAX_MEMBLOCK_SIZE__+1, sizeof(Typeless_Vector__*));
+    memset(return_val->mem_cache_blocks->contents, 0, (MAX_MEMBLOCK_SIZE__+1) * sizeof(Typeless_Vector__*));
 
     return return_val;
 }

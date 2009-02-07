@@ -63,6 +63,8 @@ def test_directory(d):
       output = Popen([compiler_bin, s,  "-o", out_bin], stdout=PIPE, stderr=PIPE).communicate()
 
       if (len(output[1]) > 0):
+        output = (output[0].replace('\r\n', '\n'), output[1].replace('\r\n', '\n'))
+        output = (output[0].replace("\\", "/"), output[1].replace("\\", "/"))
         if (err_cmp != output[1]):
           failed_tests.append( (s, output[1]) )
           tick_bad()
@@ -74,6 +76,8 @@ def test_directory(d):
           tst_cmp = tst_file.read()
 
           bin_output = Popen([out_bin], stdout=PIPE, stderr=PIPE).communicate()
+          bin_output = (bin_output[0].replace('\r\n', '\n'), bin_output[1].replace('\r\n', '\n'))
+          bin_output = (bin_output[0].replace("\\", "/"), bin_output[1].replace("\\", "/"))
           if (len(bin_output[1]) > 0):
             if (err_cmp != output[1]):
               failed_tests.append( (s, bin_output[1]) )
