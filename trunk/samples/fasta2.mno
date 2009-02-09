@@ -34,16 +34,12 @@ def IUB : Array[Frequency]
     new Frequency ('M', 0.02), new Frequency ('N', 0.02), new Frequency ('R', 0.02), new Frequency ('S', 0.02), ...
     new Frequency ('V', 0.02), new Frequency ('W', 0.02), new Frequency ('Y', 0.02)]
 
-  make_cumulative(a)
-
   return a
 end
 
 def HomoSapiens : Array[Frequency]
   $a = [new Frequency ('a', 0.3029549426680), new Frequency ('c', 0.1979883004921), ...
     new Frequency ('g', 0.1975473066391), new Frequency ('t', 0.3015094502008)]
-
-  make_cumulative(a)
 
   return a
 end
@@ -150,16 +146,15 @@ actor Game
   end
 
   action run_game(n:int)
-    //BUG: why can't we call make_cumulative here?
-    //$alu = ALU()
-    //$homosapiens = HomoSapiens()
-    //make_cumulative(alu)
-    //make_cumulative(homosapiens)
+    $iub = IUB()
+    $homosapiens = HomoSapiens()
+    make_cumulative(iub)
+    make_cumulative(homosapiens)
     seed = 42
 
     make_repeat_fasta("ONE", "Homo sapiens alu", ALU(), n*2)
-    make_random_fasta("TWO", "IUB ambiguity codes", IUB(), n*3)
-    make_random_fasta("THREE", "Homo sapiens frequency", HomoSapiens(), n*5)
+    make_random_fasta("TWO", "IUB ambiguity codes", iub, n*3)
+    make_random_fasta("THREE", "Homo sapiens frequency", homosapiens, n*5)
     Sys.exit()
   end
 end
