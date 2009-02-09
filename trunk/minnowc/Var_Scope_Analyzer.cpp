@@ -12,7 +12,8 @@
 #include <algorithm>
 
 bool Var_Scope_Analyzer::contains_var(Token *token, unsigned int var_def_num) {
-    if ((token->type == Token_Type::VAR_CALL) && (token->definition_number == (signed)var_def_num)) {
+    if ( ((token->type == Token_Type::VAR_DECL) || (token->type == Token_Type::VAR_CALL)) &&
+            (token->definition_number == (signed)var_def_num)) {
         return true;
     }
     for (unsigned int i = 0; i < token->children.size(); ++i) {
@@ -398,7 +399,9 @@ void Var_Scope_Analyzer::find_var_endpoints(Program *program, Token *token, Toke
     else if ((token->type == Token_Type::WHILE_BLOCK) || (token->type == Token_Type::FOR_BLOCK)) {
         if (contains_var(token, var_def_num)) {
             Var_Def *vd = program->vars[var_def_num];
-            vd->usage_end = token->end_pos;
+            if (token->end_pos > vd->usage_end) {
+                vd->usage_end = token->end_pos;
+            }
         }
     }
     /*

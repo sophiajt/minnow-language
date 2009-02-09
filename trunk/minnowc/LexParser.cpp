@@ -1328,9 +1328,10 @@ Token *Lex_Parser::lexparse_eol(std::string::iterator &curr, std::string::iterat
     }
     if ((*curr == '\n') || (*curr == ';')) {
         Token *eol = new Token(Token_Type::EOL, "eol", p, p);
-        p.col = 1;
-        ++p.line;
-
+        if (*curr != ';') {
+            p.col = 1;
+            ++p.line;
+        }
         ++curr;
         return eol;
     }

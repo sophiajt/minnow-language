@@ -1,6 +1,5 @@
 // FASTA benchmark - translated from the CSharp version
 
-
 feature Frequency
   c : char
   p : double
@@ -53,7 +52,6 @@ actor Game
   seed : int
   index : int
 
-
   def random(max:double) : double
     seed = (seed * 3877 + 29573) % 139968
     return max * (seed.to_double() * (1.0 / 139968.0))
@@ -79,7 +77,6 @@ actor Game
     for $j = 0 to 1023
       buf.push('\0')
     end
-    j 
 
     while (n > 0)
       if (n < 60)
@@ -97,7 +94,6 @@ actor Game
         buf[index] = select_random(a)
         index += 1
       end
-      i //BUG: what's wrong with i's scope that it won't be continued properly?
 
       buf[index] = '\n'
       index += 1
@@ -142,7 +138,7 @@ actor Game
         index += 1
         k += 1
       end
-      i
+
       buf[index] = '\n'
       index += 1
       n -= 60
@@ -154,8 +150,11 @@ actor Game
   end
 
   action run_game(n:int)
-    $alu = ALU()
-    $homosapiens = HomoSapiens()
+    //BUG: why can't we call make_cumulative here?
+    //$alu = ALU()
+    //$homosapiens = HomoSapiens()
+    //make_cumulative(alu)
+    //make_cumulative(homosapiens)
     seed = 42
 
     make_repeat_fasta("ONE", "Homo sapiens alu", ALU(), n*2)

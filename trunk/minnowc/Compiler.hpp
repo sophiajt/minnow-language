@@ -113,7 +113,6 @@ public:
         ta.analyze_stacked_fun_call(p, t, p->global);
 
         ta.analyze_token_types(p, t, p->global);
-        //debug_print_def(p, t, "");
         //debug_print_vars(p, t);
 
         for (unsigned int j = 0; j < p->funs.size(); ++j) {
