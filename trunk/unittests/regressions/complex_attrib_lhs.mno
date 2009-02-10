@@ -1,0 +1,17 @@
+feature Bob
+  y:int
+
+  def Bob(y_val:int)
+    y = y_val
+  end
+end
+
+def inc(x:int) : int
+  return x+1
+end
+
+action main
+  $unique = [new Bob(1), new Bob(2), new Bob(3)]
+  print(unique[unique.size()-1].y)
+  Sys.exit()
+end

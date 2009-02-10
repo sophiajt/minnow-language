@@ -60,9 +60,8 @@ actor Game
         return a[i].c
       end
     end
-    //BUG: Why can't I embed this?
-    $index = a.size() - 1
-    return a[index].c
+
+    return a[a.size()-1].c
   end
 
   def make_random_fasta(id:string, desc:string, a : Array[Frequency], n:int)
