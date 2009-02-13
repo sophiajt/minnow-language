@@ -1426,7 +1426,9 @@ void Var_Scope_Analyzer::examine_equation_for_copy_delete(Program *program, Toke
     if ((token->children[0]->type == Token_Type::VAR_CALL) || (token->children[0]->type == Token_Type::VAR_DECL)) {
         Var_Def *vd = program->vars[token->children[0]->definition_number];
 
-        if (/*(vd->is_removed == false) &&*/ (vd->is_dependent == true) &&
+        /*(vd->is_removed == false) &&*/
+
+        if ( (vd->is_dependent == true) &&
                 (is_complex_var(program, token->children[0]->definition_number))) {
 
             Token *delete_t = new Token(Token_Type::DELETE);
@@ -1438,6 +1440,8 @@ void Var_Scope_Analyzer::examine_equation_for_copy_delete(Program *program, Toke
         else {
             ++i;
         }
+
+        //++i;
 
         if (token->children[1]->type == Token_Type::REFERENCE_FEATURE) {
             //vd->is_removed = true;
@@ -1557,7 +1561,7 @@ void Var_Scope_Analyzer::analyze_copy_delete(Program *program, Token *token, Tok
                     }
 
                 }
-                else if ((child->type == Token_Type::WHILE_BLOCK) || (child->type == Token_Type::FOR_BLOCK)) {
+                else if ((child->type == Token_Type::WHILE_BLOCK) || (child->type == Token_Type::FOR_BLOCK) || (child->type == Token_Type::IF_BLOCK)) {
                     std::vector<int> delete_site = build_delete_list(program, scope, child->start_pos);
                     analyze_copy_delete(program, token->children[i], bounds, scope);
                     if (delete_site.size() > 0) {
