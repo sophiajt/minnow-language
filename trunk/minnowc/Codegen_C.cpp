@@ -2399,6 +2399,38 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
             output << "  ret_val__->current_size = ((Typeless_Vector__ *)v__)->current_size;" << std::endl;
             output << "  return ret_val__;" << std::endl;
         }
+        else if (td->container == Container_Type::DICT) {
+            output << "  unsigned int i, j;" << std::endl;
+            output << "  Typeless_Dictionary__ *ret_val__ = create_typeless_dictionary__(((Typeless_Dictionary__ *)v__)->elem_size);" << std::endl;
+            output << "  for (i = 0; i < DEFAULT_TYPELESS_DICTIONARY_SIZE__; ++i)" << std::endl << "  {" << std::endl;
+            output << "    if (((Typeless_Dictionary__*)v__)->contents[i] == NULL) {" << std::endl;
+            output << "      ret_val__->contents[i] = NULL;" << std::endl;
+            output << "    }" << std::endl;
+            output << "    else {" << std::endl;
+            output << "      ret_val__->contents[i] = create_typeless_vector__(sizeof(Dict_Unit__), 0);" << std::endl;
+            output << "      for (j = 0; j < ((Typeless_Dictionary__*)v__)->contents[i]->current_size; ++j) {" << std::endl;
+            output << "        Dict_Unit__ du;" << std::endl;
+            output << "        du.key = copy__(m__, INDEX_AT__(((Typeless_Dictionary__*)v__)->contents[i], j, Dict_Unit__).key, " << string_id << ");" << std::endl;
+            output << "        du.data.";
+            codegen_tu_typesig(p, td->contained_type_def_nums[0], output);
+            output << "  = ";
+            if ((td->contained_type_def_nums[0] >= (signed)obj_id) || (td->contained_type_def_nums[0] == (signed)string_id)) {
+                output << "(";
+                codegen_typesig(p, td->contained_type_def_nums[0], output);
+                output << ")copy__(m__, INDEX_AT__(((Typeless_Dictionary__*)v__)->contents[i], j, Dict_Unit__).data.VoidPtr, " << td->contained_type_def_nums[0] << ");" << std::endl;
+            }
+            else {
+                output << "INDEX_AT__(((Typeless_Dictionary__*)v__)->contents[i], j, Dict_Unit__).data.";
+                codegen_tu_typesig(p, td->contained_type_def_nums[0], output);
+                //codegen_typesig(p, td->contained_type_def_nums[0], output);
+                output << ";" << std::endl;
+            }
+            output << "       push_onto_typeless_vector__(ret_val__->contents[i], &du);" << std::endl;
+            output << "     }" << std::endl;
+            output << "   }" << std::endl;
+            output << "  }" << std::endl;
+            output << "  return ret_val__;" << std::endl;
+        }
         else if ((td->token->type == Token_Type::ACTOR_DEF) || (td->token->type == Token_Type::ISOLATED_ACTOR_DEF)) {
             output << "  return v__;" << std::endl;
         }
@@ -2511,6 +2543,19 @@ void Codegen::codegen_delete_decl(Program *p, std::ostringstream &output) {
                 output << "  }" << std::endl;
             }
             output << "  delete_typeless_vector__((Typeless_Vector__ *)v__);" << std::endl;
+        }
+        else if (td->container == Container_Type::DICT) {
+            output << "  unsigned int i, j;" << std::endl;
+            if (is_complex_type(p, td->contained_type_def_nums[0])) {
+                output << "  for (i = 0; i < DEFAULT_TYPELESS_DICTIONARY_SIZE__; ++i)" << std::endl << "  {" << std::endl;
+                output << "    if (((Typeless_Dictionary__*)v__)->contents[i] != NULL) {" << std::endl;
+                output << "      for (j = 0; j < ((Typeless_Dictionary__*)v__)->contents[i]->current_size; ++j) {" << std::endl;
+                output << "        delete__(m__, INDEX_AT__(((Typeless_Dictionary__*)v__)->contents[i], j, Dict_Unit__).data.VoidPtr, " << td->contained_type_def_nums[0] << ");" << std::endl;
+                output << "      }" << std::endl;
+                output << "    }" << std::endl;
+                output << "  }" << std::endl;
+            }
+            output << "  delete_typeless_dictionary__((Typeless_Dictionary__ *)v__);" << std::endl;
         }
         else if ((td->token->type == Token_Type::ACTOR_DEF) || (td->token->type == Token_Type::ISOLATED_ACTOR_DEF)) {
             std::map<std::string, unsigned int>::iterator del_meth = td->token->scope->local_funs.find("delete");

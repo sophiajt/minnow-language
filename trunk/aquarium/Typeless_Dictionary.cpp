@@ -37,13 +37,10 @@ void delete_typeless_slot__(Typeless_Vector__ *tv) {
 
 void delete_typeless_dictionary__(Typeless_Dictionary__ *container) {
     if (container != NULL) {
-        if (container->contents != NULL) {
-            for (unsigned int i = 0; i < DEFAULT_TYPELESS_DICTIONARY_SIZE__; ++i) {
-                if (container->contents[i] != NULL) {
-                    delete_typeless_slot__(container->contents[i]);
-                }
+        for (unsigned int i = 0; i < DEFAULT_TYPELESS_DICTIONARY_SIZE__; ++i) {
+            if (container->contents[i] != NULL) {
+                delete_typeless_slot__(container->contents[i]);
             }
-            free(container->contents);
         }
         free(container);
     }
@@ -72,6 +69,7 @@ void *lookup_key_in_slot__(Typeless_Vector__ *slot, Typeless_Vector__ *key) {
     Dict_Unit__ du;
     du.key = create_char_string__(0);
     concatenate_char_string__(du.key, key);
+    du.data.UInt64 = 0;
 
     push_onto_typeless_vector__(slot, &du);
     return &(INDEX_AT__(slot, slot->current_size-1, void*));
