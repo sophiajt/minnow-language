@@ -1091,129 +1091,6 @@ void Var_Scope_Analyzer::analyze_freeze_resume(Program *program, Token *token, S
         }
     }
 }
-/*
-void Analyzer::analyze_freeze_resume(Program *program, Token *token, Scope *scope) {
-
-    if ((token->type == Token_Type::ACTION_DEF) || (token->type == Token_Type::FUN_DEF)) {
-        //scope = token->scope;
-        scope = token->children[2]->scope;
-
-        analyze_freeze_resume(program, token->children[2], scope);
-    }
-    else if ((token->type == Token_Type::FEATURE_DEF) || (token->type == Token_Type::ACTOR_DEF) ||
-            (token->type == Token_Type::ISOLATED_ACTOR_DEF)) {
-        analyze_freeze_resume(program, token->children[2], scope);
-    }
-    else {
-        if (token->type == Token_Type::BLOCK) {
-            unsigned int i = 0;
-            while (i < token->children.size()) {
-                Token *child = token->children[i];
-
-                if (child->type == Token_Type::FUN_CALL) {
-                    Function_Def *fd = program->funs[child->definition_number];
-                    if ((fd->is_internal == false) && (fd->external_name == "")) {
-                        Token *continuation = new Token(Token_Type::CONTINUATION_SITE);
-                        continuation->children.push_back(child);
-                        continuation->start_pos = child->start_pos;
-                        continuation->end_pos = child->end_pos;
-                        std::vector<int> push_pop = build_push_pop_list(program, scope, child->start_pos, child->end_pos);
-
-                        Scope *prev = scope;
-                        while (scope != NULL) {
-                            if ((scope->owner != NULL) && ((scope->owner->type == Token_Type::ACTION_DEF) ||
-                                    (scope->owner->type == Token_Type::FUN_DEF))) {
-
-                                Function_Def *owner = program->funs[scope->owner->definition_number];
-                                program->var_sites.push_back(push_pop);
-                                owner->continuation_sites.push_back(program->var_sites.size() - 1);
-                                continuation->definition_number = program->var_sites.size() - 1;
-                                break;
-                            }
-                            scope = scope->parent;
-                        }
-                        scope = prev;
-                        token->children[i] = continuation;
-                    }
-                }
-                else if  ((child->children.size() > 1) &&
-                        ((child->type == Token_Type::SYMBOL) || (child->type == Token_Type::METHOD_CALL)) &&
-                        (child->children[1]->type == Token_Type::FUN_CALL)) {
-
-                    Function_Def *fd = program->funs[child->children[1]->definition_number];
-                    if (fd->is_internal == false) {
-                        Token *continuation = new Token(Token_Type::CONTINUATION_SITE);
-                        continuation->children.push_back(child);
-                        continuation->start_pos = child->start_pos;
-                        continuation->end_pos = child->end_pos;
-                        std::vector<int> push_pop = build_push_pop_list(program, scope, child->start_pos, child->end_pos);
-
-                        Scope *prev = scope;
-                        while (scope != NULL) {
-                            if ((scope->owner != NULL) && ((scope->owner->type == Token_Type::ACTION_DEF) ||
-                                    (scope->owner->type == Token_Type::FUN_DEF))) {
-
-                                Function_Def *owner = program->funs[scope->owner->definition_number];
-                                program->var_sites.push_back(push_pop);
-                                owner->continuation_sites.push_back(program->var_sites.size() - 1);
-                                continuation->definition_number = program->var_sites.size() - 1;
-                                break;
-                            }
-                            scope = scope->parent;
-                        }
-                        scope = prev;
-
-                        token->children[i] = continuation;
-                    }
-                }
-                ++i;
-            }
-        }
-
-        for (unsigned int i = 0; i < token->children.size(); ++i) {
-            if (token->children[i]->type != Token_Type::CONTINUATION_SITE) {
-                analyze_freeze_resume(program, token->children[i], scope);
-            }
-        }
-
-
-        if (token->type == Token_Type::WHILE_BLOCK) {
-            bool found_continuation = false;
-            for (unsigned int i = 0; i < token->children.size(); ++i) {
-                for (unsigned int j = 0; j < token->children[i]->children.size(); ++j) {
-                    if (token->children[i]->children[j]->type == Token_Type::CONTINUATION_SITE) {
-                        found_continuation = true;
-                    }
-                }
-            }
-            if (!found_continuation) {
-                Token *continuation = new Token(Token_Type::CONTINUATION_SITE);
-                std::vector<int> push_pop = build_push_pop_list(program, scope, token->start_pos, token->end_pos);
-                continuation->start_pos = token->start_pos;
-                continuation->end_pos = token->end_pos;
-
-                Scope *prev = scope;
-                while (scope != NULL) {
-                    if ((scope->owner != NULL) && ((scope->owner->type == Token_Type::ACTION_DEF) ||
-                            (scope->owner->type == Token_Type::FUN_DEF))) {
-
-                        Function_Def *owner = program->funs[scope->owner->definition_number];
-                        program->var_sites.push_back(push_pop);
-                        owner->continuation_sites.push_back(program->var_sites.size() - 1);
-                        continuation->definition_number = program->var_sites.size() - 1;
-                        break;
-                    }
-                    scope = scope->parent;
-                }
-                scope = prev;
-
-
-                token->children[1]->children.insert(token->children[1]->children.begin(), continuation);
-            }
-        }
-    }
-}
-*/
 
 std::vector<int> Var_Scope_Analyzer::build_delete_list(Program *program, Scope *scope, Position &position) {
     std::vector<int> ret_val;
@@ -1237,30 +1114,6 @@ std::vector<int> Var_Scope_Analyzer::build_delete_list(Program *program, Scope *
 
     return ret_val;
 }
-
-/*
-std::vector<int> Analyzer::build_delete_remaining_list(Program *program, Scope *scope) {
-    std::vector<int> ret_val;
-
-    while (scope != NULL) {
-        for (std::map<std::string, unsigned int>::iterator iter = scope->local_vars.begin(),
-                end = scope->local_vars.end(); iter != end; ++iter) {
-
-            Var_Def *vd = program->vars[iter->second];
-
-            if ((vd->is_property == false) && (vd->is_dependent == true) && (vd->is_removed == false) &&
-                    (is_complex_var(program, iter->second)) ) {
-
-                vd->is_removed = true;
-                ret_val.push_back(iter->second);
-            }
-        }
-        scope = scope->parent;
-    }
-
-    return ret_val;
-}
-*/
 
 void Var_Scope_Analyzer::examine_port_of_exit(Program *program, Token *token, Token *bounds) {
     Function_Def *fd;
@@ -1478,6 +1331,49 @@ void Var_Scope_Analyzer::examine_equation_for_copy_delete(Program *program, Toke
 
 }
 
+void Var_Scope_Analyzer::unwind_deletion_site(Program *program, Token *token, Token *block, Scope *scope, unsigned int &pos) {
+    Function_Def *fd = program->funs[scope->parent->owner->definition_number];
+
+    std::vector<int> delete_site = build_delete_list(program, scope, token->end_pos);
+    std::vector<int> continuation_site = build_push_pop_list(program, scope, token->start_pos, token->end_pos);
+    continuation_site.insert(continuation_site.begin(), delete_site.begin(), delete_site.end());
+
+    if (delete_site.size() > 0) {
+        program->var_sites.push_back(continuation_site);
+
+        //Function_Def *fd = program->funs[token->definition_number];
+        //delete_t->children.push_back(child->children[1]);
+        //token->children.insert(token->children.begin() + i, delete_t);
+
+        //Token *deletion = new Token(Token_Type::DELETION_SITE);
+
+        for (unsigned int i = 0; i < delete_site.size(); ++i) {
+            Token *var_ref = new Token(Token_Type::VAR_CALL);
+            Var_Def *vd = program->vars[delete_site[i]];
+            var_ref->definition_number = delete_site[i];
+            var_ref->type_def_num = vd->type_def_num;
+
+            Token *delete_t = new Token(Token_Type::DELETE);
+            delete_t->children.push_back(var_ref);
+
+            Token *cont_t = new Token(Token_Type::CONTINUATION_SITE);
+            cont_t->children.push_back(delete_t);
+            cont_t->definition_number = program->var_sites.size() - 1;
+
+            fd->continuation_sites.push_back(program->var_sites.size() - 1);
+            fd->continuation_sites.push_back(program->var_sites.size() - 1);
+
+            //token->children[2]->children.push_back(cont_t);
+            block->children.insert(block->children.begin() + pos, cont_t);
+            ++pos;
+        }
+        //program->var_sites.push_back(delete_site);
+        //deletion->definition_number = program->var_sites.size() - 1;
+
+        //token->children[2]->children.push_back(deletion);
+    }
+
+}
 void Var_Scope_Analyzer::analyze_copy_delete(Program *program, Token *token, Token *bounds, Scope *scope) {
     if (bounds == NULL) {
         switch (token->type) {
@@ -1505,17 +1401,8 @@ void Var_Scope_Analyzer::analyze_copy_delete(Program *program, Token *token, Tok
         analyze_copy_delete(program, token->children[2], bounds, scope);
         if (token->children[2]->children.size() > 0) {
             if (token->children[2]->children[token->children[2]->children.size() - 1]->type != Token_Type::RETURN_CALL) {
-                std::vector<int> delete_site = build_delete_list(program, scope, token->end_pos);
-
-                if (delete_site.size() > 0) {
-                    Token *deletion = new Token(Token_Type::DELETION_SITE);
-
-                    program->var_sites.push_back(delete_site);
-                    deletion->definition_number = program->var_sites.size() - 1;
-
-                    token->children[2]->children.push_back(deletion);
-                }
-
+                unsigned int i = token->children[2]->children.size();
+                unwind_deletion_site(program, token, token->children[2], scope, i);
             }
         }
     }

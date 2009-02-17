@@ -15,6 +15,8 @@ public:
     bool contains_var(Token *token, unsigned int var_def_num);
     void find_var_endpoints(Program *program, Token *token, Token *bounds, unsigned int var_def_num);
     void analyze_var_visibility(Program *program, Token *token);
+
+    //Currently unused
     void analyze_usage_extents(Program *program, Token *token, Token *bounds, Scope *scope);
     void analyze_usage_extent_for_var(Program *program, Extent *extent);
     void analyze_usage_extent_colors(Program *program);
@@ -31,6 +33,7 @@ public:
 
     void examine_port_of_exit(Program *program, Token *token, Token *bounds);
     void examine_equation_for_copy_delete(Program *program, Token *block, Token *token, Token *bounds, unsigned int &i);
+    void unwind_deletion_site(Program *program, Token *token, Token *block, Scope *scope, unsigned int &i);
     void analyze_copy_delete(Program *program, Token *token, Token *bounds, Scope *scope);
 
     Var_Scope_Analyzer() : next_continuation(0), next_deletion(0){ }
