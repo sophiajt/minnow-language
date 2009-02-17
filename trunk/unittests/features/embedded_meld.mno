@@ -1,0 +1,20 @@
+feature Bob
+  x:int
+end
+
+feature Fred
+  y:int
+end
+
+def set_values(o:object)
+  o.Bob.x = 5
+  o.Fred.y = 10
+end
+
+action main
+  set_values($o <+ new Bob() <+ new Fred())
+  print(o.Bob.x)
+  print(o.Fred.y)
+
+  Sys.exit()
+end

@@ -21,12 +21,14 @@ end
 action main(args : Array[string])
   $head = spawn Passer()
   $curr = head
+
   for $i = 1 to 502
     $next = spawn Passer()
     curr::setIdAndNext(i, next)
     curr = next
   end
-  curr::setIdAndNext(503, head)
 
+  curr::setIdAndNext(503, head)
   head::pass(args[0].to_int())
 end
+

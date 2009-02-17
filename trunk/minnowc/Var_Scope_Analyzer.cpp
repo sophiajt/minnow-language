@@ -634,6 +634,27 @@ Token *Var_Scope_Analyzer::analyze_ports_of_entry(Program *program, Token *token
             return NULL;
         }
         else {
+            if (token->contents == "<+") {
+                Token *child = analyze_ports_of_entry(program, token->children[0], bounds, scope, is_lhs, is_block_bound);
+                if (child != NULL) {
+                    return child;
+                }
+
+                child = analyze_ports_of_entry(program, token->children[1], bounds, scope, is_lhs, is_block_bound);
+                if (child != NULL) {
+                    Var_Def *vd = program->vars[program->vars.size() - 1];
+                    vd->is_dependent = false;
+                    return child;
+                }
+                else if ((token->children[1]->type == Token_Type::VAR_CALL)|| (token->children[1]->type == Token_Type::VAR_DECL)) {
+                    Var_Def *vd = program->vars[token->children[1]->definition_number];
+                    vd->is_dependent = false;
+                }
+
+                Token *replacement = create_temp_replacement(program, token, bounds, scope, token->type_def_num, false);
+                *token = *replacement;
+                return program->vars[token->definition_number]->token;
+            }
             if (token->contents == "=") {
                 Token *child = analyze_ports_of_entry(program, token->children[0], bounds, scope, true, is_block_bound);
                 if (child != NULL) {
