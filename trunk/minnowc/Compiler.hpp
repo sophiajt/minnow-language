@@ -165,7 +165,7 @@ public:
             exe_cmdline << "g++ -ggdb -O" << optimization_level << " -o \"" << output_file << "\" tmpXXXXX.c -Werror -I\"" << include_dir << "\" ";
 #else
   #if _MSC_VER > 1000
-			system("\"D:\\Program Files\\Microsoft Visual Studio 9.0\\VC\\vcvarsall.bat\"");
+			system("\"vcvarsall.bat\"");
 			if (atoi(optimization_level.c_str()) > 0) {
 				exe_cmdline << "cl /O" << optimization_level << " /Fe\"" << output_file << "\" /Fo\"" << output_file << "\" tmpXXXXX.c /I\"" << include_dir << "\" ";
 			}

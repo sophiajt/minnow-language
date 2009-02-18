@@ -2356,7 +2356,6 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
     int current_cont = 1;
 
     output << "void *copy__(Message__ *m__, void *v__, unsigned int t__)" << std::endl << "{" << std::endl;
-    output << "if (v__ == NULL) return NULL;" << std::endl;
     output << "  unsigned int i,j;" << std::endl;
     output << "  void *ret_val__;" << std::endl;
     output << "  void *tmp_val__;" << std::endl;
@@ -2377,6 +2376,7 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
     output << "  tmp_val__ = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack, ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, void*);" << std::endl;
     output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
     output << "}" << std::endl;
+    output << "if (v__ == NULL) return NULL;" << std::endl;
 
     output << " switch(cont_id__) {" << std::endl;
     output << " case(0):" << std::endl;
@@ -2611,7 +2611,6 @@ void Codegen::codegen_delete_decl(Program *p, std::ostringstream &output) {
     output << "  unsigned int i, j;" << std::endl;
     output << "unsigned int cont_id__ = 0;" << std::endl;
     output << "unsigned int timeslice__ = ((Actor__*)m__->recipient)->timeslice_remaining;" << std::endl;
-    output << "if (v__ == NULL) return;" << std::endl;
     output << "if (((Actor__*)m__->recipient)->continuation_stack->current_size > 0) {" << std::endl;
     output << "  cont_id__ = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack, ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, unsigned int);" << std::endl;
     output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
@@ -2624,6 +2623,7 @@ void Codegen::codegen_delete_decl(Program *p, std::ostringstream &output) {
     output << "  v__ = INDEX_AT__(((Actor__*)m__->recipient)->continuation_stack, ((Actor__*)m__->recipient)->continuation_stack->current_size - 1, void*);" << std::endl;
     output << "  pop_off_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack);" << std::endl;
     output << "}" << std::endl;
+    output << "if (v__ == NULL) return;" << std::endl;
 
     output << " switch(cont_id__) {" << std::endl;
     output << " case(0):" << std::endl;
