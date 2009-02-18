@@ -1,0 +1,17 @@
+feature Bob
+  def delete
+    for $i = 1 to 3000
+      print << i << ' '
+    end
+  end
+end
+
+def do_stuff
+  $x = new Bob()
+  $y = new Bob()
+end
+
+action main
+  do_stuff()
+  Sys.exit()
+end

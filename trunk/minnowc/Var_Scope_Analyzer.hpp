@@ -32,7 +32,7 @@ public:
     std::vector<int> build_delete_remaining_list(Program *program, Scope *scope);
 
     void examine_port_of_exit(Program *program, Token *token, Token *bounds);
-    void examine_equation_for_copy_delete(Program *program, Token *block, Token *token, Token *bounds, unsigned int &i);
+    void examine_equation_for_copy_delete(Program *program, Token *block, Token *token, Token *bounds, Scope *scope, unsigned int &i);
     void unwind_deletion_site(Program *program, Token *token, Token *block, Scope *scope, unsigned int &i);
     void analyze_copy_delete(Program *program, Token *token, Token *bounds, Scope *scope);
 

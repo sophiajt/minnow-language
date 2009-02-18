@@ -1241,8 +1241,9 @@ void Var_Scope_Analyzer::examine_port_of_exit(Program *program, Token *token, To
     }
 }
 
-void Var_Scope_Analyzer::examine_equation_for_copy_delete(Program *program, Token *block, Token *token, Token *bounds, unsigned int &i) {
+void Var_Scope_Analyzer::examine_equation_for_copy_delete(Program *program, Token *block, Token *token, Token *bounds, Scope *scope, unsigned int &i) {
     //Don't allow any deletion of references
+    Function_Def *fd = program->funs[scope->parent->owner->definition_number];
 
     //Copy any rhs that is not ours
     if ((token->children[1]->type == Token_Type::VAR_DECL) || (token->children[1]->type == Token_Type::VAR_CALL)) {
@@ -1307,6 +1308,19 @@ void Var_Scope_Analyzer::examine_equation_for_copy_delete(Program *program, Toke
 
             Token *delete_t = new Token(Token_Type::DELETE);
             delete_t->children.push_back(token->children[0]);
+
+            /*
+            std::vector<int> continuation_site = build_push_pop_list(program, scope, token->start_pos, token->end_pos);
+            program->var_sites.push_back(continuation_site);
+
+            Token *cont_t = new Token(Token_Type::CONTINUATION_SITE);
+            cont_t->children.push_back(delete_t);
+            cont_t->definition_number = program->var_sites.size() - 1;
+
+            fd->continuation_sites.push_back(program->var_sites.size() - 1);
+            fd->continuation_sites.push_back(program->var_sites.size() - 1);
+            */
+
             block->children.insert(block->children.begin() + i, delete_t);
 
             i += 2;
@@ -1447,7 +1461,7 @@ void Var_Scope_Analyzer::analyze_copy_delete(Program *program, Token *token, Tok
                     if (child->children.size() > 0) {
                         if (child->children[0]->contents == "=") {
                             bounds = child->children[0];
-                            examine_equation_for_copy_delete(program, token, child->children[0], bounds, i);
+                            examine_equation_for_copy_delete(program, token, child->children[0], bounds, scope, i);
                         }
                         else if ((child->children[0]->type == Token_Type::FUN_CALL) ||
                                 (child->children[0]->type == Token_Type::METHOD_CALL) ||
@@ -1623,7 +1637,7 @@ void Var_Scope_Analyzer::analyze_copy_delete(Program *program, Token *token, Tok
                     }
                 }
                 else if (child->contents == "=") {
-                    examine_equation_for_copy_delete(program, token, child, bounds, i);
+                    examine_equation_for_copy_delete(program, token, child, bounds, scope, i);
                 }
                 else {
                     ++i;
