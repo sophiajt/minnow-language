@@ -63,6 +63,7 @@ Section "Minnow (required)"
   FILE "aquarium\Minnow_Prelude.hpp"
   FILE "aquarium\Object_Feature.hpp"
   FILE "aquarium\Scheduler.hpp"
+  FILE "aquarium\Typeless_Dictionary.hpp"
   FILE "aquarium\Typeless_Vector.hpp"
 
   SetOutPath $INSTDIR\lib
