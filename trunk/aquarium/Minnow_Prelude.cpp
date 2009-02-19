@@ -229,7 +229,7 @@ Typeless_Vector__ *convert_i_to_s__(int i) {
 #if _MSC_VER > 1000
     _snprintf((char*)tv->contents, 14, "%i", i);
 #else 
-	snprintf((char*)tv->contents, 14, "%i", i);
+    snprintf((char*)tv->contents, 14, "%i", i);
 #endif
     tv->current_size = strlen((char*)tv->contents);
     return tv;
@@ -252,7 +252,7 @@ Typeless_Vector__ *convert_f_to_s__(float f) {
 #if _MSC_VER > 1000
     _snprintf((char*)tv->contents, 14, "%f", f);
 #else
-	snprintf((char*)tv->contents, 14, "%f", f);
+    snprintf((char*)tv->contents, 14, "%f", f);
 #endif // _MSC_VER > 1000 
     tv->current_size = strlen((char*)tv->contents);
     return tv;
@@ -275,7 +275,7 @@ Typeless_Vector__ *convert_d_to_s__(double d) {
 #if _MSC_VER > 1000
     _snprintf((char*)tv->contents, 14, "%f", d);
 #else
-	snprintf((char*)tv->contents, 14, "%f", d);
+    snprintf((char*)tv->contents, 14, "%f", d);
 #endif
     tv->current_size = strlen((char*)tv->contents);
     return tv;
@@ -298,7 +298,7 @@ Typeless_Vector__ *convert_c_to_s__(char c) {
 #if _MSC_VER > 1000
     _snprintf((char*)tv->contents, 4, "%c", c);
 #else
-	snprintf((char*)tv->contents, 4, "%c", c);
+    snprintf((char*)tv->contents, 4, "%c", c);
 #endif
     tv->current_size = strlen((char*)tv->contents);
     return tv;
