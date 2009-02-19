@@ -2393,7 +2393,7 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
     //output << "  case(" << string_id << "): {" << std::endl << "  ";
     output << "if (t__ == " << string_id << ") {" << std::endl;
     output << "  ret_val__ = create_char_string__(0);" << std::endl;
-    output << "  concatenate_char_string__(ret_val__, (";
+    output << "  concatenate_char_string__((Typeless_Vector__*)ret_val__, (";
     codegen_typesig(p, string_id, output);
     output << ")v__);" << std::endl;
     output << "  return ret_val__;" << std::endl;
@@ -2480,7 +2480,7 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
                 ++current_cont;
             }
             output << "        Dict_Unit__ du;" << std::endl;
-            output << "        du.key = copy__(m__, INDEX_AT__(((Typeless_Dictionary__*)v__)->contents[i], j, Dict_Unit__).key, " << string_id << ");" << std::endl;
+            output << "        du.key = (Typeless_Vector__*)copy__(m__, INDEX_AT__(((Typeless_Dictionary__*)v__)->contents[i], j, Dict_Unit__).key, " << string_id << ");" << std::endl;
             output << "        du.data.";
             codegen_tu_typesig(p, td->contained_type_def_nums[0], output);
             output << "  = ";
@@ -2509,7 +2509,7 @@ void Codegen::codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostr
             output << "  ret_val__ = (Object_Feature__ *)get_memblock_from_cache__(m__->sched, sizeof(";
             codegen_typesig_no_tail(p, i, output);
             output << "));" << std::endl;
-            output << "  initialize_feature__(ret_val__, " << i << ");" << std::endl;
+            output << "  initialize_feature__((Object_Feature__*)ret_val__, " << i << ");" << std::endl;
 #else
             //output << "  Object_Feature__ *ret_val__ = (Object_Feature__ *)create_feature__(sizeof(";
             output << "  ret_val__ = (Object_Feature__ *)create_feature__(sizeof(";
