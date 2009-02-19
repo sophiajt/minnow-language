@@ -1414,10 +1414,10 @@ void Var_Scope_Analyzer::unwind_deletion_site(Program *program, Token *block, To
             Var_Def *vd = program->vars[delete_site[i]];
             var_ref->definition_number = delete_site[i];
             var_ref->type_def_num = vd->type_def_num;
+            vd->is_removed = true;
 
             Token *delete_t = new Token(Token_Type::DELETE);
             delete_t->children.push_back(var_ref);
-
 
             Token *cont_t = new Token(Token_Type::CONTINUATION_SITE);
             cont_t->children.push_back(delete_t);

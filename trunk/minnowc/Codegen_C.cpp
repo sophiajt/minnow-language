@@ -600,11 +600,17 @@ void Codegen::codegen_symbol(Program *p, Token *t, std::ostringstream &output) {
 
         if ((t->children[0]->type_def_num == string_id) && (t->children[0]->type != Token_Type::VAR_DECL)) {
         //else if (is_complex_type(p, t->children[0]->type_def_num)) {
+            /*
             output << "safe_eq__(m__, (void**)&";
             codegen_token(p, t->children[0], output);
             output << ", ";
             codegen_token(p, t->children[1], output);
             output << ", " << t->children[0]->type_def_num << ")";
+            */
+
+            codegen_token(p, t->children[0], output);
+            output << " = ";
+            codegen_token(p, t->children[1], output);
         }
         else if (t->children[1]->type == Token_Type::ARRAY_INIT) {
             Token *child = t->children[1];
