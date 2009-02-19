@@ -21,7 +21,7 @@ class Internal_Type { public: enum Type { ERROR, VOID, BOOL, INT, CHAR, FLOAT, D
 class Codegen {
     std::map<unsigned int, unsigned int> internal_type_map;
 
-    unsigned int cont_id;
+    //unsigned int cont_id;
     unsigned int temp_num;
 
     Function_Def *current_fun;
@@ -86,7 +86,7 @@ public:
 
     void codegen(Program *p, Token *t, std::ostringstream &output);
 
-    Codegen() : cont_id(0), temp_num(0) { break_jmp_name = ""; catch_jmp_name = ""; }
+    Codegen() : temp_num(0) { break_jmp_name = ""; catch_jmp_name = ""; }
 };
 
 #endif /* CODEGEN_HPP_ */

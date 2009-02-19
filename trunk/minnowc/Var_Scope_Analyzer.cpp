@@ -903,9 +903,10 @@ void Var_Scope_Analyzer::analyze_freeze_resume(Program *program, Token *token, S
 
             Function_Def *owner = program->funs[scope->owner->definition_number];
             program->var_sites.push_back(push_pop);
+            continuation->definition_number = owner->continuation_sites.size();
             owner->continuation_sites.push_back(program->var_sites.size() - 1);
             owner->continuation_sites.push_back(program->var_sites.size() - 1);
-            continuation->definition_number = program->var_sites.size() - 1;
+            //continuation->definition_number = program->var_sites.size() - 1;
 
             *token = *continuation;
         }
@@ -927,9 +928,10 @@ void Var_Scope_Analyzer::analyze_freeze_resume(Program *program, Token *token, S
 
             Function_Def *owner = program->funs[scope->owner->definition_number];
             program->var_sites.push_back(push_pop);
+            continuation->definition_number = owner->continuation_sites.size();
             owner->continuation_sites.push_back(program->var_sites.size() - 1);
             owner->continuation_sites.push_back(program->var_sites.size() - 1);
-            continuation->definition_number = program->var_sites.size() - 1;
+            //continuation->definition_number = program->var_sites.size() - 1;
 
             *token = *continuation;
         }
@@ -975,9 +977,10 @@ void Var_Scope_Analyzer::analyze_freeze_resume(Program *program, Token *token, S
 
                 Function_Def *owner = program->funs[scope->owner->definition_number];
                 program->var_sites.push_back(push_pop);
+                continuation->definition_number = owner->continuation_sites.size();
                 owner->continuation_sites.push_back(program->var_sites.size() - 1);
                 owner->continuation_sites.push_back(program->var_sites.size() - 1);
-                continuation->definition_number = program->var_sites.size() - 1;
+                //continuation->definition_number = program->var_sites.size() - 1;
 
                 *token = *continuation;
             }
@@ -1019,9 +1022,10 @@ void Var_Scope_Analyzer::analyze_freeze_resume(Program *program, Token *token, S
                 }
                 Function_Def *owner = program->funs[scope->owner->definition_number];
                 program->var_sites.push_back(push_pop);
+                continuation->definition_number = owner->continuation_sites.size();
                 owner->continuation_sites.push_back(program->var_sites.size() - 1);
                 owner->continuation_sites.push_back(program->var_sites.size() - 1);
-                continuation->definition_number = program->var_sites.size() - 1;
+                //continuation->definition_number = program->var_sites.size() - 1;
 
                 *token = *continuation;
             }
@@ -1058,8 +1062,9 @@ void Var_Scope_Analyzer::analyze_freeze_resume(Program *program, Token *token, S
                 }
                 Function_Def *owner = program->funs[scope->owner->definition_number];
                 program->var_sites.push_back(push_pop);
+                continuation->definition_number = owner->continuation_sites.size();
                 owner->continuation_sites.push_back(program->var_sites.size() - 1);
-                continuation->definition_number = program->var_sites.size() - 1;
+                //continuation->definition_number = program->var_sites.size() - 1;
 
                 // *token = *continuation;
 
@@ -1081,8 +1086,9 @@ void Var_Scope_Analyzer::analyze_freeze_resume(Program *program, Token *token, S
             }
             Function_Def *owner = program->funs[scope->owner->definition_number];
             program->var_sites.push_back(push_pop);
+            continuation->definition_number = owner->continuation_sites.size();
             owner->continuation_sites.push_back(program->var_sites.size() - 1);
-            continuation->definition_number = program->var_sites.size() - 1;
+            //continuation->definition_number = program->var_sites.size() - 1;
 
             // *token = *continuation;
 
@@ -1262,7 +1268,28 @@ void Var_Scope_Analyzer::examine_equation_for_copy_delete(Program *program, Toke
                 copy_t->type_def_num = token->children[1]->type_def_num;
                 copy_t->children.push_back(token->children[1]);
 
-                token->children[1] = copy_t;
+                Token *replace_t = create_temp_replacement(program, token->children[1], bounds, scope, token->children[1]->type_def_num, false);
+
+                Token *eq_t = new Token(Token_Type::SYMBOL);
+                eq_t->contents = "=";
+                eq_t->children.push_back(replace_t);
+                eq_t->children.push_back(copy_t);
+
+                std::vector<int> continuation_site = build_push_pop_list(program, scope, token->start_pos, token->end_pos);
+                program->var_sites.push_back(continuation_site);
+
+                Token *cont_t = new Token(Token_Type::CONTINUATION_SITE);
+                cont_t->children.push_back(eq_t);
+                cont_t->definition_number = fd->continuation_sites.size();
+
+                fd->continuation_sites.push_back(program->var_sites.size() - 1);
+                fd->continuation_sites.push_back(program->var_sites.size() - 1);
+
+                block->children.insert(block->children.begin() + i, cont_t);
+                ++i;
+
+                token->children[1] = replace_t;
+                //token->children[1] = copy_t;
             }
         }
     }
@@ -1291,7 +1318,28 @@ void Var_Scope_Analyzer::examine_equation_for_copy_delete(Program *program, Toke
                         copy_t->type_def_num = token->children[1]->children[j]->type_def_num;
                         copy_t->children.push_back(token->children[1]->children[j]);
 
-                        token->children[1]->children[j] = copy_t;
+                        Token *replace_t = create_temp_replacement(program, token->children[1]->children[j], bounds, scope, token->children[1]->children[j]->type_def_num, false);
+
+                        Token *eq_t = new Token(Token_Type::SYMBOL);
+                        eq_t->contents = "=";
+                        eq_t->children.push_back(replace_t);
+                        eq_t->children.push_back(copy_t);
+
+                        std::vector<int> continuation_site = build_push_pop_list(program, scope, token->start_pos, token->end_pos);
+                        program->var_sites.push_back(continuation_site);
+
+                        Token *cont_t = new Token(Token_Type::CONTINUATION_SITE);
+                        cont_t->children.push_back(eq_t);
+                        cont_t->definition_number = fd->continuation_sites.size();
+
+                        fd->continuation_sites.push_back(program->var_sites.size() - 1);
+                        fd->continuation_sites.push_back(program->var_sites.size() - 1);
+
+                        block->children.insert(block->children.begin() + i, cont_t);
+                        ++i;
+
+                        //token->children[1]->children[j] = copy_t;
+                        token->children[1]->children[j] = replace_t;
                     }
                 }
             }
@@ -1309,19 +1357,19 @@ void Var_Scope_Analyzer::examine_equation_for_copy_delete(Program *program, Toke
             Token *delete_t = new Token(Token_Type::DELETE);
             delete_t->children.push_back(token->children[0]);
 
-            /*
             std::vector<int> continuation_site = build_push_pop_list(program, scope, token->start_pos, token->end_pos);
             program->var_sites.push_back(continuation_site);
 
             Token *cont_t = new Token(Token_Type::CONTINUATION_SITE);
             cont_t->children.push_back(delete_t);
-            cont_t->definition_number = program->var_sites.size() - 1;
+            //cont_t->definition_number = program->var_sites.size() - 1;
+            cont_t->definition_number = fd->continuation_sites.size();
 
             fd->continuation_sites.push_back(program->var_sites.size() - 1);
             fd->continuation_sites.push_back(program->var_sites.size() - 1);
-            */
 
-            block->children.insert(block->children.begin() + i, delete_t);
+            //unwind_deletion_site(program, block, token, scope, i);
+            block->children.insert(block->children.begin() + i, cont_t);
 
             i += 2;
         }
@@ -1345,10 +1393,10 @@ void Var_Scope_Analyzer::examine_equation_for_copy_delete(Program *program, Toke
 
 }
 
-void Var_Scope_Analyzer::unwind_deletion_site(Program *program, Token *token, Token *block, Scope *scope, unsigned int &pos) {
+void Var_Scope_Analyzer::unwind_deletion_site(Program *program, Token *block, Token *token, Scope *scope, Position &del_lim, unsigned int &pos) {
     Function_Def *fd = program->funs[scope->parent->owner->definition_number];
 
-    std::vector<int> delete_site = build_delete_list(program, scope, token->end_pos);
+    std::vector<int> delete_site = build_delete_list(program, scope, del_lim);
     std::vector<int> continuation_site = build_push_pop_list(program, scope, token->start_pos, token->end_pos);
     continuation_site.insert(continuation_site.begin(), delete_site.begin(), delete_site.end());
 
@@ -1370,14 +1418,17 @@ void Var_Scope_Analyzer::unwind_deletion_site(Program *program, Token *token, To
             Token *delete_t = new Token(Token_Type::DELETE);
             delete_t->children.push_back(var_ref);
 
+
             Token *cont_t = new Token(Token_Type::CONTINUATION_SITE);
             cont_t->children.push_back(delete_t);
-            cont_t->definition_number = program->var_sites.size() - 1;
+            //cont_t->definition_number = program->var_sites.size() - 1;
+            cont_t->definition_number = fd->continuation_sites.size();
 
             fd->continuation_sites.push_back(program->var_sites.size() - 1);
             fd->continuation_sites.push_back(program->var_sites.size() - 1);
 
             //token->children[2]->children.push_back(cont_t);
+
             block->children.insert(block->children.begin() + pos, cont_t);
             ++pos;
         }
@@ -1408,6 +1459,12 @@ void Var_Scope_Analyzer::analyze_copy_delete(Program *program, Token *token, Tok
         }
     }
 
+    Function_Def *fd = NULL;
+
+    if (scope != NULL) {
+        fd = program->funs[scope->owner->definition_number];
+    }
+
     if ((token->type == Token_Type::ACTION_DEF) || (token->type == Token_Type::FUN_DEF)) {
         //scope = token->scope;
         scope = token->children[2]->scope;
@@ -1416,7 +1473,7 @@ void Var_Scope_Analyzer::analyze_copy_delete(Program *program, Token *token, Tok
         if (token->children[2]->children.size() > 0) {
             if (token->children[2]->children[token->children[2]->children.size() - 1]->type != Token_Type::RETURN_CALL) {
                 unsigned int i = token->children[2]->children.size();
-                unwind_deletion_site(program, token, token->children[2], scope, i);
+                unwind_deletion_site(program, token->children[2], token, scope, token->end_pos, i);
             }
         }
     }
@@ -1458,6 +1515,8 @@ void Var_Scope_Analyzer::analyze_copy_delete(Program *program, Token *token, Tok
                 }
 
                 if (child->type == Token_Type::CONTINUATION_SITE) {
+                    unwind_deletion_site(program, token, child, scope, child->start_pos, i);
+
                     if (child->children.size() > 0) {
                         if (child->children[0]->contents == "=") {
                             bounds = child->children[0];
@@ -1469,10 +1528,19 @@ void Var_Scope_Analyzer::analyze_copy_delete(Program *program, Token *token, Tok
                             examine_port_of_exit(program, child->children[0], bounds);
                             ++i;
                         }
+
+                        else {
+                            ++i;
+                        }
+
                     }
                     else {
                         ++i;
                     }
+
+                    //unsigned int k = child->children.size() - 1;
+                    //unwind_deletion_site(program, token, child, scope, i);
+                    /*
                     std::vector<int> delete_site = build_delete_list(program, scope, child->start_pos);
                     if (delete_site.size() > 0) {
                         Token *deletion = new Token(Token_Type::DELETION_SITE);
@@ -1481,18 +1549,22 @@ void Var_Scope_Analyzer::analyze_copy_delete(Program *program, Token *token, Tok
 
                         child->children.push_back(deletion);
                     }
-
+                    */
                 }
                 else if ((child->type == Token_Type::WHILE_BLOCK) || (child->type == Token_Type::FOR_BLOCK) || (child->type == Token_Type::IF_BLOCK)) {
                     std::vector<int> delete_site = build_delete_list(program, scope, child->start_pos);
                     analyze_copy_delete(program, token->children[i], bounds, scope);
                     if (delete_site.size() > 0) {
+                        unwind_deletion_site(program, token, child, scope, child->start_pos, i);
+                        /*
                         Token *deletion = new Token(Token_Type::DELETION_SITE);
                         program->var_sites.push_back(delete_site);
                         deletion->definition_number = program->var_sites.size() - 1;
 
                         token->children.insert(token->children.begin() + i, deletion);
                         i += 2;
+                        */
+                        ++i;
                     }
                     else {
                         ++i;
@@ -1508,12 +1580,15 @@ void Var_Scope_Analyzer::analyze_copy_delete(Program *program, Token *token, Tok
                                 //std::vector<int> delete_site = build_delete_remaining_list(program, scope);
                                 std::vector<int> delete_site = build_delete_list(program, scope, child->end_pos);
                                 if (delete_site.size() > 0) {
+                                    unwind_deletion_site(program, token, child, scope, child->end_pos, i);
+                                    /*
                                     Token *deletion = new Token(Token_Type::DELETION_SITE);
                                     program->var_sites.push_back(delete_site);
                                     deletion->definition_number = program->var_sites.size() - 1;
 
                                     token->children.insert(token->children.begin() + i, deletion);
-                                    i += 2;
+                                    i += 2;*/
+                                    ++i;
                                 }
                                 else {
                                     ++i;
@@ -1528,31 +1603,37 @@ void Var_Scope_Analyzer::analyze_copy_delete(Program *program, Token *token, Tok
                             }
                             else {
                                 if (is_complex_type(program, child->children[1]->type_def_num)) {
-                                    /*
-                                    Scope *trackback = scope;
-                                    bool is_function_arg = false;
-                                    while (trackback != NULL) {
-                                        for (std::map<std::string, unsigned int>::iterator iter = trackback->local_vars.begin(), end =
-                                            trackback->local_vars.end(); iter != end; ++iter) {
-                                            if (iter->second == (unsigned)child->children[1]->definition_number) {
-                                                if (trackback->owner->type == Token_Type::FUN_DEF) {
-                                                    is_function_arg = true;
-                                                }
-                                            }
-                                        }
-                                        trackback = trackback->parent;
-                                    }
-                                    if (!is_function_arg) {*/
-                                        Token *copy_t = new Token(Token_Type::COPY);
-                                        copy_t->start_pos = child->children[1]->start_pos;
-                                        copy_t->end_pos = child->children[1]->end_pos;
-                                        copy_t->type_def_num = child->children[1]->type_def_num;
-                                        copy_t->children.push_back(child->children[1]);
+                                    Token *copy_t = new Token(Token_Type::COPY);
+                                    copy_t->start_pos = child->children[1]->start_pos;
+                                    copy_t->end_pos = child->children[1]->end_pos;
+                                    copy_t->type_def_num = child->children[1]->type_def_num;
+                                    copy_t->children.push_back(child->children[1]);
 
-                                        child->children[1] = copy_t;
-                                    //}
+                                    Token *replace_t = create_temp_replacement(program, child->children[1], bounds, scope, child->children[1]->type_def_num, false);
+
+                                    Token *eq_t = new Token(Token_Type::SYMBOL);
+                                    eq_t->contents = "=";
+                                    eq_t->children.push_back(replace_t);
+                                    eq_t->children.push_back(copy_t);
+
+                                    std::vector<int> continuation_site = build_push_pop_list(program, scope, token->start_pos, token->end_pos);
+                                    program->var_sites.push_back(continuation_site);
+
+                                    Token *cont_t = new Token(Token_Type::CONTINUATION_SITE);
+                                    cont_t->children.push_back(eq_t);
+                                    cont_t->definition_number = fd->continuation_sites.size();
+
+                                    fd->continuation_sites.push_back(program->var_sites.size() - 1);
+                                    fd->continuation_sites.push_back(program->var_sites.size() - 1);
+
+                                    token->children.insert(token->children.begin() + i, cont_t);
+                                    i += 2;
+
+                                    //child->children[1] = copy_t;
+                                    child->children[1] = replace_t;
                                 }
                                 //std::vector<int> delete_site = build_delete_remaining_list(program, scope);
+                                /*
                                 std::vector<int> delete_site = build_delete_list(program, scope, child->end_pos);
 
                                 if (delete_site.size() > 0) {
@@ -1566,6 +1647,9 @@ void Var_Scope_Analyzer::analyze_copy_delete(Program *program, Token *token, Tok
                                 else {
                                     ++i;
                                 }
+                                */
+                                unwind_deletion_site(program, token, child, scope, child->end_pos, i);
+                                ++i;
                             }
                         }
                         else {
@@ -1574,6 +1658,8 @@ void Var_Scope_Analyzer::analyze_copy_delete(Program *program, Token *token, Tok
                     }
                     else {
                         //std::vector<int> delete_site = build_delete_remaining_list(program, scope);
+                        unwind_deletion_site(program, token, child, scope, child->end_pos, i);
+                        /*
                         std::vector<int> delete_site = build_delete_list(program, scope, child->end_pos);
                         if (delete_site.size() > 0) {
                             Token *deletion = new Token(Token_Type::DELETION_SITE);
@@ -1586,6 +1672,7 @@ void Var_Scope_Analyzer::analyze_copy_delete(Program *program, Token *token, Tok
                         else {
                             ++i;
                         }
+                        */
                     }
                 }
                 else if ((child->type == Token_Type::ACTION_CALL) || (child->type == Token_Type::METHOD_CALL)
@@ -1608,7 +1695,28 @@ void Var_Scope_Analyzer::analyze_copy_delete(Program *program, Token *token, Tok
                                 copy_t->type_def_num = child->children[1]->type_def_num;
                                 copy_t->children.push_back(child->children[1]);
 
-                                child->children[1] = copy_t;
+                                Token *replace_t = create_temp_replacement(program, child->children[1], bounds, scope, child->children[1]->type_def_num, false);
+
+                                Token *eq_t = new Token(Token_Type::SYMBOL);
+                                eq_t->contents = "=";
+                                eq_t->children.push_back(replace_t);
+                                eq_t->children.push_back(copy_t);
+
+                                std::vector<int> continuation_site = build_push_pop_list(program, scope, token->start_pos, token->end_pos);
+                                program->var_sites.push_back(continuation_site);
+
+                                Token *cont_t = new Token(Token_Type::CONTINUATION_SITE);
+                                cont_t->children.push_back(eq_t);
+                                cont_t->definition_number = fd->continuation_sites.size();
+
+                                fd->continuation_sites.push_back(program->var_sites.size() - 1);
+                                fd->continuation_sites.push_back(program->var_sites.size() - 1);
+
+                                token->children.insert(token->children.begin() + i, cont_t);
+                                i += 2;
+
+                                //child->children[1] = copy_t;
+                                child->children[1] = replace_t;
                             }
                         }
                         child = child->children[0];
@@ -1622,7 +1730,16 @@ void Var_Scope_Analyzer::analyze_copy_delete(Program *program, Token *token, Tok
                         if ((vd->is_removed == false) && (vd->is_dependent == true)) {
                             Token *delete_t = new Token(Token_Type::DELETE);
                             delete_t->children.push_back(child->children[1]);
-                            token->children.insert(token->children.begin() + i, delete_t);
+
+                            Token *cont_t = new Token(Token_Type::CONTINUATION_SITE);
+                            cont_t->children.push_back(delete_t);
+                            cont_t->definition_number = fd->continuation_sites.size();
+
+                            fd->continuation_sites.push_back(program->var_sites.size() - 1);
+                            fd->continuation_sites.push_back(program->var_sites.size() - 1);
+
+                            //token->children.insert(token->children.begin() + i, delete_t);
+                            token->children.insert(token->children.begin() + i, cont_t);
 
                             i += 2;
                         }

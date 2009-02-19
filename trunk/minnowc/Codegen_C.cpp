@@ -1373,7 +1373,9 @@ void Codegen::codegen_reference_feature(Program *p, Token *t, std::ostringstream
 void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream &output) {
     Function_Def *owner = this->current_fun;
 
-    ++this->cont_id;
+    //++this->cont_id;
+    int cont_id = t->definition_number;
+
 
     if ((t->children.size() > 0) && (t->children[0]->type != Token_Type::DELETION_SITE)) {
         output << "((Actor__*)m__->recipient)->timeslice_remaining = timeslice__;" << std::endl;
@@ -1381,7 +1383,7 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
         if (t->children.size() > 1) {
             codegen_token(p, t->children[1], output);
         }
-        output << "case(" << this->cont_id << "):" << std::endl;
+        output << "case(" << cont_id << "):" << std::endl;
         codegen_token(p, t->children[0], output);
         output << ";" << std::endl;
 
@@ -1407,11 +1409,11 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
         output << "}" << std::endl;
 
         if (t->definition_number != -1) {
-            for (unsigned int i = 0; i < p->var_sites[t->definition_number].size(); ++i) {
-                output << "push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &var__" << p->var_sites[t->definition_number][i] << ");" << std::endl;
+            for (unsigned int i = 0; i < p->var_sites[owner->continuation_sites[t->definition_number]].size(); ++i) {
+                output << "push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &var__" << p->var_sites[owner->continuation_sites[t->definition_number]][i] << ");" << std::endl;
             }
         }
-        output << "cont_id__ = " << this->cont_id << ";" << std::endl;
+        output << "cont_id__ = " << cont_id << ";" << std::endl;
         output << "push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &cont_id__);" << std::endl;
         if (owner->token->type == Token_Type::ACTION_DEF) {
             //output << "((Actor__*)m__->recipient)->actor_state = ACTOR_STATE_ACTIVE__;" << std::endl;
@@ -1426,14 +1428,14 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
         output << "else if (--timeslice__ == 0) {" << std::endl;
         output << "((Actor__*)m__->recipient)->timeslice_remaining = timeslice__;" << std::endl;
 
-        ++this->cont_id;
+        ++cont_id;
 
         if (t->definition_number != -1) {
-            for (unsigned int i = 0; i < p->var_sites[t->definition_number].size(); ++i) {
-                output << "push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &var__" << p->var_sites[t->definition_number][i] << ");" << std::endl;
+            for (unsigned int i = 0; i < p->var_sites[owner->continuation_sites[t->definition_number]].size(); ++i) {
+                output << "push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &var__" << p->var_sites[owner->continuation_sites[t->definition_number]][i] << ");" << std::endl;
             }
         }
-        output << "cont_id__ = " << this->cont_id << ";" << std::endl;
+        output << "cont_id__ = " << cont_id << ";" << std::endl;
         output << "push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &cont_id__);" << std::endl;
         if (owner->token->type == Token_Type::ACTION_DEF) {
             output << "((Actor__*)m__->recipient)->actor_state = ACTOR_STATE_ACTIVE__;" << std::endl;
@@ -1446,7 +1448,7 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
             output << "; } " << std::endl;
         }
 
-        output << "case(" << this->cont_id << "):" << std::endl;
+        output << "case(" << cont_id << "):" << std::endl;
     }
     else {
         if ((t->children.size() > 0) && (t->children[0]->type == Token_Type::DELETION_SITE)) {
@@ -1455,11 +1457,11 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
         output << "if (--timeslice__ == 0) {" << std::endl;
         output << "((Actor__*)m__->recipient)->timeslice_remaining = timeslice__;" << std::endl;
         if (t->definition_number != -1) {
-            for (unsigned int i = 0; i < p->var_sites[t->definition_number].size(); ++i) {
-                output << "push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &var__" << p->var_sites[t->definition_number][i] << ");" << std::endl;
+            for (unsigned int i = 0; i < p->var_sites[owner->continuation_sites[t->definition_number]].size(); ++i) {
+                output << "push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &var__" << p->var_sites[owner->continuation_sites[t->definition_number]][i] << ");" << std::endl;
             }
         }
-        output << "cont_id__ = " << this->cont_id << ";" << std::endl;
+        output << "cont_id__ = " << cont_id << ";" << std::endl;
         output << "push_onto_typeless_vector__(((Actor__*)m__->recipient)->continuation_stack, &cont_id__);" << std::endl;
         if (owner->token->type == Token_Type::ACTION_DEF) {
             output << "((Actor__*)m__->recipient)->actor_state = ACTOR_STATE_ACTIVE__;" << std::endl;
@@ -1470,7 +1472,7 @@ void Codegen::codegen_continuation_site(Program *p, Token *t, std::ostringstream
             codegen_default_value(p, owner->return_type_def_num, output);
             output << "; } " << std::endl;
         }
-        output << "case(" << this->cont_id << "):" << std::endl;
+        output << "case(" << cont_id << "):" << std::endl;
     }
 }
 
@@ -2094,7 +2096,7 @@ void Codegen::codegen_action_decl(Program *p, Token *t, std::ostringstream &outp
                     output << "}" << std::endl;
                     */
 
-                    this->cont_id = 0;
+                    //this->cont_id = 0;
                     output << "switch(cont_id__) {" << std::endl;
                     output << "case(0):" << std::endl;
                     if (fd->token->children.size() > 2) {
@@ -2303,7 +2305,7 @@ void Codegen::codegen_fun_decl(Program *p, Token *t, std::ostringstream &output)
                     }
                     output << "}" << std::endl;
                     */
-                    this->cont_id = 0;
+                    //this->cont_id = 0;
                     output << "switch(cont_id__) {" << std::endl;
                     output << "case(0):" << std::endl;
                     if (fd->token->children.size() > 2) {
