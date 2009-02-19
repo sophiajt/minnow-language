@@ -55,10 +55,10 @@ int main(int argc, char *argv[]) {
     std::string lib_dir = ".";
     std::string include_dir = "aquarium";
     std::string optimization_level = "0";
-    std::string prelude = prefix_dir + "prelude.mno";
+    std::string prelude = "prelude.mno";
 
-    #ifdef INSTALLPREFIX
-        prefix_dir = INSTALLPREFIX;
+    #ifdef INSTALL_PREFIX
+        prefix_dir = INSTALL_PREFIX;
         prelude_dir = prefix_dir + "share/minnow/";
         lib_dir = prefix_dir + "lib";
         include_dir = prefix_dir + "include/minnow";
