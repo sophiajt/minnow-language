@@ -12,7 +12,7 @@
 
 #include "Compiler.hpp"
 
-#define MINNOW_VERSION "v1.0a3-pre"
+#define MINNOW_VERSION "v1.0a3"
 
 void print_help() {
     printf("Usage: minnowc <options> <filename(s)>\n");

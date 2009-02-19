@@ -27,13 +27,22 @@ On Windows Vista:
   - cmake -DCMAKE_BUILD_TYPE=gdb -G "MSYS Makefiles" .
   - make
 
-If all goes well you'll have a libaquarium in the main directory as well as a ./bin/minnowc (or bin/minnowc.exe on Windows).  This is the minnow compiler.  To do its dirty work, it requires GCC, but assuming you built the above correctly, we can assume you have GCC also.
+If all goes well you'll have a libaquarium in the main directory as well as a ./bin/minnowc (or bin/minnowc.exe on Windows).  This is the minnow compiler.  To do its dirty work, it requires GCC, but assuming you built the above correctly, we can assume you have GCC also.  If you built aquarium and minnow with Visual Studio, the compiler will instead look for the "cl.exe" commandline compiler.
 
 -=[USAGE]=-
 
+Usage: minnowc <options> <filename(s)>
+-o <filename>   : compile and output to a binary file
+-O <level>      : set the optimization level
+-I <source dir> : add a source include directory to your search path
+-L <lib dir>    : add a library directory to the library search path
+-C              : output the generated C file to the stdout
+-v              : print version
+-h              : this help
+
 To compile a Minnow source file, make sure you're in the main source directory (where libaquarium is), and run:
 
-  - ./bin/minnowc <SOURCE FILE> -o <OUTPUT BINARY>
+  ./bin/minnowc <SOURCE FILE> -o <OUTPUT BINARY>
 
 There are lots of examples to get you started in the ./samples directory.  Also be sure to check out the Minnow documentation wiki at: http://www.minnow-lang.org/docs
 
