@@ -26,17 +26,17 @@ SET (MINNOW_SRCS minnowc/main.cpp minnowc/Var_Scope_Analyzer.cpp minnowc/Type_An
 SET (AQUARIUM_LIBS )
 #Platform ident hackery
 IF (WIN32)
-#  SET(CMAKE_BUILD_TYPE release)
-#  SET(CMAKE_CXX_FLAGS_RELEASE " -Wall -DINSTALLPREFIX=\"\\\"${CMAKE_INSTALL_PREFIX}/\"\\\" -O3")
-#  SET(CMAKE_C_FLAGS_RELEASE " -Wall -DINSTALLPREFIX=\"\\\"${CMAKE_INSTALL_PREFIX}/\"\\\" -O3")
+  IF (MINGW)
+    SET(CMAKE_BUILD_TYPE release)
+    SET(CMAKE_CXX_FLAGS_RELEASE " -Wall -DINSTALLPREFIX=\"\\\"${CMAKE_INSTALL_PREFIX}/\"\\\" -O3")
+    SET(CMAKE_C_FLAGS_RELEASE " -Wall -DINSTALLPREFIX=\"\\\"${CMAKE_INSTALL_PREFIX}/\"\\\" -O3")
+  ENDIF (MINGW)
 
-#  IF (MINGW)
     SET (AQUARIUM_SRCS ${AQUARIUM_SRCS} aquarium/Windows/Threading.cpp)
-#  ENDIF (MINGW)
 ELSE (WIN32)
-#  SET(CMAKE_BUILD_TYPE release)
-#  SET(CMAKE_CXX_FLAGS_RELEASE " -Wall -DINSTALLPREFIX=\\\"${CMAKE_INSTALL_PREFIX}/\\\" -O3")
-#  SET(CMAKE_C_FLAGS_RELEASE " -Wall -DINSTALLPREFIX=\\\"${CMAKE_INSTALL_PREFIX}/\\\" -O3")
+  SET(CMAKE_BUILD_TYPE release)
+  SET(CMAKE_CXX_FLAGS_RELEASE " -Wall -DINSTALLPREFIX=\\\"${CMAKE_INSTALL_PREFIX}/\\\" -O3")
+  SET(CMAKE_C_FLAGS_RELEASE " -Wall -DINSTALLPREFIX=\\\"${CMAKE_INSTALL_PREFIX}/\\\" -O3")
   
 ENDIF (WIN32)
 
@@ -81,7 +81,7 @@ INSTALL(TARGETS bin/minnowc aquarium
 INSTALL(FILES aquarium/Actor.hpp aquarium/Aquarium.hpp aquarium/Char_String.hpp
  aquarium/Common.hpp aquarium/Message.hpp aquarium/Message_Channel.hpp 
  aquarium/Object_Feature.hpp aquarium/Scheduler.hpp aquarium/Typeless_Vector.hpp
- aquarium/Minnow_Prelude.hpp DESTINATION include/minnow)
+ aquarium/Minnow_Prelude.hpp aquarium/Typeless_Dictionary.hpp DESTINATION include/minnow)
 INSTALL(FILES prelude.mno DESTINATION share/minnow)
 
 IF(INCLUDE_TESTS) 

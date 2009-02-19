@@ -55,19 +55,21 @@ int main(int argc, char *argv[]) {
     std::string lib_dir = ".";
     std::string include_dir = "aquarium";
     std::string optimization_level = "0";
+    std::string prelude = prefix_dir + "prelude.mno";
 
     #ifdef INSTALLPREFIX
         prefix_dir = INSTALLPREFIX;
         prelude_dir = prefix_dir + "share/minnow/";
         lib_dir = prefix_dir + "lib";
         include_dir = prefix_dir + "include/minnow";
+        prelude = prelude_dir + "/prelude.mno";
     #endif
 
     std::vector<std::string> lib_dirs;
     lib_dirs.push_back(lib_dir);
 
     try {
-        sources.push_back(prelude_dir + "prelude.mno");
+        sources.push_back(prelude);
 
         int i = 1;
         while (i < argc) {
