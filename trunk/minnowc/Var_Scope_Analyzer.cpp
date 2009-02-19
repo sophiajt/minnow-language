@@ -1489,25 +1489,22 @@ void Var_Scope_Analyzer::analyze_copy_delete(Program *program, Token *token, Tok
             while (i < token->children.size()) {
                 Token *child = token->children[i];
 
-                //if (bounds == NULL) {
-                    switch (child->type) {
-                        case (Token_Type::ACTION_CALL) :
-                        case (Token_Type::ARRAY_CALL) :
-                        case (Token_Type::CONCATENATE) :
-                        case (Token_Type::CONCATENATE_ARRAY) :
-                        case (Token_Type::CONSTRUCTOR_CALL) :
-                        case (Token_Type::FUN_CALL) :
-                        case (Token_Type::METHOD_CALL) :
-                        case (Token_Type::NEW_ALLOC) :
-                        case (Token_Type::RETURN_CALL) :
-                        case (Token_Type::SYMBOL) :
-                            bounds = child;
-                        break;
-                        default:
-                            bounds = NULL;
-                    }
-                //}
-
+                switch (child->type) {
+                    case (Token_Type::ACTION_CALL) :
+                    case (Token_Type::ARRAY_CALL) :
+                    case (Token_Type::CONCATENATE) :
+                    case (Token_Type::CONCATENATE_ARRAY) :
+                    case (Token_Type::CONSTRUCTOR_CALL) :
+                    case (Token_Type::FUN_CALL) :
+                    case (Token_Type::METHOD_CALL) :
+                    case (Token_Type::NEW_ALLOC) :
+                    case (Token_Type::RETURN_CALL) :
+                    case (Token_Type::SYMBOL) :
+                        bounds = child;
+                    break;
+                    default:
+                        bounds = NULL;
+                }
 
                 //While handles analysis differently, so we check for that here
                 if ((child->type != Token_Type::WHILE_BLOCK) && (child->type != Token_Type::FOR_BLOCK)) {
@@ -1537,38 +1534,12 @@ void Var_Scope_Analyzer::analyze_copy_delete(Program *program, Token *token, Tok
                     else {
                         ++i;
                     }
-
-                    //unsigned int k = child->children.size() - 1;
-                    //unwind_deletion_site(program, token, child, scope, i);
-                    /*
-                    std::vector<int> delete_site = build_delete_list(program, scope, child->start_pos);
-                    if (delete_site.size() > 0) {
-                        Token *deletion = new Token(Token_Type::DELETION_SITE);
-                        program->var_sites.push_back(delete_site);
-                        deletion->definition_number = program->var_sites.size() - 1;
-
-                        child->children.push_back(deletion);
-                    }
-                    */
                 }
                 else if ((child->type == Token_Type::WHILE_BLOCK) || (child->type == Token_Type::FOR_BLOCK) || (child->type == Token_Type::IF_BLOCK)) {
+                    unwind_deletion_site(program, token, child, scope, child->start_pos, i);
                     std::vector<int> delete_site = build_delete_list(program, scope, child->start_pos);
                     analyze_copy_delete(program, token->children[i], bounds, scope);
-                    if (delete_site.size() > 0) {
-                        unwind_deletion_site(program, token, child, scope, child->start_pos, i);
-                        /*
-                        Token *deletion = new Token(Token_Type::DELETION_SITE);
-                        program->var_sites.push_back(delete_site);
-                        deletion->definition_number = program->var_sites.size() - 1;
-
-                        token->children.insert(token->children.begin() + i, deletion);
-                        i += 2;
-                        */
-                        ++i;
-                    }
-                    else {
-                        ++i;
-                    }
+                    ++i;
                 }
                 else if (child->type == Token_Type::RETURN_CALL) {
                     if (child->children.size() > 1) {
@@ -1577,22 +1548,8 @@ void Var_Scope_Analyzer::analyze_copy_delete(Program *program, Token *token, Tok
                             Var_Def *vd = program->vars[child->children[1]->definition_number];
                             if (vd->is_dependent == true) {
                                 vd->is_removed = true;
-                                //std::vector<int> delete_site = build_delete_remaining_list(program, scope);
-                                std::vector<int> delete_site = build_delete_list(program, scope, child->end_pos);
-                                if (delete_site.size() > 0) {
-                                    unwind_deletion_site(program, token, child, scope, child->end_pos, i);
-                                    /*
-                                    Token *deletion = new Token(Token_Type::DELETION_SITE);
-                                    program->var_sites.push_back(delete_site);
-                                    deletion->definition_number = program->var_sites.size() - 1;
-
-                                    token->children.insert(token->children.begin() + i, deletion);
-                                    i += 2;*/
-                                    ++i;
-                                }
-                                else {
-                                    ++i;
-                                }
+                                unwind_deletion_site(program, token, child, scope, child->end_pos, i);
+                                ++i;
 
                                 if (vd->usage_end == child->end_pos) {
                                     vd->is_removed = true;
@@ -1632,22 +1589,6 @@ void Var_Scope_Analyzer::analyze_copy_delete(Program *program, Token *token, Tok
                                     //child->children[1] = copy_t;
                                     child->children[1] = replace_t;
                                 }
-                                //std::vector<int> delete_site = build_delete_remaining_list(program, scope);
-                                /*
-                                std::vector<int> delete_site = build_delete_list(program, scope, child->end_pos);
-
-                                if (delete_site.size() > 0) {
-                                    Token *deletion = new Token(Token_Type::DELETION_SITE);
-                                    program->var_sites.push_back(delete_site);
-                                    deletion->definition_number = program->var_sites.size() - 1;
-
-                                    token->children.insert(token->children.begin() + i, deletion);
-                                    i += 2;
-                                }
-                                else {
-                                    ++i;
-                                }
-                                */
                                 unwind_deletion_site(program, token, child, scope, child->end_pos, i);
                                 ++i;
                             }
@@ -1657,22 +1598,7 @@ void Var_Scope_Analyzer::analyze_copy_delete(Program *program, Token *token, Tok
                         }
                     }
                     else {
-                        //std::vector<int> delete_site = build_delete_remaining_list(program, scope);
                         unwind_deletion_site(program, token, child, scope, child->end_pos, i);
-                        /*
-                        std::vector<int> delete_site = build_delete_list(program, scope, child->end_pos);
-                        if (delete_site.size() > 0) {
-                            Token *deletion = new Token(Token_Type::DELETION_SITE);
-                            program->var_sites.push_back(delete_site);
-                            deletion->definition_number = program->var_sites.size() - 1;
-
-                            token->children.insert(token->children.begin() + i, deletion);
-                            i += 2;
-                        }
-                        else {
-                            ++i;
-                        }
-                        */
                     }
                 }
                 else if ((child->type == Token_Type::ACTION_CALL) || (child->type == Token_Type::METHOD_CALL)
