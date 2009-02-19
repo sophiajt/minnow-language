@@ -58,8 +58,6 @@ public:
     void codegen_delete_predecl(Program *p, std::ostringstream &output);
     void codegen_copy_decl(Program *p, unsigned int type_def_num, std::ostringstream &output);
     void codegen_delete_decl(Program *p, std::ostringstream &output);
-    void codegen_safe_eq_predecl(Program *p, Token *token, std::ostringstream &output);
-    void codegen_safe_eq_decl(Program *p, Token *token, std::ostringstream &output);
 
     void codegen_concatenate(Program *p, Token *t, std::ostringstream &output);
 

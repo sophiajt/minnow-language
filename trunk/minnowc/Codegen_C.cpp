@@ -2826,19 +2826,6 @@ void Codegen::codegen_delete_decl(Program *p, std::ostringstream &output) {
     output << "}" << std::endl;
 }
 
-void Codegen::codegen_safe_eq_predecl(Program *p, Token *token, std::ostringstream &output) {
-    output << "void *safe_eq__(Message__ *m__, void **lhs__, void *rhs__, unsigned int t__);" << std::endl;
-}
-
-void Codegen::codegen_safe_eq_decl(Program *p, Token *token, std::ostringstream &output) {
-    output << "void *safe_eq__(Message__ *m__, void **lhs__, void *rhs__, unsigned int t__) {" << std::endl;
-    output << "  if (*lhs__ != NULL) {" << std::endl;
-    output << "    delete__(m__, *lhs__, t__);" << std::endl;
-    output << "  }" << std::endl;
-    output << "  *lhs__ = rhs__;" << std::endl;
-    output << "}" << std::endl;
-}
-
 void Codegen::codegen_class_predecl(Program *p, Token *t, std::ostringstream &output) {
     for (unsigned int i = 0; i < p->types.size(); ++i) {
 		if ((p->types[i]->is_internal == false) && (p->types[i]->container == Container_Type::SCALAR) && (p->types[i]->token->type != Token_Type::ENUM_DEF)) {
@@ -3045,7 +3032,6 @@ void Codegen::codegen(Program *p, Token *t, std::ostringstream &output) {
     codegen_action_predecl(p, t, output);
     codegen_copy_predecl(p, 0, output);
     codegen_delete_predecl(p, output);
-    codegen_safe_eq_predecl(p, t, output);
 
     codegen_array_concat_decl(p, output);
 
@@ -3056,7 +3042,6 @@ void Codegen::codegen(Program *p, Token *t, std::ostringstream &output) {
     codegen_action_decl(p, t, output);
     codegen_copy_decl(p, 0, output);
     codegen_delete_decl(p, output);
-    codegen_safe_eq_decl(p, t, output);
 
     codegen_main_action(p, output);
 
