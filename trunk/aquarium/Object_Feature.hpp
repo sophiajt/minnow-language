@@ -11,8 +11,8 @@
  */
 typedef struct feature__{
     struct feature__ *parent; /**< The parent of the feature, NULL if a primary */
-    struct feature__ *next; /**< The previous feature in the dl-list, NULL if head */
-    struct feature__ *prev; /**< The next feature in the dl-list, NULL if tail */
+    struct feature__ *next; /**< The next feature in the dl-list, NULL if tail */
+    struct feature__ *prev; /**< The previous feature in the dl-list, NULL if head */
     unsigned int feature_id; /**< The id, which is unique for each feature type */
 } Object_Feature__;
 
