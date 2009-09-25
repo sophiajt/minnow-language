@@ -1,0 +1,1 @@
+Error: Actions do not have return types at line 2 col 1 in unittests/compiler_errors/broken_action.mno

@@ -1,0 +1,12 @@
+action main (args : Array[string])
+ i:int 
+ j:Array[int] = new Array[int]
+ k:Array[Array[int]]
+ k = new Array[Array[int]]
+
+ i = 3
+ j.push(i)
+ z : int = j.pop() 
+ print(z)
+ Sys.exit()
+end

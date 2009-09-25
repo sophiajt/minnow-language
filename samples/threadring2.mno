@@ -1,0 +1,34 @@
+actor Passer
+  m_id : int
+  m_next : Passer
+ 
+  action pass(token : int)
+    if (token == 0)
+      print(m_id)
+      Sys.exit(0)
+    else
+      token -= 1
+      m_next::pass(token)
+    end
+  end
+ 
+  action setIdAndNext(id : int, next : Passer)
+    m_id = id
+    m_next = next
+  end
+end
+ 
+action main(args : Array[string])
+  $head = spawn Passer()
+  $curr = head
+
+  for $i = 1 to 502
+    $next = spawn Passer()
+    curr::setIdAndNext(i, next)
+    curr = next
+  end
+
+  curr::setIdAndNext(503, head)
+  head::pass(args[0].to_int())
+end
+

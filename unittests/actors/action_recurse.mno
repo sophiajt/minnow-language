@@ -1,0 +1,23 @@
+actor Bob
+  z : int
+  action greet(a : int)
+    x : int = 4
+    z
+    if (a > 0)
+      greet(a-1)
+    else
+      print("Done")
+      Sys.exit()
+    end
+  end
+end
+
+namespace Circle
+feature Bob
+end
+
+namespace global
+action main
+  y : Bob = spawn Bob()
+  y::greet(3)
+end

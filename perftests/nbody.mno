@@ -1,0 +1,154 @@
+enum BodyName(sun, jupiter, saturn, uranus, neptune)
+
+feature NBodySystem
+  bodies : Array[Body]
+  
+  def NBodySystem
+    bodies = [new Body(BodyName.sun), new Body(BodyName.jupiter), new Body(BodyName.saturn), new Body(BodyName.uranus), ...
+      new Body(BodyName.neptune)]
+    
+    px : double = 0.0
+    py : double = 0.0
+    pz : double = 0.0
+    i : int
+    for i = 0 to bodies.size()-1
+      px += bodies[i].vx * bodies[i].mass
+      py += bodies[i].vy * bodies[i].mass
+      pz += bodies[i].vz * bodies[i].mass
+    end
+    bodies[0].offset_momentum(px, py, pz) 
+  end
+
+  def advance(dt : double)
+    i : int
+    for i = 0 to bodies.size()-1
+      j : int
+      for j = i+1 to bodies.size()-1
+        dx : double = bodies[i].x - bodies[j].x
+        dy : double = bodies[i].y - bodies[j].y
+        dz : double = bodies[i].z - bodies[j].z
+
+        d_squared : double = dx ** 2 + dy ** 2 + dz ** 2
+        distance : double = Math.sqrt(d_squared)
+        mag : double = dt / (d_squared * distance)
+
+        bodies[i].vx -= dx * bodies[j].mass * mag
+        bodies[i].vy -= dy * bodies[j].mass * mag
+        bodies[i].vz -= dz * bodies[j].mass * mag
+
+        bodies[j].vx += dx * bodies[i].mass * mag
+        bodies[j].vy += dy * bodies[i].mass * mag
+        bodies[j].vz += dz * bodies[i].mass * mag
+      end
+    end
+    
+    for i = 0 to bodies.size()-1
+      bodies[i].x += dt * bodies[i].vx
+      bodies[i].y += dt * bodies[i].vy
+      bodies[i].z += dt * bodies[i].vz
+    end
+  end
+
+  def energy() : double
+    dx : double
+    dy : double
+    dz : double
+    distance : double
+    e : double = 0.0
+
+    i : int
+    for i = 0 to bodies.size() - 1
+      e += 0.5 * bodies[i].mass * (bodies[i].vx ** 2 + bodies[i].vy ** 2 + bodies[i].vz ** 2)
+      j : int
+      for j = i+1 to bodies.size() - 1
+        dx = bodies[i].x - bodies[j].x
+        dy = bodies[i].y - bodies[j].y
+        dz = bodies[i].z - bodies[j].z
+
+        distance = Math.sqrt(dx ** 2 + dy ** 2 + dz ** 2)
+        e -= (bodies[i].mass * bodies[j].mass) / distance
+      end
+    end
+    return e
+  end
+end
+
+feature Body
+  x : double
+  y : double
+  z : double
+  vx : double
+  vy : double
+  vz : double
+  mass : double
+
+  PI : double
+  SOLAR_MASS : double
+  DAYS_PER_YEAR : double
+
+  def Body(bn : BodyName)
+    PI = 3.141592653589793
+    SOLAR_MASS = 4 * PI * PI
+    DAYS_PER_YEAR = 365.24
+
+    if (bn == BodyName.jupiter)
+      x = 4.84143144246472090e+00;
+      y = -1.16032004402742839e+00;
+      z = -1.03622044471123109e-01;
+      vx = 1.66007664274403694e-03 * DAYS_PER_YEAR;
+      vy = 7.69901118419740425e-03 * DAYS_PER_YEAR;
+      vz = -6.90460016972063023e-05 * DAYS_PER_YEAR;
+      mass = 9.54791938424326609e-04 * SOLAR_MASS;
+    elseif (bn == BodyName.saturn)
+      x = 8.34336671824457987e+00;
+      y = 4.12479856412430479e+00;
+      z = -4.03523417114321381e-01;
+      vx = -2.76742510726862411e-03 * DAYS_PER_YEAR;
+      vy = 4.99852801234917238e-03 * DAYS_PER_YEAR;
+      vz = 2.30417297573763929e-05 * DAYS_PER_YEAR;
+      mass = 2.85885980666130812e-04 * SOLAR_MASS;
+    elseif (bn == BodyName.uranus)
+      x = 1.28943695621391310e+01;
+      y = -1.51111514016986312e+01;
+      z = -2.23307578892655734e-01;
+      vx = 2.96460137564761618e-03 * DAYS_PER_YEAR;
+      vy = 2.37847173959480950e-03 * DAYS_PER_YEAR;
+      vz = -2.96589568540237556e-05 * DAYS_PER_YEAR;
+      mass = 4.36624404335156298e-05 * SOLAR_MASS;
+    elseif (bn == BodyName.neptune)
+      x = 1.53796971148509165e+01;
+      y = -2.59193146099879641e+01;
+      z = 1.79258772950371181e-01;
+      vx = 2.68067772490389322e-03 * DAYS_PER_YEAR;
+      vy = 1.62824170038242295e-03 * DAYS_PER_YEAR;
+      vz = -9.51592254519715870e-05 * DAYS_PER_YEAR;
+      mass = 5.15138902046611451e-05 * SOLAR_MASS;
+    elseif (bn == BodyName.sun)
+      mass = SOLAR_MASS;
+    end
+  end
+
+  def offset_momentum(px : double, py : double, pz : double) 
+    vx = (0.0 - px) / SOLAR_MASS
+    vy = (0.0 - py) / SOLAR_MASS
+    vz = (0.0 - pz) / SOLAR_MASS
+  end
+end
+
+
+
+
+
+action main(args : Array[string])
+  n : int = args[0].to_int()
+  bodies : var = new NBodySystem()
+  print(bodies.energy(), 9)
+  print("\n")
+  i : int
+  for i = 0 to n-1
+    bodies.advance(0.01)
+  end
+  print(bodies.energy(), 9)
+  print("\n")
+  Sys.exit()
+end

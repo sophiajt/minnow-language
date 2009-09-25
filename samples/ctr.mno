@@ -1,0 +1,12 @@
+feature Bob
+  y : int
+  def Bob(x : int)
+    y = x
+  end
+end
+
+action main
+  z : Bob = new Bob(3)
+  print(z.y)
+  Sys.exit()
+end

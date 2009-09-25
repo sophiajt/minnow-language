@@ -1,0 +1,29 @@
+feature Bob
+  def greet()
+    print("Hello")
+  end
+end
+
+feature Fred
+end
+
+action main
+  o : object <+ new Fred() <+ new Bob()
+  if (o.is_null()) 
+    print("o is null\n")
+  else
+    print("o is not null\n")
+  end
+
+  //o <+ new Bob()
+  //o +> o.Bob
+
+  if (o.Bob.is_null())
+    print("Doesn't have Bob\n")
+  else
+    print("Has Bob\n")
+  end
+
+  Sys.exit()
+end
+

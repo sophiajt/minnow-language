@@ -1,0 +1,22 @@
+feature Feature1
+end
+
+feature Feature2
+end
+
+action main
+  o : object <+ new Feature1()
+  if (o.Feature1.is_null()) 
+    print("True")
+  else
+    print("False")
+  end
+
+  if (o.Feature2.is_null()) 
+    print("True")
+  else
+    print("False")
+  end
+
+  Sys.exit()
+end

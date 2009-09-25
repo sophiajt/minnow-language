@@ -1,0 +1,31 @@
+actor Passer
+  id : int
+  next : Passer
+
+  action pass(token : int)
+    if (token == 0)
+      print(id)
+      Sys.exit()
+    else
+      token -= 1
+      next::pass(token)
+    end
+  end
+
+  action make_next(head:Passer, next_id:int)
+    id = next_id
+    if (next_id == 503)
+      next = head //loop back to head of list
+    else
+      next_id += 1
+      next = spawn Passer()
+      next::make_next(head, next_id)
+    end
+  end
+end
+
+action main(args : Array[string])
+  $p = spawn Passer()
+  p::make_next(p, 1)
+  p::pass(args[0].to_int())
+end

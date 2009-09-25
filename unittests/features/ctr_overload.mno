@@ -1,0 +1,18 @@
+feature Test
+  i : int
+  def Test(j : int)
+    i = j
+  end
+  def Test()
+    i = 4
+  end
+end
+
+action main
+  t : Test = new Test(5)
+  print(t.i)
+  t = new Test()
+  print(t.i)
+
+  Sys.exit()
+end

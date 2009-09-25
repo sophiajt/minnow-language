@@ -1,0 +1,12 @@
+feature Long
+  def Long
+    for $i = 1 to 5000
+      print(i)
+    end
+  end
+end
+
+action main
+  new Long()
+  Sys.exit()
+end

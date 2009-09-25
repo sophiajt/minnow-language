@@ -1,0 +1,144 @@
+actor Output
+  current_index : int
+  answer_data : Array[Array[char]]
+  total_blocks : int
+
+  def Output(width : int, height : int)
+    answer_data = new Array[Array[char]]
+    current_index = 0
+
+    total_blocks = Sys.num_hw_threads()
+    i : int = 0
+    while (i < total_blocks)
+      answer_data.push(new Array[char])
+      i += 1
+    end
+
+    print("P4\n")
+    print(width.to_string() + " " + height.to_string() + "\n" )
+  end
+
+  def output_data
+    s : var = answer_data[current_index].size()
+    while (s > 0) 
+      i : int = 0
+      a : var = answer_data[current_index]
+
+      while (i < s)
+        print(a[i])
+        i += 1
+      end
+
+      current_index += 1
+      if (current_index == total_blocks)
+        Sys.exit()
+      end
+      s = answer_data[current_index].size()
+    end
+  end
+
+  action receive_data(data : Array[char], slot : int)
+    answer_data[slot] = data
+    output_data()
+  end
+end
+
+actor Calculator
+  m_width : int
+  m_height : int
+  m_output : Output
+
+  def Calculator(width : int, height : int, output : Output)
+    m_width = width
+    m_height = height
+    m_output = output
+  end
+
+  action calculate_block(start_row : int, end_row : int, slot : int)
+    Zr : double
+    Zi : double
+    Cr : double
+    Ci : double
+    Tr : double
+    Ti : double
+    iter : int = 50
+    limit : double = 2.0
+    i : int
+    block : var = new Array[char]
+    acc : int = 0
+    bit_num : int = 0
+
+    x : int 
+    y : int = start_row
+    while (y < end_row)
+      x = 0
+      while (x < m_width)
+        Zr = 0.0
+        Zi = 0.0
+        Tr = 0.0
+        Ti = 0.0
+
+        Cr = (2.0*x.to_double()/m_width.to_double() - 1.5)
+        Ci = (2.0*y.to_double()/m_height.to_double() - 1.0)
+
+        i = 0
+        while ((i < iter) && (Tr + Ti <= limit * limit))
+          Zi = 2.0 * Zr * Zi + Ci
+          Zr = Tr - Ti + Cr
+          Tr = Zr * Zr
+          Ti = Zi * Zi
+          i += 1
+        end
+
+        acc = acc.bit_shl(1)
+        if ((Tr+Ti) <= limit*limit)
+          acc = acc.bit_or(1)
+        end
+
+        bit_num += 1
+
+        if (bit_num == 8)
+          block.push(acc.to_char())
+          acc = 0
+          bit_num = 0
+        elseif (x == m_width - 1)
+          acc = acc.bit_shl(8 - m_width % 8)
+          block.push(acc.to_char())
+          acc = 0
+          bit_num = 0
+        end
+
+        x += 1
+      end
+
+      y += 1
+    end
+
+    m_output::receive_data(block, slot)
+  end
+end
+
+
+action main(args : Array[string])
+  if (args.size() == 0) 
+    print("Please specify size: mandelbrot <size>\n")
+    Sys.exit()
+  end
+
+  w : int = args[0].to_int()
+  h : int = w
+
+  o : var = spawn Output(w, h)
+  
+  total_calcs : var = Sys.num_hw_threads()
+  i : int = 0
+  row : int = 0
+
+  while (i < total_calcs)
+    c : var = spawn Calculator(w, h, o)
+    c::calculate_block(row, row + h / total_calcs, i)
+
+    row = row + h / total_calcs
+    i += 1
+  end
+end

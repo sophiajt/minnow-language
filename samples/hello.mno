@@ -1,0 +1,4 @@
+action main
+  print("Hello, world\n")
+  Sys.exit()
+end

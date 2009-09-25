@@ -1,0 +1,72 @@
+feature Node
+  l : Node
+  r : Node
+  i : int
+  def Node(i2 : int) 
+    i = i2
+  end
+
+  def Node(l2 : Node, i2 : int, r2 : Node)
+    l = l2
+    i = i2
+    r = r2
+  end
+
+  def check() : int 
+    if (l.is_null() == false)
+      return(l.check() + i - r.check())
+    else
+      return(i)
+    end
+  end
+end
+
+def make(i : int, d : int) : Node
+  if (d == 0)
+    return new Node(i)
+  else
+    return new Node(make(2 * i - 1, d - 1), i , make(2 * i, d - 1))
+  end
+end
+
+action main(args : Array[string])
+  min_depth : var = 4
+  max_depth : var 
+
+  if (args.size() > 0) 
+    max_depth = args[0].to_int()
+  else
+    max_depth = 10
+  end
+
+  stretch_depth : var = max_depth + 1
+
+  if (min_depth > 0)
+    c1 : var = make(0, stretch_depth)
+    print("stretch tree of depth " + stretch_depth.to_string() + "\t check: " + c1.check().to_string() + "\n")
+  end
+
+  long_lived_tree : var = make(0, max_depth)
+
+  d : int = min_depth
+  while (d <= max_depth)
+    v : int = 1
+    iterations : int = v.bit_shl(max_depth - d + min_depth) 
+    c : int = 0
+    i : int = 1
+    while (i <= iterations)
+      a : Node = make(i, d)
+      b : Node = make(0-i, d)
+      c = c + a.check() + b.check()
+      i += 1
+      a.delete()
+      b.delete()
+    end
+    print( (2*iterations).to_string() + "\t trees of depth " + d.to_string() + "\t check: " + c.to_string() + "\n")
+
+    d += 2
+  end
+  print("long lived tree of depth " + max_depth.to_string() + "\t check: " + long_lived_tree.check().to_string() + "\n")
+
+  Sys.exit()
+end

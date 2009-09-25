@@ -1,0 +1,18 @@
+feature Bob
+  y : int
+  z : int
+end
+
+action main
+  x : var = new Bob()
+  x.y = 5
+  x.z = 10
+
+  x.y
+  abc : var = x.z
+  
+  print(x.y)
+  print(abc)
+
+  Sys.exit()
+end

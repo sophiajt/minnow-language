@@ -1,0 +1,62 @@
+namespace SDL.Externals
+
+library "minnowsdl"
+  extern def create_sdl_window_(width : int, height : int, depth : int) : pointer
+  extern def create_sdl_surface_(width : int, height : int, depth : int) : pointer
+  extern def draw_pixel_(surface_v : pointer, r : int, g : int, b : int, x : int, y : int)
+  extern def blit_surface_(screen_v : pointer, surface_v : pointer)
+  extern def blit_surface_at_(screen_v : pointer, surface_v : pointer, x : int, y : int)
+  extern def delay_(milliseconds : int)
+  extern def clear_events_()
+end
+
+namespace global
+
+feature SDLException
+  reason : string
+  def SDLException(r : string)
+    reason = r
+  end
+end
+
+namespace SDL
+
+feature Surface
+  surface : pointer
+ 
+  def create_main_window(width : int, height : int, depth : int)
+    surface = SDL.Externals.create_sdl_window_(width, height, depth)
+    if (surface.is_null())
+      throw(o:object <+ new SDLException("Can't create window"));
+    end
+  end
+  
+  def create_surface(width : int, height : int, depth : int) 
+    surface = SDL.Externals.create_sdl_surface_(width, height, depth)
+    if (surface.is_null())
+      throw(o:object <+ new SDLException("Can't create surface"));
+    end
+  end
+  
+  def draw_pixel(r : int, g : int, b : int, x : int, y : int)
+    SDL.Externals.draw_pixel_(surface, r, g, b, x, y)
+  end
+  
+  def blit_surface(src : Surface)
+    SDL.Externals.blit_surface_(surface, src.surface)
+  end
+
+  def blit_surface(src : Surface, x : int, y : int)
+    SDL.Externals.blit_surface_at_(surface, src.surface, x, y)
+  end
+
+end
+
+def delay(milliseconds : int)
+  SDL.Externals.delay_(milliseconds)
+end
+
+def clear_events()
+  SDL.Externals.clear_events_()
+end
+

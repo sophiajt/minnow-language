@@ -1,0 +1,6 @@
+action main
+  s : string = "Bob"
+  print(s[1])
+  print(s.size())
+  Sys.exit()
+end

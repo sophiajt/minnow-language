@@ -1,0 +1,47 @@
+actor Finish
+  count : int
+  stop : int
+
+  action complete
+    count = count + 1
+    if (count == stop)
+      Sys.exit()
+    end
+  end
+
+  def Finish(count_to : int)
+    stop = count_to
+  end
+end
+
+actor Worker
+  collector : Finish
+  stop : int
+
+  action work
+    i : int = 0
+    while (i < stop)
+      i = i + 1
+    end
+    collector::complete()
+  end
+
+  def Worker(count_to : int, f : Finish)
+    stop = count_to
+    collector = f
+  end
+end
+
+action main(args : Array[string])
+  total : int = args[0].to_int()
+  per : int = args[1].to_int()
+
+  f : Finish = spawn Finish(total)
+  
+  i : int = 0
+  while(i < total)
+    worker : Worker = spawn Worker(per, f)
+    worker::work()
+    i = i + 1
+  end
+end

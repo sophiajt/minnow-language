@@ -1,0 +1,64 @@
+def read_all_test()
+  f : Sys.File = new Sys.File()
+
+  try 
+    f.open("samples/file_op.txt", Sys.Open_Mode.READ)
+  catch
+    print("Error: " + exception.File_Exception.reason + " '" + exception.File_Exception.filename + "'\n")
+    Sys.exit()
+  end
+
+  print("Size: ")
+  print(f.length())
+  print("\n")
+
+  contents : string = f.read_all()
+  print(contents)
+
+  f.close()
+end
+
+def read_line_test()
+  f : Sys.File = new Sys.File()
+
+  try 
+    f.open("samples/file_op.txt", Sys.Open_Mode.READ)
+  catch
+    print("Error: " + exception.File_Exception.reason + " '" + exception.File_Exception.filename + "'\n")
+    Sys.exit()
+  end
+
+  line : string
+  while (f.eof() == false)
+    line = f.read_line()
+    print(line)
+    if (line.size() > 0)
+      print("\n")
+    end
+  end
+
+  f.close()
+end
+
+def write_file_test()
+  f : Sys.File = new Sys.File()
+  try
+    f.open("/tmp/something.txt", Sys.Open_Mode.WRITE)
+
+    stuff : string = "this is a long file\nwith multiple lines"
+    f.write(stuff)
+    f.close()
+  catch
+    print("Error: " + exception.File_Exception.reason + " '" + exception.File_Exception.filename + "'\n")
+    Sys.exit()
+  end
+end
+
+action main
+  read_all_test()
+  read_line_test()
+  write_file_test()
+
+  Sys.exit()
+end 
+  

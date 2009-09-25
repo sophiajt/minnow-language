@@ -1,0 +1,21 @@
+def bob
+  bob(3)
+end
+
+def bob(x:int)
+end
+
+def bob(x:int, y:int)
+end
+
+def bob(x:int, y:int, z:int)
+  bob(x)
+  return
+end
+
+def bob(x:int, y:double) : int
+  return 0
+end
+
+action main
+end

@@ -1,0 +1,23 @@
+feature Bob
+  x : int
+end
+
+feature Fred
+  y : int
+end
+
+action main
+  b : var = new Bob()
+  b <+ new Fred()
+  
+  b.x = 3
+  b.Fred.y = 5
+
+  print(b.x)
+  print('\n')
+  print(b.Fred.y)
+  print('\n')
+
+  Sys.exit()
+end
+

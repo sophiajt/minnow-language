@@ -1,0 +1,23 @@
+feature Test
+  i : int
+end
+
+action main
+  o : object <+ new Test()
+  
+  if (o.Test.is_null())
+    print("Null")
+  else
+    print("Exists")
+  end
+
+  o +> o.Test
+
+  if (o.Test.is_null())
+    print("Null")
+  else
+    print("Exists")
+  end
+  
+  Sys.exit()
+end

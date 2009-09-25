@@ -1,0 +1,22 @@
+feature Bob
+end
+
+def dosomething() : Bob
+  return new Bob()
+end
+
+def breakit()
+  x : Bob
+  loop : int = 0
+
+  while (loop < 10)
+    x = dosomething()
+    loop += 1
+  end
+end
+
+action main
+  breakit()
+  print("Success")
+  Sys.exit()
+end

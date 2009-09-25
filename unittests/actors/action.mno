@@ -1,0 +1,11 @@
+actor Test
+  action test() 
+    print("Done") 
+    Sys.exit()
+  end
+end
+
+action main
+  t : Test = spawn Test()
+  t::test()
+end

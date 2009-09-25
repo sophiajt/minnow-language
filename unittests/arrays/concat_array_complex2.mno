@@ -1,0 +1,12 @@
+action main
+  x : var = [1, 2] ++ [3, 4]
+  print(x[3])
+  y : var = ["bob", "sam", "fred"] ++ ["george", "sally"]
+  print(y[1])
+  print(y[3])
+  print(y[4])
+  z : var = [true] ++ [false, true, false]
+  print(z[0])
+  print(z[3])
+  Sys.exit()
+end

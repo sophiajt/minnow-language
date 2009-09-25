@@ -1,0 +1,3 @@
+action main
+  print("Hello")
+end

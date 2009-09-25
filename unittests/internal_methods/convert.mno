@@ -1,0 +1,10 @@
+action main
+  f : double = 5.13
+  print(f)
+  print("\n")
+  s : string = f.to_string()
+  print(s)
+  print("\n")
+  Sys.exit()
+
+end

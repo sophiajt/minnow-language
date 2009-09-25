@@ -1,0 +1,11 @@
+action main
+  ''
+  "this is a string"
+  print("Hello")
+  "\"This is too\" "
+  "With a carriage return\n"
+  'a'
+  '\''
+  //"this is a string".find("string")
+  Sys.exit()
+end

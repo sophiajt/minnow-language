@@ -1,0 +1,22 @@
+feature Exception
+  reason : string
+  def Exception(s : string)
+    reason = s
+  end
+end
+
+def break_something()
+  print("Hello ")
+  o : object <+ new Exception("I cry")
+  throw(o)
+  print("World ")
+end
+
+action main
+  try
+    break_something()
+  catch
+    print("Fail:" + exception.Exception.reason)
+  end
+  Sys.exit()
+end

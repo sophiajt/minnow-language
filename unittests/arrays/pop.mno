@@ -1,0 +1,9 @@
+action main
+  a : Array[int] = new Array[int]
+  a.push(7)
+  a.push(8)
+  print(a.pop())
+  print(a.size())
+  print(a[0])
+  Sys.exit()
+end

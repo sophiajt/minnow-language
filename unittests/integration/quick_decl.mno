@@ -1,0 +1,5 @@
+action main
+  $a = 5
+  print(a)
+  Sys.exit()
+end

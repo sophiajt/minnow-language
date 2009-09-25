@@ -1,0 +1,15 @@
+feature Bob
+  bob:int
+end
+
+def out : int
+end
+
+action main(args : Array[string])
+  x:int = 3 + 5
+  y:int = 3 + 5
+  while (true)
+    z:int
+    x = 4
+  end
+end

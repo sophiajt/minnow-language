@@ -1,0 +1,5 @@
+action main
+  f : double = 3.3
+  print(f.to_string())
+  Sys.exit()
+end

@@ -1,0 +1,25 @@
+actor collector
+  total : int
+
+  def collector
+    total = 0
+  end
+
+  action collect(i : int)
+    total += 1
+    if (total == 5000)
+      print(total)
+      Sys.exit()
+    end
+  end
+end  
+
+action main
+  i : int = 0
+  c : collector = new collector()
+
+  while (i < 5000)
+    c::collect(i)
+    i += 1
+  end
+end

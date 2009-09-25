@@ -1,0 +1,14 @@
+feature Bob
+end
+
+action main
+  b : Bob = new Bob()
+
+  print(b.is_null())
+
+  b.delete()
+
+  print(b.is_null())
+
+  Sys.exit()
+end

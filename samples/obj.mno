@@ -1,0 +1,16 @@
+feature Fred
+  x : int
+  z : Bob
+end
+
+feature Bob
+  y : int
+end
+
+action main
+  o : object = new Fred()
+  v : Array[object] = new Array[object]
+  o <+ new Bob()
+  o.Bob
+  x : var = o.Bob
+end

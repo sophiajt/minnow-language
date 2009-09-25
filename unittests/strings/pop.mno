@@ -1,0 +1,6 @@
+action main
+  s : string = "rate"
+  print(s.pop())
+  print(s)
+  Sys.exit()
+end

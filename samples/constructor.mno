@@ -1,0 +1,26 @@
+actor Bob
+  def Bob(x : int)
+  end
+end
+
+feature Fred
+  def Fred(z : int)
+  end
+end
+
+action main
+  y : Bob = spawn Bob(4)
+  z : Fred = new Fred(5)
+  o : object <+ new Fred(3) <+ new Fred(4)
+  s : George.Sally = new George.Sally(10)
+  //a : Array[Fred] = new Array[Fred]
+end
+
+namespace George
+feature Sally
+  def Sally(q : int)
+    print(q)
+    Sys.exit()
+  end
+end
+

@@ -1,0 +1,17 @@
+isolated actor Bob
+  y : int
+  action greet
+    print("Hello from isolated\n")
+    print(y)
+    Sys.exit()
+  end
+
+  def Bob(x : int)
+    y = x
+  end
+end
+
+action main
+  x : Bob = spawn Bob(3)
+  x::greet()
+end

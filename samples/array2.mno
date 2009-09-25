@@ -1,0 +1,17 @@
+action main (args : Array[string])
+ i:int
+ j:Array[int]
+ j = new Array[int]
+
+ k : int = 3
+ j.push(3)
+ j[0] = 2
+ j.insert(4, 0)
+
+ print(j[0])
+ print(j[1])
+
+ j.delete(0)
+ print(j[0])
+ Sys.exit()
+end

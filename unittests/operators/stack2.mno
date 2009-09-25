@@ -1,0 +1,17 @@
+feature Bob
+  def printme(i:int)
+    print("int: ")
+    print(i)
+  end
+
+  def printme(d:double)
+    print("double: ")
+    print(d)
+  end
+end
+
+action main
+  b:Bob = new Bob()
+  b.printme << 4.4 << 2
+  Sys.exit()
+end

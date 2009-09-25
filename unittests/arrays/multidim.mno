@@ -1,0 +1,14 @@
+action main
+  x : var = new Array[Array[int]]
+  x.push(new Array[int])
+  x[0].push(1)
+  x[0].push(5)
+  x[0].push(3)
+  x[0][2] = 9
+  print(x[0][0])
+  print(x[0][1])
+  print(x[0][2])
+  print(x[0].size())
+  
+  Sys.exit()
+end

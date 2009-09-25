@@ -1,0 +1,4 @@
+action main
+  print(11 % 3)
+  Sys.exit()
+end

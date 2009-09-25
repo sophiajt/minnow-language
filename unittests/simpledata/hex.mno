@@ -1,0 +1,4 @@
+action main
+  print(0xff)
+  Sys.exit()
+end

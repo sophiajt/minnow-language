@@ -1,0 +1,22 @@
+actor Handler
+  action handle(a : Array[string])
+    len : var = a.size()
+    i : var = 0
+    while (i < len)
+      print(a[i] + " ")
+      i = i + 1
+    end
+    Sys.exit()
+  end
+end
+
+action main
+  a : var = new Array[string]
+
+  a.push("Hi")
+  a.push("there")
+  a.push("Bob")
+  
+  h : var = spawn Handler()
+  h::handle(a)
+end

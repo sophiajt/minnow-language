@@ -1,0 +1,19 @@
+/*
+  Because we use SDL.delay, we need to isolate the actor from the rest of the actors - since delay forces time away from our scheduler.
+*/
+isolated actor SDL_Test
+  action do_sdl
+    s : var = new SDL.Surface()
+    s.create_main_window(640, 480, 32)
+    s.draw_pixel(255, 0, 0, 10, 20)
+    while (true)
+      SDL.delay(100)
+      SDL.clear_events()
+    end
+  end
+end
+
+action main
+  ia : var = spawn SDL_Test()
+  ia::do_sdl()
+end

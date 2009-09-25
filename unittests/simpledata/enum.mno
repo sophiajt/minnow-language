@@ -1,0 +1,11 @@
+enum Bob(Fred, Sam)
+enum Bob2(Fred, Sam)
+action main
+  x : Bob = Bob.Fred
+  if (x == Bob.Fred)
+    print("Bob.Fred")
+  elseif (x == Bob.Sam)
+    print("Bob.Sam")
+  end
+  Sys.exit()
+end

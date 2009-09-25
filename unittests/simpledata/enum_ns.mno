@@ -1,0 +1,17 @@
+namespace NS
+enum Bob(Fred, Sam)
+namespace global
+
+def printme(x : NS.Bob)
+  if (x == NS.Bob.Fred) 
+    print("NS.Bob.Fred")
+  elseif (x == NS.Bob.Sam)
+    print("NS.Bob.Sam")
+  end
+end
+
+action main
+  x : var = NS.Bob.Fred
+  printme(x)
+  Sys.exit()
+end

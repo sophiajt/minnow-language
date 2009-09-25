@@ -1,0 +1,19 @@
+feature Bob
+end
+
+def make_bob : Bob
+  o : object
+  b : Bob = new Bob()
+  
+  //o +> b
+  b = new Bob()
+  x:Bob = b // o.Bob
+  while (true)
+    x
+  end
+  return b
+end
+
+action main
+  make_bob()
+end

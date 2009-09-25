@@ -1,0 +1,11 @@
+action main
+  x : var = new Fred.Bob()
+  x.y
+end
+
+namespace Fred
+
+feature Bob
+  y : int
+end
+

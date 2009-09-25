@@ -1,0 +1,47 @@
+actor PrintMe
+  action printit(a : Dict[int])
+    print << a["bob"]
+    print << a["4"] 
+  end
+  action printit(a : Dict[string])
+    print << a["bob"] 
+    print << a["4"] 
+    Sys.exit()
+  end
+end
+
+feature Bob
+  x:int
+
+  def delete
+    print << "del: " << x << " "
+  end
+
+  def Bob(x_val:int)
+    x = x_val
+  end
+end
+
+action main
+  $printme = spawn PrintMe()
+  $a = new Dict[int]
+  $b = new Dict[string]
+
+  a["bob"] = 3
+  a["4"] = 1
+
+  b["bob"] = "123"
+  b["4"] = "abcd!"
+
+  $c = new Dict[Bob]
+  c["123"] = new Bob(123)
+  c["x"] = new Bob(456)
+
+  //$c = new Array[string]
+  //c[0] = "abcd!"
+
+  printme::printit(a)
+  printme::printit(b)
+  a
+  b
+end

@@ -1,0 +1,10 @@
+feature Feat
+  x : int
+end
+
+action main
+  o : object
+  o.Feat.x
+  o.Feat.Feat.x
+end 
+  

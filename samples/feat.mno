@@ -1,0 +1,8 @@
+feature Bob
+  x : int
+end
+
+action main
+  y : Bob
+  y.x
+end

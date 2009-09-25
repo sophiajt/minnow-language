@@ -1,0 +1,5 @@
+action main
+  if ((true && true) || (false && false))
+    print("Hello")
+  end
+end

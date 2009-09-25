@@ -1,0 +1,9 @@
+action main
+  s : string = "Bob"
+  if (s == "Bob")
+    print("Strings match")
+  else
+    print("Strings don't match")
+  end
+  Sys.exit()
+end

@@ -1,0 +1,19 @@
+feature Bob
+  x : int
+
+  def greet()
+    print("Hello")
+  end
+
+  def Bob(i : int)
+    x = i
+  end
+end
+
+action main
+  o : object <+ new Bob(3)
+  print(o.Bob.x)
+  o.Bob.greet()
+  Sys.exit()
+end
+

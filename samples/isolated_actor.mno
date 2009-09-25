@@ -1,0 +1,11 @@
+isolated actor Bob
+  action greet
+    print("Hello from isolated\n")
+    Sys.exit()
+  end
+end
+
+action main
+  x : Bob = spawn Bob()
+  x::greet()
+end

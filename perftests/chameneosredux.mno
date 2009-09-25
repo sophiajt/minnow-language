@@ -1,0 +1,348 @@
+enum Color(red, blue, yellow)
+
+/*
+def print(c : Color)
+  if (c == Color.red)
+    print("red")
+  elseif (c == Color.blue)
+    print("blue")
+  elseif (c == Color.yellow)
+    print("yellow")
+  end
+end
+*/
+
+def compliment(c1 : Color, c2 : Color) : Color
+  if (c1 == Color.blue)
+    if (c2 == Color.blue)
+      return Color.blue
+    elseif (c2 == Color.red)
+      return Color.yellow
+    elseif (c2 == Color.yellow)
+      return Color.red
+    end
+  elseif (c1 == Color.red)
+    if (c2 == Color.blue)
+      return Color.yellow
+    elseif (c2 == Color.red)
+      return Color.red
+    elseif (c2 == Color.yellow)
+      return Color.blue
+    end
+  elseif (c1 == Color.yellow)
+    if (c2 == Color.blue)
+      return Color.red
+    elseif (c2 == Color.red)
+      return Color.blue
+    elseif (c2 == Color.yellow)
+      return Color.yellow
+    end
+  end
+end
+
+def print_num_name(c : char)
+  if (c == '0')
+    print("zero")
+  elseif (c == '1')
+    print("one")
+  elseif (c == '2')
+    print("two")
+  elseif (c == '3')
+    print("three")
+  elseif (c == '4')
+    print("four")
+  elseif (c == '5')
+    print("five")
+  elseif (c == '6')
+    print("six")
+  elseif (c == '7')
+    print("seven")
+  elseif (c == '8')
+    print("eight")
+  elseif (c == '9')
+    print("nine")
+  end
+end
+
+def print_num(n : int)
+  str : var = n.to_string()
+  i : int 
+  for i = 0 to (str.size() - 1)
+    print(" ")
+    print_num_name(str[i])
+  end
+end
+    
+  
+actor Meeting_Place
+  waiting_cham : Chameneos
+  waiting_color : Color
+  waiting_id : int
+
+  game : Game
+
+  is_waiting : bool
+  max_meetings : int
+  total_creatures_met : int
+  total_meetings : int
+  num_creatures : int
+  num_creatures_reporting : int
+
+  def Meeting_Place(g : Game, N : int)
+    reset()
+    max_meetings = N
+    game = g
+  end
+
+  def reset
+    is_waiting = false
+    total_creatures_met = 0
+    total_meetings = 0
+  end
+
+  action set_num_creatures(n : int)
+    num_creatures = n
+    num_creatures_reporting = 0
+  end
+
+  action meet(cham:Chameneos, color:Color, id:int)
+    if (total_meetings == max_meetings)
+      cham::report()
+    elseif (is_waiting == false)
+      waiting_cham = cham
+      waiting_color = color
+      waiting_id = id
+      is_waiting = true
+    else
+      waiting_cham::greet(cham, color, id)
+      total_creatures_met += 1
+      cham::greet(waiting_cham, waiting_color, waiting_id)
+      total_creatures_met += 1
+      is_waiting = false
+      total_meetings += 1
+    end
+  end
+
+  action report(num_meetings : int, num_times_met_self : int)
+    print(num_meetings)
+    print(" ")
+    print_num(num_times_met_self)
+    print("\n")
+    num_creatures_reporting += 1
+    if (num_creatures == num_creatures_reporting)
+      print_num(total_creatures_met)
+      print("\n")
+      reset()
+      game::next_stage()
+    end
+  end
+end
+
+actor Chameneos
+  color : Color
+  num_times_met_self : int
+  meeting_place : Meeting_Place
+  total_met : int
+  id : int
+
+  def Chameneos(meeting : Meeting_Place, my_color : Color, my_id : int)
+    num_times_met_self = 0
+    meeting_place = meeting
+    color = my_color
+    total_met = 0
+    id = my_id
+  end
+
+  action greet(their_cham:Chameneos, their_color:Color, their_id : int)
+    color = compliment(color, their_color)
+    
+    if (their_id == id)
+      num_times_met_self += 1
+    end
+    
+    total_met += 1
+    meet()
+  end
+
+  action meet()
+    meeting_place::meet(this, color, id)
+  end
+
+  action report()
+    meeting_place::report(total_met, num_times_met_self)
+  end
+end
+
+actor Game
+  stage : int
+  mp : Meeting_Place
+  N : int
+
+  def Game(total : int)
+    stage = 1
+    N = total
+  end
+
+  action next_stage()
+    print("\n")
+    if (stage == 1)
+      mp = spawn Meeting_Place(this, N)
+      mp::set_num_creatures(3)
+
+      print(" ")
+      print(Color.blue)
+      c_blue : var = spawn Chameneos(mp, Color.blue, 1)
+
+      print(" ")
+      print(Color.red)
+      c_red : var = spawn Chameneos(mp, Color.red, 2)
+
+      print(" ")
+      print(Color.yellow)
+      c_yellow : var = spawn Chameneos(mp, Color.yellow, 3)
+      print("\n")
+
+      c_blue::meet()
+      c_red::meet()
+      c_yellow::meet()
+
+      stage += 1
+
+    elseif (stage == 2)
+      mp::set_num_creatures(10)
+
+      print(" ")
+      print(Color.blue)
+      c1 : var = spawn Chameneos(mp, Color.blue, 1)
+
+      print(" ")
+      print(Color.red)
+      c2 : var = spawn Chameneos(mp, Color.red, 2)
+
+      print(" ")
+      print(Color.yellow)
+      c3 : var = spawn Chameneos(mp, Color.yellow, 3)
+
+      print(" ")
+      print(Color.red)
+      c4 : var = spawn Chameneos(mp, Color.red, 4)
+
+      print(" ")
+      print(Color.yellow)
+      c5 : var = spawn Chameneos(mp, Color.yellow, 5)
+
+      print(" ")
+      print(Color.blue)
+      c6 : var = spawn Chameneos(mp, Color.blue, 6)
+
+      print(" ")
+      print(Color.red)
+      c7 : var = spawn Chameneos(mp, Color.red, 7)
+
+      print(" ")
+      print(Color.yellow)
+      c8 : var = spawn Chameneos(mp, Color.yellow, 8)
+
+      print(" ")
+      print(Color.red)
+      c9 : var = spawn Chameneos(mp, Color.red, 9)
+
+      print(" ")
+      print(Color.blue)
+      c10 : var = spawn Chameneos(mp, Color.blue, 10)
+      print("\n")
+
+      c1::meet()
+      c2::meet()
+      c3::meet()
+      c4::meet()
+      c5::meet()
+      c6::meet()
+      c7::meet()
+      c8::meet()
+      c9::meet()
+      c10::meet()
+      stage += 1
+    elseif (stage == 3)
+      Sys.exit()
+    end
+  end
+end
+
+def print_compliments
+  print(Color.blue)
+  print(" + ")
+  print(Color.blue)
+  print(" -> ")
+  print(compliment(Color.blue, Color.blue))
+  print("\n")
+
+  print(Color.blue)
+  print(" + ")
+  print(Color.red)
+  print(" -> ")
+  print(compliment(Color.blue, Color.red))
+  print("\n")
+
+  print(Color.blue)
+  print(" + ")
+  print(Color.yellow)
+  print(" -> ")
+  print(compliment(Color.blue, Color.yellow))
+  print("\n")
+
+  print(Color.red)
+  print(" + ")
+  print(Color.blue)
+  print(" -> ")
+  print(compliment(Color.red, Color.blue))
+  print("\n")
+
+  print(Color.red)
+  print(" + ")
+  print(Color.red)
+  print(" -> ")
+  print(compliment(Color.red, Color.red))
+  print("\n")
+
+  print(Color.red)
+  print(" + ")
+  print(Color.yellow)
+  print(" -> ")
+  print(compliment(Color.red, Color.yellow))
+  print("\n")
+
+  print(Color.yellow)
+  print(" + ")
+  print(Color.blue)
+  print(" -> ")
+  print(compliment(Color.yellow, Color.blue))
+  print("\n")
+
+  print(Color.yellow)
+  print(" + ")
+  print(Color.red)
+  print(" -> ")
+  print(compliment(Color.yellow, Color.red))
+  print("\n")
+
+  print(Color.yellow)
+  print(" + ")
+  print(Color.yellow)
+  print(" -> ")
+  print(compliment(Color.yellow, Color.yellow))
+  print("\n")
+
+end
+
+action main(args : Array[string])
+  total : var = 600
+  if (args.size() > 0)
+    total = args[0].to_int()
+  end
+
+  print_compliments()
+
+  g : var = spawn Game(total)
+  g::next_stage()
+end

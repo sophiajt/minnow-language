@@ -1,0 +1,15 @@
+feature Test
+  i : int
+end
+
+action main
+  o : object
+
+  t : Test = new Test()
+  t.i = 99
+
+  o <+ t
+
+  print(o.Test.i)
+  Sys.exit()
+end

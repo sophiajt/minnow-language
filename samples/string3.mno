@@ -1,0 +1,8 @@
+def greet(i : int)
+  print("H" + 'e' + 'l' + 'l' + 'o' + '\n')
+end
+
+action main
+  greet(3)
+  Sys.exit()
+end

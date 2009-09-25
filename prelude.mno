@@ -1,0 +1,268 @@
+namespace Sys.Externals
+extern def print_i__(i : int)
+extern def print_s__(s : string)
+extern def print_d__(d : double)
+extern def print_d_i__(d : double, depth:int)
+extern def print_c__(c : char)
+extern def print_f__(f : float)
+extern def file_open_read_file_s__(s : string) : pointer
+extern def file_open_write_file_s__(s : string) : pointer
+extern def file_close_file_p__(p : pointer)
+extern def file_length_p__(p : pointer) : int
+extern def file_read_all_p__(p : pointer) : string
+extern def file_read_line_p__(p : pointer) : string
+extern def file_write_p_s__(p : pointer, s : string) : bool
+extern def file_eof_p__(p : pointer) : bool
+extern def exit_i__(i : int)
+extern def exit__()
+extern def convert_s_to_i__(s : string) : int
+extern def convert_s_to_f__(s : string) : float
+extern def convert_s_to_d__(s : string) : double
+extern def convert_s_to_c__(s : string) : char
+extern def convert_i_to_s__(i : int) : string
+extern def convert_i_to_f__(i : int) : float
+extern def convert_i_to_d__(i : int) : double
+extern def convert_i_to_c__(i : int) : char
+extern def convert_d_to_s__(d : double) : string
+extern def convert_d_to_f__(d : double) : float
+extern def convert_d_to_i__(d : double) : int
+extern def convert_d_to_c__(d : double) : char
+extern def convert_f_to_s__(f : float) : string
+extern def convert_f_to_i__(f : float) : int
+extern def convert_f_to_d__(f : float) : double
+extern def convert_f_to_c__(f : float) : char
+extern def convert_c_to_s__(c : char) : string
+extern def convert_c_to_f__(c : char) : float
+extern def convert_c_to_d__(c : char) : double
+extern def convert_c_to_i__(c : char) : int
+extern def create_char_string__(num_elems : int) : string
+extern def num_hw_threads__() : int
+extern def substr_s_i_i__(s:string, from:int, to:int) : string
+
+//Math
+namespace Math
+extern def cos(d : double) : double
+extern def sin(d : double) : double
+extern def tan(d : double) : double
+extern def acos(d : double) : double
+extern def asin(d : double) : double
+extern def atan(d : double) : double
+extern def atan2(d : double, d2 : double) : double
+extern def log(d : double) : double
+extern def log10(d : double) : double
+extern def sqrt(d : double) : double
+extern def cbrt(d : double) : double
+extern def floor(d : double) : double
+extern def ceil(d : double) : double
+extern def fabs(d : double) : double
+extern def abs(i : int) : int
+
+//String
+namespace String
+def substr(s:string, from:int, length:int) : string
+  return Sys.Externals.substr_s_i_i__(s, from, length)
+end
+
+def lines(s:string) : Array[string]
+  start : int = 0
+  length : int = 0
+  retval : var = new Array[string]
+
+  while ((start+length) <= s.size())
+    if (s[start+length] == '\n')
+      retval.push(String.substr(s, start, length))
+      start = start + length + 1 
+      length = 0
+    else
+      length += 1
+    end
+  end
+  if (length > 0)
+    retval.push(String.substr(s, start, length))
+  end
+  return(retval)
+end
+
+namespace global
+def print(i : int)
+  Sys.Externals.print_i__(i)
+end
+
+def print(s : string)
+  Sys.Externals.print_s__(s)
+end
+
+def printline(s : string)
+  Sys.Externals.print_s__(s)
+  Sys.Externals.print_s__("\n")
+end
+
+def print(d : double)
+  Sys.Externals.print_d__(d)
+end
+
+def print(d : double, depth:int)
+  Sys.Externals.print_d_i__(d, depth)
+end
+
+def print(c : char)
+  Sys.Externals.print_c__(c)
+end
+
+def print(f : float)
+  Sys.Externals.print_f__(f)
+end
+
+def print(b : bool)
+  if (b == true)
+    print("true")
+  else
+    print("false")
+  end
+end
+
+def not(x:bool) : bool
+  if (x == false)
+    return true
+  else
+    return false
+  end
+end
+
+def `+`(x:int, y:double) : double
+  return x.to_double() + y
+end
+
+def `+`(x:double, y:int) : double
+  return x + y.to_double()
+end
+
+def `-`(x:int, y:double) : double
+  return x.to_double() - y
+end
+
+def `-`(x:double, y:int) : double
+  return x - y.to_double()
+end
+
+def `*`(x:int, y:double) : double
+  return x.to_double() * y
+end
+
+def `*`(x:double, y:int) : double
+  return x * y.to_double()
+end
+
+def `/`(x:int, y:double) : double
+  return x.to_double() / y
+end
+
+def `/`(x:double, y:int) : double
+  return x / y.to_double()
+end
+
+def `**`(x:int, y:double) : double
+  return x.to_double() ** y
+end
+
+def `**`(x:double, y:int) : double
+  return x ** y.to_double()
+end
+
+//----EXCEPTIONS----
+/*
+  We make exceptions global because otherwise they'd be a pain to type.  We're explicit, yet general, so hopefully it's a good compromise.
+*/
+feature File_Exception
+  filename : string
+  reason : string
+
+  def File_Exception(fn : string, r:string)
+    filename = fn
+    reason = r
+  end
+end
+
+
+//----SYS----
+
+namespace Sys
+
+enum Open_Mode(READ, WRITE, READWRITE, APPEND)
+enum File_Type(TEXT, BINARY)
+
+feature File
+  handle : pointer
+  filename : string
+
+  def File()
+  end
+
+  def File(fname : string, direction : Sys.Open_Mode)
+    open(fname, direction)
+  end
+
+  def open(fname : string, direction : Sys.Open_Mode)
+    o : object
+    filename = fname
+    if (direction == Sys.Open_Mode.READ)
+      handle = Sys.Externals.file_open_read_file_s__(fname)
+      if (handle.is_null())
+        throw(o <+ new File_Exception(filename, "Can not open file"))
+      end
+    elseif (direction == Sys.Open_Mode.WRITE)
+      handle = Sys.Externals.file_open_write_file_s__(fname)
+      if (handle.is_null())
+        throw(o <+ new File_Exception(filename, "Can not open file"))
+      end
+    end
+  end
+
+  def read_all() : string
+    s:var = Sys.Externals.file_read_all_p__(handle)
+    if (s.is_null())
+      throw(o:object <+ new File_Exception(filename, "Can not read entire file"))
+    end
+    return s
+  end
+
+  def read_line() : string
+    s:var = Sys.Externals.file_read_line_p__(handle)
+    if (s.is_null())
+      throw(o:object <+ new File_Exception(filename, "Can not read line"))
+    end
+    return s
+  end
+
+  def write(s : string) 
+    b : bool = Sys.Externals.file_write_p_s__(handle, s)
+    if (b == false)
+      throw(o:object <+ new File_Exception(filename, "Can not write string"))
+    end
+  end
+      
+  def length() : int
+    return Sys.Externals.file_length_p__(handle)
+  end
+
+  def close() 
+    Sys.Externals.file_close_file_p__(handle)
+  end
+
+  def eof() : bool
+    return Sys.Externals.file_eof_p__(handle)
+  end
+end
+
+def exit(i : int)
+  Sys.Externals.exit_i__(i)
+end
+
+def exit()
+  Sys.Externals.exit__()
+end
+
+def num_hw_threads() : int
+  return Sys.Externals.num_hw_threads__()
+end
+

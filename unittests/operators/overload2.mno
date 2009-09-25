@@ -1,0 +1,8 @@
+def `@@`(x:int, y:int) : double
+  return (Math.sqrt( (x**2).to_double() + (y**2).to_double()))
+end
+
+action main()
+  print(3 @@ 4)
+  Sys.exit()
+end
