@@ -1,0 +1,1 @@
+The Minnow programming language is a system for developing applications which scale naturally onto multicore and manycore systems.  It uses an actor-based approach and an efficient support library to provide a system that is easy to use while having good performance characteristics.
